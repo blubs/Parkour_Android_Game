@@ -12,11 +12,10 @@ void android_main(struct android_app *app)
 	//We never leave this scope anyways
 	app->userData = &engine;
 
-	//Trying to get files to load.
 	File_Utils::asset_mgr = app->activity->assetManager;
 
 	//Setting start time as now (a reference point)
-	set_start_time();
+	Time::set_start_time();
 
 	//====================================
 
@@ -30,8 +29,6 @@ void android_main(struct android_app *app)
 	LOGI("Read file: %s.\n",data);
 	free((char*)data);
 	File_Utils::write_savedata("test.dat");*/
-
-	float last_frame_time = 0.0;
 
 	//run the engine loop
 	while(1)
@@ -99,10 +96,6 @@ void android_main(struct android_app *app)
 				//	LOGE("60 frames passed\n");
 				//LOGE("Frame: %ld, frame mod 60 = %ld\n",frame,(frame % 60));
 				frame++;
-				float ctime = time();
-
-				engine.delta_time = ctime - last_frame_time;
-				last_frame_time = ctime;
 				//LOGE("delta_time = %f,  last_frame_time = %f, avg fps = %f\n",delta_time, last_frame_time,frame/time());
 			}
 		}

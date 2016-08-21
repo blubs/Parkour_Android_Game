@@ -354,9 +354,15 @@ void Engine::draw_frame ()
 		is_first_frame = false;
 	}
 
+	float t = Time::time();
+	//Evaluating global time variables
+	Time::delta_time = t - Time::current_time;
+	//If way too much time has elapsed since last frame, lerping things will get messed up, so make delta_time be 0
+	if(Time::delta_time >= 1.0f/5.0f)
+		Time::delta_time = 0.0f;//(setting delta time to 0 may cause issues)
+	Time::current_time = t;
+
 	game->update();
 	game->render();
 	eglSwapBuffers(egl_display, egl_surface);
 }
-
-float Engine::delta_time = 0.0f;

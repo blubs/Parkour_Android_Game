@@ -86,8 +86,6 @@ public:
 	int animating;
 
 	Game* game;
-
-	static float delta_time;
 };
 
 

@@ -6,6 +6,7 @@
 #define ENGINE_CAMERA_H
 
 #include "../engine/common.hpp"
+#include "../engine/misc.hpp"
 #include "../engine/Game_Object.hpp"
 
 class Camera : public Entity
@@ -40,9 +41,10 @@ public:
 	static const int VIEWBOB_NONE = 0;
 	static const int VIEWBOB_RUNNING = 1;
 	static const int VIEWBOB_SLIDING = 2;
+	int viewbob;
+	Vec3 viewbob_vel;
 	void set_viewbob(int type);
-	void viewbob_run_footstep(float strength);
-	//TOOD: what do I need to be able to evaluate the camera viewbob in terms of timing?
+	void viewbob_run_footstep(float pitch_v,float yaw_v, float roll_v);
 	void update_viewbob();
 };
 

@@ -473,7 +473,9 @@ public:
 			case INPUT_EVENT_ON_TOUCH_MOVE:
 			case INPUT_EVENT_ON_TOUCH_RELEASE:
 				input_x = x;
-				input_y = y;
+				input_y = 1.0f-y;
+				break;
+			default:
 				break;
 		}
 	}
@@ -518,12 +520,12 @@ public:
 			ad_visible = true;
 		}
 
-		float t = time();
+		float t = Time::time();
 
 		//Make player spin
 		//player->angles.y = fmodf(t*2.0f,TWO_PI);
-		player->angles.x = ((0.5f - input_y) * TWO_PI);
-		player->angles.y = (0.5f - input_x) * TWO_PI;
+		//player->angles.x = ((0.5f - input_y) * TWO_PI);
+		//player->angles.y = (0.5f - input_x) * TWO_PI;
 
 		//Making the test audio source rotate about the player
 		//float distance = 5.0f + 2.0f * cosf(t*12.75f);
@@ -562,7 +564,7 @@ public:
 		//glClear(GL_COLOR_BUFFER_BIT);
 
 		camera->pos = Vec3::ZERO();
-		camera->angles = Vec3::ZERO();
+		//camera->angles = Vec3::ZERO();
 
 		//Pitch
 		//camera->angles.x = ((0.5f - input_y) * TWO_PI);
@@ -571,6 +573,28 @@ public:
 		//Roll
 		//camera->angles.z = 0.0f;
 
+		camera->set_viewbob(Camera::VIEWBOB_RUNNING);
+
+		static bool stepped = true;
+
+		if(input_y <= 0.1f && !stepped)
+		{
+			stepped = true;
+			if(input_x > 0.5f)
+			{
+				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
+			}
+			else
+			{
+				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50f*DEG_TO_RAD,0.0f);
+			}
+		}
+		else if(input_y > 0.1f)
+			stepped = false;
+
+
+		camera->update_viewbob();
+
 		camera->update_view_matrix();
 
 
@@ -578,7 +602,7 @@ public:
 
 		//Setting up global shader parameters
 		//Time
-		float t = time();
+		float t = Time::time();
 		Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_TIME,&t);
 		//Camera direction
 		float cam_dir[] = {camera->forward.x,camera->forward.y,camera->forward.z};
@@ -734,7 +758,7 @@ public:
 
 		//Test UI image
 		char time_str[20];
-		snprintf(time_str,20,"t = %f",t);
+		snprintf(time_str,20,"t=%f",t);
 
 		test_text->set_text(time_str);
 		test_text->render(camera->ortho_proj_m);

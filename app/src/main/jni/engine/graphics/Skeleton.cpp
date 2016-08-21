@@ -72,7 +72,7 @@ int Skeleton::stop_anim()
 void Skeleton::calc_lerped_pose_mats()
 {
 	//Getting lerping factor:
-	float ctime = time();
+	float ctime = Time::time();
 	float t = 1.0f - (time_for_next_frame - ctime)/frame_time;
 	t = fmaxf(fminf(t,1.0f),0.0f);
 
@@ -150,7 +150,7 @@ int Skeleton::update_frame()
 	if(!playing_anim)
 		return 1;
 
-	float ctime = time();
+	float ctime = Time::time();
 	if(ctime > time_for_next_frame)
 	{
 		current_frame += 1;

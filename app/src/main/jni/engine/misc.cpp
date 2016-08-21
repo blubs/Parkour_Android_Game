@@ -5,31 +5,9 @@
 #include "misc.hpp"
 
 
-
-
-//We use double here for more precision then convert down to float once subtracting time from this
-double start_time = 0.0;
-//Sets start_time for later usage
-void set_start_time()
-{
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	start_time = now.tv_sec + (double) now.tv_nsec / 1e9;
-}
-
-//Returns time since start_time as a float
-float time()
-{
-	if(start_time == 0.0)
-	{
-		LOGW("Warning: time() called without first calling set_start_time(), start_time = 0\n");
-	}
-
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	double current_time = now.tv_sec + (double) now.tv_nsec / 1e9;
-	return (float) (current_time - start_time);
-}
+float Time::delta_time = 0.0;
+float Time::current_time = 0.0;
+double Time::start_time = 0.0;
 
 //Returns nanoseconds (from some arbitrary reference point, doesn't seem to be epoch time) as an unsigned long long
 //sample printing code:
