@@ -78,7 +78,28 @@ void Camera::update_viewbob ()
 			float resistance = 0.9;
 			force = spring_constant*force - resistance*viewbob_vel;
 			viewbob_vel = viewbob_vel + Time::delta_time * force;
+			//Don't let angles stray too far
+
+			float max_stray = 30.0f * DEG_TO_RAD;
+
+			//Damping pitch velocity
+			if((angles.x > max_stray && viewbob_vel.x > 0) || (angles.x < -max_stray && viewbob_vel.x < 0))
+			{
+				viewbob_vel.x *= 0.5;
+			}
+			//Damping yaw velocity
+			if((angles.y > max_stray && viewbob_vel.y > 0) || (angles.y < -max_stray && viewbob_vel.y < 0))
+			{
+				viewbob_vel.y *= 0.5;
+			}
+			//Damping roll velocity
+			if((angles.z > max_stray && viewbob_vel.z > 0) || (angles.z < -max_stray && viewbob_vel.z < 0))
+			{
+				viewbob_vel.z *= 0.5;
+			}
+
 			angles = angles + Time::delta_time * viewbob_vel;
+
 			break;
 		}
 		case VIEWBOB_SLIDING:

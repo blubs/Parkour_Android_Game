@@ -586,7 +586,7 @@ public:
 			}
 			else
 			{
-				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50f*DEG_TO_RAD,0.0f);
+				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
 			}
 		}
 		else if(input_y > 0.1f)
