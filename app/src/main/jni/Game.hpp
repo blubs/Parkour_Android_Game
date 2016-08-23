@@ -12,6 +12,7 @@
 #include "engine/graphics/Skybox.hpp"
 #include "engine/sound/Sound_Source.hpp"
 #include "engine/JNI_Interface.hpp"
+#include "entities/Building.hpp"
 
 
 class Game
@@ -80,7 +81,13 @@ public:
 
 	Skybox* skybox = NULL;
 
+	Building* buildings[];
+	Building* current_building = NULL;
+
+	#define MAX_BUILDINGS 5
+
 	//======================================================================
+
 
 	//========================================= Loading assets ======================================
 
@@ -142,15 +149,16 @@ public:
 
 	int load_models()
 	{
-		test_arms = new Skel_Model("test_arms.skmf");
+		test_arms = new Skel_Model("models/test_arms.skmf");
 
-		model_prim_cube = new Static_Model("primitive_cube.stmf");
-		model_prim_quad = new Static_Model("primitive_quad.stmf");
+		model_prim_cube = new Static_Model("models/primitive_cube.stmf");
+		model_prim_quad = new Static_Model("models/primitive_quad.stmf");
 
-		player_skel = new Skeleton("player_skeleton.sksf");
-		player_skel->load_animation("player_animations/run.skaf");
-		player_skel->load_animation("player_animations/showcase_hands.skaf");
-		player_skel->load_animation("player_animations/speed_vault.skaf");
+		player_skel = new Skeleton("animations/player_skeleton.sksf");
+		player_skel->load_animation("animations/run.skaf");
+		player_skel->load_animation("animations/speed_vault.skaf");
+		player_skel->load_animation("animations/speed_vault.skaf");
+		player_skel->load_animation("animations/showcase_hands.skaf");
 
 		skybox = new Skybox();
 		return 1;
@@ -441,12 +449,37 @@ public:
 		player_skel->parent = player;
 		camera->set_persp_view(90.0f * DEG_TO_RAD, screen_width,screen_height, 0.01f, 1000.0f);
 		camera->set_ortho_view(screen_width,screen_height,0.0001f,1.0f);
+
+		//Start of game logic code
+		buildings = new Building*[MAX_BUILDINGS];
+
+		for(int i = 0; i < MAX_BUILDINGS; i++)
+		{
+			buildings[i] = new Building();
+		}
+
+		buildings[0]->generate();
+
+		current_building = buildings[0];
+
+		player->pos.y = 1;
+		player_state = PLAYER_STATE_RUNNING;
 	}
+
+	#define wat 4
 
 	//Ran on last frame
 	//This is where we destroy our game objects
 	void finish()
 	{
+		int max = 5;
+
+		for(int i = 0; i < MAX_BUILDINGS; i++)
+		{
+			buildings[i]->clear();
+			delete buildings[i];
+		}
+		delete[] buildings;
 		delete test_text;
 		delete test_img;
 
@@ -479,6 +512,20 @@ public:
 				break;
 		}
 	}
+
+
+	float player_runspeed = 6.0f;
+
+	int player_state;
+	float player_substate = 0.0f;
+
+	static const int PLAYER_STATE_MENU = 0;
+	static const int PLAYER_STATE_RUNNING = 1;
+	static const int PLAYER_STATE_FALLING = 2;
+	static const int PLAYER_STATE_SLIDING = 3;
+	static const int PLAYER_STATE_MANEUVERING = 4;
+	static const int PLAYER_STATE_TRAVERSING = 5;
+
 
 	//Updates the game state / logic
 	void update()
@@ -545,6 +592,39 @@ public:
 			test_sound_source->play_sound(test_pulse);
 		}
 
+		if(player_state == PLAYER_STATE_RUNNING)
+		{
+			camera->set_viewbob(Camera::VIEWBOB_RUNNING);
+
+			static bool stepped = true;
+
+			if(input_y <= 0.1f && !stepped)
+			{
+				stepped = true;
+				if(input_x > 0.5f)
+				{
+					camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
+				}
+				else
+				{
+					camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
+				}
+			}
+			else if(input_y > 0.1f)
+					stepped = false;
+
+			camera->update_viewbob();
+			current_building->active_floor->altitude;
+
+			//TODO: run logic
+		}
+		else if(player_state == PLAYER_STATE_FALLING)
+		{
+			//TODO: slide logic
+		}
+		//TODO: other states
+
+
 		//TODO: make this only execute at 30 times per second
 		player->update();
 	}
@@ -563,7 +643,7 @@ public:
 
 		//glClear(GL_COLOR_BUFFER_BIT);
 
-		camera->pos = Vec3::ZERO();
+		//camera->pos = Vec3::ZERO();
 		//camera->angles = Vec3::ZERO();
 
 		//Pitch
@@ -572,28 +652,6 @@ public:
 		//camera->angles.y = (0.5f - input_x) * TWO_PI;
 		//Roll
 		//camera->angles.z = 0.0f;
-
-		camera->set_viewbob(Camera::VIEWBOB_RUNNING);
-
-		static bool stepped = true;
-
-		if(input_y <= 0.1f && !stepped)
-		{
-			stepped = true;
-			if(input_x > 0.5f)
-			{
-				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
-			}
-			else
-			{
-				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
-			}
-		}
-		else if(input_y > 0.1f)
-			stepped = false;
-
-
-		camera->update_viewbob();
 
 		camera->update_view_matrix();
 

@@ -11,6 +11,11 @@
 class Player : public Entity
 {
 public:
+	static const int ANIM_RUN = 1;
+	static const int ANIM_SHOWCASE_HANDS = 2;
+	static const int ANIM_SPEEDVAULT = 3;
+	static const int ANIM_JUMP = 4;
+
 	Skeleton* skel;
 	//Have to store an array of all models that make up the player
 	Skel_Model* player_model;
