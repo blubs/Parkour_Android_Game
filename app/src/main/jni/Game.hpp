@@ -495,18 +495,41 @@ public:
 	const static int INPUT_EVENT_ON_TOUCH_RELEASE = 3;
 
 	//Temp test input variables
-	float input_x;
-	float input_y;
+	bool input_touching = false;
+	float input_x = 0.0f;
+	float input_y = 0.0f;
+
+	float input_start_x = 0.0f;
+	float input_start_y = 0.0f;
+
 
 	int handle_input(float x, float y, int event)
 	{
+		y = 1.0f - y;
+		if(event == INPUT_EVENT_ON_TOUCH_DOWN)
+		{
+			input_touching = true;
+			input_start_x = x;
+			input_start_y = y;
+		}
+		else if(event == INPUT_EVENT_ON_TOUCH_MOVE)
+		{
+			//TODO: swiping
+		}
+		else if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
+		{
+			input_touching = false;
+			input_start_x = 0.0f;
+			input_start_y = 0.0f;
+		}
+
 		switch(event)
 		{
 			case INPUT_EVENT_ON_TOUCH_DOWN:
 			case INPUT_EVENT_ON_TOUCH_MOVE:
 			case INPUT_EVENT_ON_TOUCH_RELEASE:
 				input_x = x;
-				input_y = 1.0f-y;
+				input_y = y;
 				break;
 			default:
 				break;
