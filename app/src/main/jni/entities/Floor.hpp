@@ -46,6 +46,20 @@ public:
 		//TODO: reach into tile at position
 		return false;
 	}
+
+	bool is_y_out_of_bounds(Vec3 p)
+	{
+		if(p.y < global_mins.y || p.y > global_maxs.y)
+			return true;
+		return false;
+	}
+
+	bool is_x_out_of_bounds(Vec3 p)
+	{
+		if(p.x < global_mins.x || p.x > global_maxs.x)
+			return true;
+		return false;
+	}
 };
 
 #endif //PARKOUR_FLOOR_HPP

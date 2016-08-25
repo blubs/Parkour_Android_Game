@@ -31,6 +31,7 @@ public:
 	Camera* audio_listener;
 	int32_t screen_width;
 	int32_t screen_height;
+	float screen_ratio;// width/height
 
 	//Access to engine-initiated JNI interface
 	JNI_Interface* jnii;
@@ -502,22 +503,41 @@ public:
 	float input_start_x = 0.0f;
 	float input_start_y = 0.0f;
 
+	bool input_turning = false;
+	bool input_sent_command = false;
 
-	int handle_input(float x, float y, int event)
+	int input_swipe;
+	static const int INPUT_SWIPE_UP = 1;
+	static const int INPUT_SWIPE_DOWN = 2;
+	static const int INPUT_SWIPE_LEFT = 3;
+	static const int INPUT_SWIPE_RIGHT = 4;
+
+	float input_turn;
+
+	//Defined as the percentage of the screen width the finger must be dragged before we register a swipe
+	float input_sensitivity = 0.0625f;
+
+
+	void handle_input(float x, float y, int event)
 	{
 		y = 1.0f - y;
+		//TODO: handle gamestates such as menu / pause menu
 		if(event == INPUT_EVENT_ON_TOUCH_DOWN)
 		{
+			input_turning = false;
+			input_sent_command = false;
 			input_touching = true;
 			input_start_x = x;
 			input_start_y = y;
 		}
-		else if(event == INPUT_EVENT_ON_TOUCH_MOVE)
-		{
-			//TODO: swiping
-		}
+		//else if(event == INPUT_EVENT_ON_TOUCH_MOVE)
+		//{
+		//
+		//}
 		else if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
 		{
+			input_turning = false;
+			input_sent_command = false;
 			input_touching = false;
 			input_start_x = 0.0f;
 			input_start_y = 0.0f;
@@ -533,6 +553,45 @@ public:
 				break;
 			default:
 				break;
+		}
+
+		input_turn = 0;
+		input_swipe = 0;
+
+		if(input_sent_command)
+			return;
+
+		float delta_x = input_x - input_start_x;
+		float delta_y = input_y - input_start_y;
+		float delta_x_abs = fabsf(delta_x);
+		float delta_y_abs = fabsf(delta_y);
+
+		//Check if we are swiping horizontally or already turning
+		if(input_turning || ((delta_x_abs > delta_y_abs) && (delta_x_abs > input_sensitivity)))
+		{
+			//if input_sensitivity is 1/16, the 16.0f and it annihilate each other
+			//Making us only have to swipe 1/3rd of the screen width to go through the full range of motion
+			input_turn = 3.0f * 16.0f * delta_x * input_sensitivity;
+			input_turn = fmaxf(0.0f,fminf(1.0f,input_turn));
+
+			input_turning = true;
+			return;
+		}
+
+		//Check if we are swiping vertically
+		if(delta_y_abs > delta_x_abs)
+		{
+			if(delta_y_abs > input_sensitivity*screen_ratio)
+			{
+				input_swipe = INPUT_SWIPE_UP;
+				input_sent_command = true;
+			}
+			if(delta_y_abs < -input_sensitivity*screen_ratio)
+			{
+				input_swipe = INPUT_SWIPE_DOWN;
+				input_sent_command = true;
+			}
+			return;
 		}
 	}
 
@@ -590,21 +649,13 @@ public:
 			ad_visible = true;
 		}
 
+
 		float t = Time::time();
 
-		//Make player spin
-		//player->angles.y = fmodf(t*2.0f,TWO_PI);
-		//player->angles.x = ((0.5f - input_y) * TWO_PI);
-		//player->angles.y = (0.5f - input_x) * TWO_PI;
-
-		//Making the test audio source rotate about the player
-		//float distance = 5.0f + 2.0f * cosf(t*12.75f);
+		//Making the test audio source move / rotate
 		float distance = 5.0f;
 		test_sound_source->pos = Vec3(distance * cosf(0.5f*t),distance * sinf(0.5f*t),0.0f);
-		//test_sound_source->pos = Vec3(0,distance,0);
 		test_sound_source->angles.y = fmodf(t*8.0f,TWO_PI);
-		//test_sound_source->angles.x = fmodf(t*2.5f,TWO_PI);	makes cube tumble!
-		//test_sound_source->angles.z = fmodf(t*3.0f,TWO_PI);	makes cube tumble!
 
 
 		//=========== Test Audio Playing every 0.5 seconds ==============
@@ -614,6 +665,9 @@ public:
 			time_to_play_audio = t + 0.5f;
 			test_sound_source->play_sound(test_pulse);
 		}
+
+		//TODO: handle input here
+		//TODO: check for maneuvers and traversals
 
 		if(player_state == PLAYER_STATE_RUNNING)
 		{
@@ -655,8 +709,6 @@ public:
 	//Draws the scene
 	void render()
 	{
-		//Filling the screen with a color
-		//glClearColor(state.x, 0.0f/*state.angle*/, state.y, 1);
 		//Setting all transforms to be recalculated
 		player_skel->transform_calculated = false;
 		camera->transform_calculated = false;
@@ -666,20 +718,10 @@ public:
 
 		//glClear(GL_COLOR_BUFFER_BIT);
 
-		//camera->pos = Vec3::ZERO();
-		//camera->angles = Vec3::ZERO();
-
-		//Pitch
-		//camera->angles.x = ((0.5f - input_y) * TWO_PI);
-		//Yaw
-		//camera->angles.y = (0.5f - input_x) * TWO_PI;
-		//Roll
-		//camera->angles.z = 0.0f;
-
 		camera->update_view_matrix();
 
-
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 		//Setting up global shader parameters
 		//Time
@@ -699,128 +741,6 @@ public:
 		Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_COL, light_col);
 
 
-		//================================== Begin Drawing test boxes ==========================================
-
-		const float cube_vertices[] =
-		{
-			//Front quad
-			-0.5f, 0.5f, 0.5f,
-			0.5f, 0.5f, 0.5f,
-			0.5f, 0.5f, -0.5f,
-			-0.5f, 0.5f, -0.5f,
-			//Back quad
-			0.5f, -0.5f, 0.5f,
-			-0.5f, -0.5f, 0.5f,
-			-0.5f, -0.5f, -0.5f,
-			0.5f, -0.5f, -0.5f,
-			//Right quad
-			//Left quad
-			//Top quad
-			//Bottom quad
-		};
-		const float cube_uvs[] =
-		{
-			//Front quad
-			1.0f, 0.0f,
-			0.0f, 0.0f,
-			0.0f, 1.0f,
-			1.0f, 1.0f,
-			//Back quad
-			1.0f, 0.0f,
-			0.0f, 0.0f,
-			0.0f, 1.0f,
-			1.0f, 1.0f,
-			//Right quad
-			//Left quad
-			//Top quad
-			//Bottom quad
-		};
-		const float cube_colors[] =
-		{
-			//Front quad
-			1.0f, 1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 1.0f,
-			//Back quad
-			1.0f, 1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f, 1.0f,
-			//Right quad
-			//Left quad
-			//Top quad
-			//Bottom quad
-		};
-
-		//Referencing vertices by index
-		unsigned int cube_tris[] =
-		{
-			//Front quad
-			0, 1, 2, 2, 3, 0,
-			//Back quad
-			4, 5, 6, 6, 7, 4,
-			//Right quad
-			1, 4, 7, 7, 2, 1,
-			//Left quad
-			0, 3, 6, 6, 5, 0,
-			//Top quad
-			4, 1, 0, 0, 5, 4,
-			//Bottom quad
-			6, 3, 2, 2, 7, 6,
-		};
-
-		GLuint element_buffer;
-		glGenBuffers(1, &element_buffer);
-		//Bind the buffer to set the data
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int)size of indices, cube_tris, GL_STATIC_DRAW);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), cube_tris, GL_STATIC_DRAW);
-
-		int i = 0;
-		int j = 0;
-		int k = 0;
-		//Drawing a 3d array of cubes
-		for(i = 0; i < 4; i++)
-		{
-			for(j = 0; j < 4; j++)
-			{
-				for(k = 0; k < 4; k++)
-				{
-					if(i == 2 || j == 2 || k == 2)
-						continue;
-					Vec3 pos(5.0f * (i - 2.0f), 5.0f * (j - 2.0f), 5.0f * (k - 2.0f));
-
-					Mat4 model_pos = Mat4::TRANSLATE(pos);
-					//Mat4 model_transform = model_pos * model_rot; //don't rotate
-					Mat4 model_transform = model_pos; //don't rotate
-					Mat4 mvp = camera->persp_proj_m * camera->view_m * model_transform;
-
-					//Make a checker board pattern of cubes (alternating materials between each subsequent cube)
-					if((i + j + k) % 2)
-					{
-						mat_red->bind_material();
-						mat_red->bind_value(Shader::PARAM_VERTICES, (void *) cube_vertices);
-						mat_red->bind_value(Shader::PARAM_VERT_UV1, (void *) cube_uvs);
-						mat_red->bind_value(Shader::PARAM_VERT_COLORS, (void *) cube_colors);
-						//mat_red->bind_value(Shader::PARAM_TEXTURE_DIFFUSE, (void *) test_texture);
-						mat_red->bind_value(Shader::PARAM_MVP_MATRIX, (void *) mvp.m);
-					}
-					else
-					{
-						mat_blue->bind_material();
-						mat_blue->bind_value(Shader::PARAM_VERTICES, (void *) cube_vertices);
-						mat_blue->bind_value(Shader::PARAM_VERT_UV1, (void *) cube_uvs);
-						mat_blue->bind_value(Shader::PARAM_VERT_COLORS, (void *) cube_colors);
-						mat_blue->bind_value(Shader::PARAM_TEXTURE_DIFFUSE, (void *) test_texture);
-						mat_blue->bind_value(Shader::PARAM_MVP_MATRIX, (void *) mvp.m);
-					}
-					glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void *) 0);
-				}
-			}
-		}
-		glDeleteBuffers(1,&element_buffer);
-		//================================== End Drawing test boxes ==========================================
 
 		Mat4 vp = camera->persp_proj_m * camera->view_m;
 
@@ -834,16 +754,13 @@ public:
 
 
 		//Test UI image
+		//test_img->render(camera->ortho_proj_m);
+
+		//Test UI Text
+		//char time_str[20];
+		//snprintf(time_str,20,"t=%f",t);
+		//test_text->set_text(time_str);
 		//test_text->render(camera->ortho_proj_m);
-		//test_img->render(camera->ortho_proj_m);
-
-		//Test UI image
-		char time_str[20];
-		snprintf(time_str,20,"t=%f",t);
-
-		test_text->set_text(time_str);
-		test_text->render(camera->ortho_proj_m);
-		//test_img->render(camera->ortho_proj_m);
 	}
 
 };

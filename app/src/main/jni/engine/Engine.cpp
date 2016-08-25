@@ -305,6 +305,8 @@ void Engine::first_frame()
 {
 	game->screen_width = width;
 	game->screen_height = height;
+	game->screen_ratio = ((float)width / (float)height);
+	LOGE("Game aspect ratio: %f",game->screen_ratio);
 	game->jnii = jnii;
 	game->start();
 	Audio_Engine::set_audio_listener(game->audio_listener);
