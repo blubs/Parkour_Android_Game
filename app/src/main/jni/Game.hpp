@@ -673,6 +673,7 @@ public:
 		{
 			camera->set_viewbob(Camera::VIEWBOB_RUNNING);
 
+			//Testing viewbob code
 			static bool stepped = true;
 
 			if(input_y <= 0.1f && !stepped)
@@ -689,9 +690,21 @@ public:
 			}
 			else if(input_y > 0.1f)
 					stepped = false;
+			//========================= end test viewbob code
 
 			camera->update_viewbob();
 			current_building->active_floor->altitude;
+
+
+			//Make the player move forward, if runs outside of building bounds, reset at building start
+			Vec3 movement_vel = Vec3(0,player_runspeed,0);
+
+			player->pos = player->pos + Time::delta_time * movement_vel;
+
+			if(current_building->is_box_out_of_bounds(player->pos,0.5f))//TODO: make 0.5f be the player size
+			{
+				player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
+			}
 
 			//TODO: run logic
 		}
