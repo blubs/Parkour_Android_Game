@@ -28,62 +28,62 @@ public:
 	}
 
 	//Variables that engine uses
-	Camera* audio_listener;
+	Camera *audio_listener;
 	int32_t screen_width;
 	int32_t screen_height;
 	float screen_ratio;// width/height
 
 	//Access to engine-initiated JNI interface
-	JNI_Interface* jnii;
+	JNI_Interface *jnii;
 
 	//=========================== Game Asset Variables ====================
 	//-------------- Sound Files --------------
-	Sound_Sample* test_pulse = NULL;
+	Sound_Sample *test_pulse = NULL;
 
 	//-------------- Shaders ------------------
-	Shader* test_shader = NULL;
-	Shader* skel_color_shader = NULL;
-	Shader* static_color_shader = NULL;
-	Shader* text_shader = NULL;
-	Shader* player_skin_shader = NULL;
+	Shader *test_shader = NULL;
+	Shader *skel_color_shader = NULL;
+	Shader *static_color_shader = NULL;
+	Shader *text_shader = NULL;
+	Shader *player_skin_shader = NULL;
 
 	//------------- Materials -----------------
-	Material* mat_red = NULL;
-	Material* mat_blue = NULL;
-	Material* skel_color_mat= NULL;
-	Material* static_color_mat = NULL;
-	Material* text_mat = NULL;
-	Material* player_skin_mat = NULL;
+	Material *mat_red = NULL;
+	Material *mat_blue = NULL;
+	Material *skel_color_mat= NULL;
+	Material *static_color_mat = NULL;
+	Material *text_mat = NULL;
+	Material *player_skin_mat = NULL;
 
 	//------------ Textures -------------------
-	Texture* test_texture = NULL;
-	Texture* char_set = NULL;
-	Texture* tex_arm_nor = NULL;
-	Texture* tex_arm_diff = NULL;
-	Cube_Map* test_cube_map = NULL;
+	Texture *test_texture = NULL;
+	Texture *char_set = NULL;
+	Texture *tex_arm_nor = NULL;
+	Texture *tex_arm_diff = NULL;
+	Cube_Map *test_cube_map = NULL;
 
 	//------------- Models --------------------
-	Skel_Model* test_arms = NULL;
-	Static_Model* model_prim_cube = NULL;
-	Static_Model* model_prim_quad = NULL;
+	Skel_Model *test_arms = NULL;
+	Static_Model *model_prim_cube = NULL;
+	Static_Model *model_prim_quad = NULL;
 
 	//---------- Skeletons --------------------
-	Skeleton* player_skel = NULL;
+	Skeleton *player_skel = NULL;
 
 	//=========================== Game Object Variables ====================
-	Camera* camera = NULL;
-	Player* player = NULL;
-	Entity_Bone_Joint* cam_to_bone = NULL;
+	Camera *camera = NULL;
+	Player *player = NULL;
+	Entity_Bone_Joint *cam_to_bone = NULL;
 
-	Entity* test_sound_source = NULL;
+	Entity *test_sound_source = NULL;
 
-	UI_Text* test_text = NULL;
-	UI_Image* test_img = NULL;
+	UI_Text *test_text = NULL;
+	UI_Image *test_img = NULL;
 
-	Skybox* skybox = NULL;
+	Skybox *skybox = NULL;
 
-	Building* buildings[];
-	Building* current_building = NULL;
+	Building **buildings;
+	Building *current_building = NULL;
 
 	#define MAX_BUILDINGS 5
 
@@ -467,8 +467,6 @@ public:
 		player_state = PLAYER_STATE_RUNNING;
 	}
 
-	#define wat 4
-
 	//Ran on last frame
 	//This is where we destroy our game objects
 	void finish()
@@ -598,7 +596,10 @@ public:
 
 	float player_runspeed = 6.0f;
 
-	int player_state;
+	//From center to edge of the player bbox's square base
+	float player_bbox_half_size = 0.5f;
+
+	int player_state = 0;
 	float player_substate = 0.0f;
 
 	static const int PLAYER_STATE_MENU = 0;
@@ -636,7 +637,7 @@ public:
 		//	played_anim = false;
 		//}
 
-		//Test show/hide ad calls
+		//====Test show/hide ad calls====
 		static bool ad_visible = false;
 		if(input_x < 0.10f && ad_visible)
 		{
@@ -648,6 +649,7 @@ public:
 			jnii->show_ad();
 			ad_visible = true;
 		}
+		//============================
 
 
 		float t = Time::time();
@@ -689,7 +691,7 @@ public:
 				}
 			}
 			else if(input_y > 0.1f)
-					stepped = false;
+				stepped = false;
 			//========================= end test viewbob code
 
 			camera->update_viewbob();
