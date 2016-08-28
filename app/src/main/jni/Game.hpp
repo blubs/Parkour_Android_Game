@@ -695,7 +695,11 @@ public:
 			//========================= end test viewbob code
 
 			camera->update_viewbob();
-			current_building->active_floor->altitude;
+
+			if(player->pos.z > current_building->active_floor->altitude)
+			{
+				player_state = PLAYER_STATE_FALLING;
+			}
 
 
 			//Make the player move forward, if runs outside of building bounds, reset at building start
@@ -710,9 +714,22 @@ public:
 
 			//TODO: run logic
 		}
-		else if(player_state == PLAYER_STATE_FALLING)
+		if(player_state == PLAYER_STATE_FALLING)
 		{
 			//TODO: slide logic
+			//TODO: add physics velocity and acceleration
+			Vec3 movement_vel;
+			//physics_vel = physics_vel + Time::delta_time * gravity;
+			//movement_vel = physics_vel
+			Vec3 delta_pos = Time::delta_time * movement_vel;
+
+			if(player->pos.z + delta_pos.z < current_building->active_floor->altitude)
+			{
+				player_state = PLAYER_STATE_RUNNING;
+				player->pos.y = current_building->active_floor->altitude;
+			}
+
+			player->pos = player->pos + delta_pos;
 		}
 		//TODO: other states
 
