@@ -781,7 +781,7 @@ public:
 
 		skybox->render(view_no_translation);
 
-		//Have to draw transparent sources after skybox
+		//Have to draw transparent objects after skybox
 		test_sound_source->render(vp);
 
 

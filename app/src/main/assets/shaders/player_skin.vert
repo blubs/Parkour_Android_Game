@@ -17,9 +17,6 @@ uniform vec3 cam_dir;
 uniform vec3 dirlight_dir;
 
 varying vec2 v_uv;
-varying vec3 v_nor;
-varying vec3 v_tan;
-varying vec3 v_binor;
 varying vec3 cam_dir_tanspace;
 varying vec3 dirlight_dir_tanspace;
 
@@ -53,6 +50,7 @@ void main()
 
 	mat3 normal_transform = m_IT * (bone1_nor * bone_weight.x + bone2_nor * bone_weight.y + bone3_nor * bone_weight.z);
 
+	//Calculating the camera direction and light direction in tangent space
 	//These 3 vectors are in world space
 	vec3 v_nor = normal_transform * vert_nor;
 	vec3 v_tan = normal_transform * vert_tan;
@@ -60,7 +58,7 @@ void main()
 
 	mat3 temp = mat3(v_tan,v_binor,v_nor);
 
-	//Manually transposing for what reason? (Does GLES2 not have a transpose function?)
+	//Manually transposing the matrix... (Does GLES2 not have a transpose function?)
 	mat3 world_to_tangent = mat3(temp[0][0],temp[1][0],temp[2][0],
 							temp[0][1],temp[1][1],temp[2][1],
 							temp[0][2],temp[1][2],temp[2][2]);
