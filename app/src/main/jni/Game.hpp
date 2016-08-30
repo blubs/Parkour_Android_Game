@@ -67,6 +67,8 @@ public:
 	Static_Model *model_prim_cube = NULL;
 	Static_Model *model_prim_quad = NULL;
 
+	Static_Model *test_model_int_empty = NULL;
+
 	//---------- Skeletons --------------------
 	Skeleton *player_skel = NULL;
 
@@ -155,6 +157,8 @@ public:
 		model_prim_cube = new Static_Model("models/primitive_cube.stmf");
 		model_prim_quad = new Static_Model("models/primitive_quad.stmf");
 
+		test_model_int_empty = new Static_Model("models/tiles/style0/empt0.stmf");
+
 		player_skel = new Skeleton("animations/player_skeleton.sksf");
 		player_skel->load_animation("animations/run.skaf");
 		player_skel->load_animation("animations/speed_vault.skaf");
@@ -170,6 +174,8 @@ public:
 
 		delete model_prim_cube;
 		delete model_prim_quad;
+
+		delete test_model_int_empty;
 
 		delete player_skel;
 
@@ -350,6 +356,8 @@ public:
 		model_prim_cube->init_gl();
 		model_prim_quad->init_gl();
 
+		test_model_int_empty->init_gl();
+
 		skybox->init_gl();
 		return 1;
 	}
@@ -367,6 +375,8 @@ public:
 		test_arms->term_gl();
 		model_prim_cube->term_gl();
 		model_prim_quad->term_gl();
+
+		test_model_int_empty->term_gl();
 
 		skybox->term_gl();
 
