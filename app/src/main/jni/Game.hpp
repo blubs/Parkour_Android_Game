@@ -184,7 +184,7 @@ public:
 
 	int load_sounds()
 	{
-		test_pulse = new Sound_Sample("test_audio_pulse.raw");
+		test_pulse = new Sound_Sample("sounds/test_audio_pulse.raw");
 		return 1;
 	}
 	void unload_sounds()
