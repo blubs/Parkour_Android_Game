@@ -1,0 +1,8 @@
+//
+// Created by F1 on 9/3/2016.
+//
+
+#ifndef PARKOUR_GLOBAL_TILES_HPP
+#define PARKOUR_GLOBAL_TILES_HPP
+
+#endif //PARKOUR_GLOBAL_TILES_HPP
