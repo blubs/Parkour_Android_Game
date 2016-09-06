@@ -7,12 +7,16 @@
 
 class Collision_Map
 {
-	char tile[12][12];
+	//are we going to allow for arbitrarily sized tiles?
+
+	//2 voxels per meter, 3mx3m tile = 6vx6v voxel map
+	char tile[6][6];
 	Collision_Map()
 	{
 	}
 	~Collision_Map()
-	{}
+	{
+	}
 };
 
 class Tile_Variant
