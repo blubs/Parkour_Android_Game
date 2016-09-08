@@ -13,6 +13,7 @@
 #include "engine/sound/Sound_Source.hpp"
 #include "engine/JNI_Interface.hpp"
 #include "entities/Building.hpp"
+#include "game/Global_Tiles.hpp"
 
 
 class Game
@@ -71,6 +72,8 @@ public:
 
 	//---------- Skeletons --------------------
 	Skeleton *player_skel = NULL;
+
+
 
 	//=========================== Game Object Variables ====================
 	Camera *camera = NULL;
@@ -359,6 +362,9 @@ public:
 		test_model_int_empty->init_gl();
 
 		skybox->init_gl();
+
+		Global_Tiles::init_gl();
+
 		return 1;
 	}
 
@@ -379,6 +385,8 @@ public:
 		test_model_int_empty->term_gl();
 
 		skybox->term_gl();
+
+		Global_Tiles::term_gl();
 
 		//Terminating all loaded textures
 		test_cube_map->term_gl();

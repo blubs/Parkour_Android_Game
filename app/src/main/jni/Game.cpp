@@ -8,6 +8,7 @@
 //This is where we set up our game objects and their relationships
 void Game::start()
 {
+	Global_Tiles::init_data();
 	camera = new Camera();
 	player = new Player();
 	cam_to_bone = new Entity_Bone_Joint();
@@ -104,6 +105,9 @@ void Game::finish()
 		buildings[i]->clear();
 		delete buildings[i];
 	}
+
+	Global_Tiles::term_data();
+
 	delete[] buildings;
 	delete test_text;
 	delete test_img;
