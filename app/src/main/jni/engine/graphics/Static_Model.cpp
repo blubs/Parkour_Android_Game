@@ -32,6 +32,40 @@ int Static_Model::render(Mat4 m,Mat4 vp,Material* mat)
 	return 1;
 }
 
+//Binds all data except MVP matrix
+int Static_Model::bind_mesh_data(Material* mat)
+{
+	if(!mat)
+	{
+		LOGW("Warning: tried rendering a static model without assigning material\n");
+		return 0;
+	}
+
+	mat->bind_value(Shader::PARAM_VERTICES, (void*) verts);
+
+	mat->bind_value(Shader::PARAM_VERT_UV1, (void*) uv_coords_1);
+	mat->bind_value(Shader::PARAM_VERT_UV2, (void*) uv_coords_2);
+
+	mat->bind_value(Shader::PARAM_VERT_NORMALS, (void*) normals);
+	mat->bind_value(Shader::PARAM_VERT_TANGENTS, (void*) tangents);
+	mat->bind_value(Shader::PARAM_VERT_BINORMALS, (void*) binormals);
+
+	//Mat4 mvp = vp * m;
+	//mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+	//Mat3 m_it = m.inverted_then_transposed().get_mat3();
+	//mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tri_verts_buffer);
+}
+
+//Assumes all data is already bound
+int Static_Model::render_without_bind()
+{
+	glDrawElements(GL_TRIANGLES, tri_vert_count, GL_UNSIGNED_INT, (void *) 0);
+	return 1;
+}
+
 int Static_Model::load_model(const char* filepath)
 {
 	raw_data = (unsigned int*) File_Utils::load_raw_asset(filepath);

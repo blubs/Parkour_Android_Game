@@ -90,7 +90,7 @@ public:
 class Global_Tiles
 {
 public:
-	static Global_Tiles* instance = NULL;
+	static Global_Tiles* instance;
 
 	static void init_data()
 	{

@@ -36,6 +36,13 @@ public:
 
 	int render(Mat4 m,Mat4 vp,Material* mat);
 
+	//Binds all data except MVP matrix
+	int bind_mesh_data(Material* mat);
+
+	//Assumes all data is already bound
+	int render_without_bind();
+
+
 	//We will eventually need methods for combining Meshes, and copying Meshes
 	int init_gl();
 

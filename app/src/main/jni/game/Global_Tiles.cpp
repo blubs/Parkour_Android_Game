@@ -3,3 +3,6 @@
 //
 
 #include "Global_Tiles.hpp"
+
+
+Global_Tiles* Global_Tiles::instance = NULL;
