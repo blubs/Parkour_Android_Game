@@ -5,85 +5,68 @@
 #ifndef PARKOUR_GLOBAL_TILES_HPP
 #define PARKOUR_GLOBAL_TILES_HPP
 
+#include "../entities/Grid_Tile.hpp"
+
+//TODO: finalize implementation of this (we are doing some starter testing things for now)
+//Tile Terminology
 //
-// Created by F1 on 9/3/2016.
+//Style: the entire tile-set that makes up a style of interior
+//Style Variant: different texture/material version of a tile set
+//TODO: if we go with procedural colors, variants will be different textures with different features, and we will randomly choose colors to use in a shader for variety
+//Type: the general navigation type of a tile
+//		i.e. this tile is empty, this tile is a solid block (blocks all navigation), this tile is a wall
+//			this tile has an obstacle on it, etc...
+//Tile Variant: different models with potentially different traversals of a tile type
+
+//General routine:
 //
+//	Building picks an exterior style and a random exterior variant
+//	Building picks an interior style, and a random interior variant (if random colors, choose those)
+//	Floor begins generation and populates tile types 2d array
+//		This evaluates what tile types will go where
+//	Floor then chooses a random variant of each tile type for each tile in the floor
 
-#include "../engine/graphics/Static_Model.hpp"
 
-class Collision_Map
+#define TILE_TYPES 2//total count of tile types
+#define TILE_TYPE_EMPT 0
+#define TILE_TYPE_SOLD 1
+//TODO: ...more tile type const identifiers
+
+class Interior_Style
 {
 public:
-	//are we going to allow for arbitrarily sized tiles?
-	static const char VOX_EMPTY = 0;
-	static const char VOX_SOLID = 1;
-	//static const char VOX_DOORWAY = 2;
-	//...etc
+	//TODO: how are we going to store / handle materials & textures?
 
-	//2 voxels per meter, 3m x 3m tile = 6v x 6v voxel map
-	char tile[6][6];
-	Collision_Map()
+	//TODO: This will hold arrays of length however many variants each type has
+	Grid_Tile* tiles[TILE_TYPES];
+
+	//Holds the number of variants per type (also the length of each array pointed to by tiles pointer array)
+	int type_variant_counts[TILE_TYPES];
+
+
+	Interior_Style()
 	{
-		tile[0][0] = tile[0][1] = tile[0][2] = tile[0][3] = tile[0][4] = tile[0][5] =
-		tile[1][0] = tile[1][1] = tile[1][2] = tile[1][3] = tile[1][4] = tile[1][5] =
-		tile[2][0] = tile[2][1] = tile[2][2] = tile[2][3] = tile[2][4] = tile[2][5] =
-		tile[3][0] = tile[3][1] = tile[3][2] = tile[3][3] = tile[3][4] = tile[3][5] =
-		tile[4][0] = tile[4][1] = tile[4][2] = tile[4][3] = tile[4][4] = tile[4][5] =
-		tile[5][0] = tile[5][1] = tile[5][2] = tile[5][3] = tile[5][4] = tile[5][5] = VOX_EMPTY;
-	}
-	~Collision_Map()
-	{
-	}
+		tiles[0] = new Grid_Tile[2];
+		type_variant_counts[0] = 2;
+		tiles[1] = new Grid_Tile[3];
+		type_variant_counts[1] = 3;
 
-	char get_vox_at(int x, int y)
-	{
-		return tile[x][y];
-	}
-};
-
-//Since variants are just alternate textures, there is no need to have different models/collision maps per variant
-/*class Tile_Variant
-{
-public:
-	Static_Model* model;
-	Collision_Map* collision_map;
-};*/
-
-class Tile_Type
-{
-public:
-	//TODO: tile type const identifiers
-	//Tile_Variant* variant[1];
-
-	Static_Model* model;
-	Collision_Map* coll_map;
-
-	Tile_Type()
-	{
-		//model = new Static_Model("filename");
-		//have to instantiate at load
-		coll_map = new Collision_Map();
-	}
-
-	~Tile_Type()
-	{
-		//delete model on unload
-		delete coll_map;
-	}
-};
-
-class Tile_Style
-{
-public:
-	Tile_Type* type[2];
-
-	Tile_Style()
-	{
-		type[0] = new Tile_Type();
-		type[1] = new Tile_Type();
+		//TODO: populate tile models and collision maps
+		//FIXME: should probably do this in a more general way from outside this class (since different styles may have different numbers of variants)
+		//tiles[1][0].coll_map = new Collision_Map();
+		//tiles[1][0].model = new Static_Model("da_filename");
 	}
 	~Tile_Style()
 	{
+		for(int i = 0; i < TILE_TYPES; i++)
+		{
+			for(int j = 0; j < type_variant_counts[i]; j++)
+			{
+				//Deleting individual Grid_Tiles
+				delete tiles[i][j];
+			}
+			delete[] tiles[i];
+		}
 	}
 };
 
@@ -101,11 +84,10 @@ public:
 		delete instance;
 	}
 
-	Tile_Style* style[1];
+	Interior_Style* style[1];
 
 	//temp remove this
-	Tile_Type* empt_tile;
-	Tile_Type* sold_tile;
+	Grid_Tile* test_tiles[2];
 	//end temp
 
 	Global_Tiles()
@@ -116,42 +98,42 @@ public:
 		//style[0]->type[0]->collision_map = new Collision_Map();
 
 		//For now just hold the 2 tiles explicitly
-		empt_tile = new Tile_Type();
-		sold_tile = new Tile_Type();
+		test_tiles[TILE_TYPE_EMPT] = new Grid_Tile();
+		test_tiles[TILE_TYPE_SOLD] = new Grid_Tile();
+
 
 		//Setting solid tile's voxels as solid
 		for(int i = 0; i < 6; i++)
 		{
 			for(int j = 0; j < 6; j++)
 			{
-				sold_tile->coll_map->tile[i][j] = Collision_Map::VOX_EMPTY;
+				test_tiles[TILE_TYPE_SOLD]->coll_map->tile[i][j] = Collision_Map::VOX_SOLID;
 			}
 		}
-
-		empt_tile->model = new Static_Model("models/tiles/style0/empt0.stmf");
-		sold_tile->model = new Static_Model("models/tiles/style0/sold0.stmf");
+		test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
+		test_tiles[TILE_TYPE_SOLD]->model = new Static_Model("models/tiles/style0/sold0.stmf");
 	}
 	~Global_Tiles()
 	{
-		delete empt_tile->model;
-		delete sold_tile->model;
-		delete empt_tile;
-		delete sold_tile;
+		delete test_tiles[0]->model;
+		delete test_tiles[1]->model;
+		delete test_tiles[0];
+		delete test_tiles[1];
 	}
 
 	static void init_gl()
 	{
 		if(!instance)
 			return;
-		instance->empt_tile->model->init_gl();
-		instance->sold_tile->model->init_gl();
+		instance->test_tiles[0]->model->init_gl();
+		instance->test_tiles[1]->model->init_gl();
 	}
 	static void term_gl()
 	{
 		if(!instance)
 			return;
-		instance->empt_tile->model->term_gl();
-		instance->sold_tile->model->term_gl();
+		instance->test_tiles[0]->model->term_gl();
+		instance->test_tiles[1]->model->term_gl();
 	}
 };
 

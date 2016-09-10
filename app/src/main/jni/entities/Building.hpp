@@ -15,6 +15,9 @@ public:
 	//Where the bottom of the buildings go in world space
 	static const int GROUNDLEVEL = -50;
 
+	static const int MAX_WIDTH = BUILDING_MAX_WIDTH;
+	static const int MAX_LENGTH = BUILDING_MAX_LENGTH;
+
 	//Size of the building in meters
 	Vec3 size;
 	//Size of the building in tiles (ints)
@@ -26,8 +29,14 @@ public:
 	//Number of floors this building has
 	int floors = 0;
 
+	//TODO: this array will hold variant index of a tile
+	char tiles[MAX_WIDTH][MAX_LENGTH];
+
+	//char tile_types[MAX_WIDTH][MAX_LENGTH];
+
 	Floor *active_floor = NULL;
 	int active_floor_number = 0;
+
 
 
 	Building()
