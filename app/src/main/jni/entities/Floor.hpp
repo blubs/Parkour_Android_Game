@@ -36,6 +36,17 @@ public:
 		global_maxs = maxs;
 	}
 
+
+	//TODO: need vp matrix
+	int render()
+	{
+		//Need to iterate through all tiles in this floor and draw them
+		//Starting from frontmost tile, render it and all other tiles that use the same model
+		//Then move onto the next unrendered tile
+		//TODO: how will we store tile type in the floors?
+
+	}
+
 	void clear()
 	{
 

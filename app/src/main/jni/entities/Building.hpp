@@ -99,6 +99,15 @@ public:
 		//Z bounds are not handled here
 		return false;
 	}
+
+	//TODO: need vp matrix
+	int render()
+	{
+		//TODO: if this building is generated
+		//TODO: render this building
+		if(active_floor)
+			active_floor->render();
+	}
 };
 
 #endif //PARKOUR_BUILDING_HPP

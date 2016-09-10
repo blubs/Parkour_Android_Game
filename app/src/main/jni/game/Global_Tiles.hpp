@@ -119,7 +119,7 @@ public:
 		empt_tile = new Tile_Type();
 		sold_tile = new Tile_Type();
 
-		//Setting sold tile's voxels as solid
+		//Setting solid tile's voxels as solid
 		for(int i = 0; i < 6; i++)
 		{
 			for(int j = 0; j < 6; j++)
