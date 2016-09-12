@@ -26,6 +26,17 @@
 //		This evaluates what tile types will go where
 //	Floor then chooses a random variant of each tile type for each tile in the floor
 
+//How variant materials / textures are going to be stored
+//
+//	Interior style holds a list of Variant_Materials
+//		This class holds methods for randomizing shader color values
+//		This class is responsible for the color palette generation
+//		To use the material, we just call bind to bind the material
+//		A method called gen_palette to make random colors
+
+//Fallback: if palette generation fails, we can store a large array of preset interior palettes and just use those
+//
+
 
 #define TILE_TYPES 2//total count of tile types
 #define TILE_TYPE_EMPT 0
@@ -100,7 +111,6 @@ public:
 		//For now just hold the 2 tiles explicitly
 		test_tiles[TILE_TYPE_EMPT] = new Grid_Tile();
 		test_tiles[TILE_TYPE_SOLD] = new Grid_Tile();
-
 
 		//Setting solid tile's voxels as solid
 		for(int i = 0; i < 6; i++)
