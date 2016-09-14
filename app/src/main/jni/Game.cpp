@@ -129,7 +129,7 @@ void Game::update()
 	{
 		played_anim = true;
 		//player_skel->play_anim(2,Skeleton::END_TYPE_DEFAULT_ANIM);
-		player_skel->play_anim(1,Skeleton::END_TYPE_LOOP);
+		player_skel->play_anim(2,Skeleton::END_TYPE_LOOP);
 	}
 	//if(state.x < 0.10f)
 	//{

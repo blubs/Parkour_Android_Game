@@ -67,15 +67,10 @@ public:
 		//tiles[1][0].coll_map = new Collision_Map();
 		//tiles[1][0].model = new Static_Model("da_filename");
 	}
-	~Tile_Style()
+	~Interior_Style()
 	{
 		for(int i = 0; i < TILE_TYPES; i++)
 		{
-			for(int j = 0; j < type_variant_counts[i]; j++)
-			{
-				//Deleting individual Grid_Tiles
-				delete tiles[i][j];
-			}
 			delete[] tiles[i];
 		}
 	}

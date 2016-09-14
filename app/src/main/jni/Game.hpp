@@ -165,7 +165,7 @@ public:
 		player_skel = new Skeleton("animations/player_skeleton.sksf");
 		player_skel->load_animation("animations/run.skaf");
 		player_skel->load_animation("animations/speed_vault.skaf");
-		player_skel->load_animation("animations/speed_vault.skaf");
+		//player_skel->load_animation("animations/speed_vault.skaf");
 		player_skel->load_animation("animations/showcase_hands.skaf");
 
 		skybox = new Skybox();
