@@ -318,7 +318,7 @@ void Engine::last_frame()
 	game->finish();
 }
 
-void Engine::draw_frame ()
+void Engine::draw_frame()
 {
 	//Need to initialize data before the screen context has been created.
 	if(!data_initialized)

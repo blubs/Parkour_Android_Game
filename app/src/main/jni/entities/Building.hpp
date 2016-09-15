@@ -109,13 +109,12 @@ public:
 		return false;
 	}
 
-	//TODO: need vp matrix
-	int render()
+	int render(Mat4 vp)
 	{
 		//TODO: if this building is generated
 		//TODO: render this building
 		if(active_floor)
-			active_floor->render();
+			active_floor->render(vp);
 	}
 };
 

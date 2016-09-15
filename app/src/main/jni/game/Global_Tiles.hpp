@@ -6,6 +6,7 @@
 #define PARKOUR_GLOBAL_TILES_HPP
 
 #include "../entities/Grid_Tile.hpp"
+#include "Interior_Variant.hpp"
 
 //TODO: finalize implementation of this (we are doing some starter testing things for now)
 //Tile Terminology
@@ -49,6 +50,9 @@ public:
 	//TODO: how are we going to store / handle materials & textures?
 
 	//TODO: This will hold arrays of length however many variants each type has
+
+	Interior_Variant* variants[1];
+
 	Grid_Tile* tiles[TILE_TYPES];
 
 	//Holds the number of variants per type (also the length of each array pointed to by tiles pointer array)
@@ -57,6 +61,8 @@ public:
 
 	Interior_Style()
 	{
+		variants[0] = new Interior_Variant();
+
 		tiles[0] = new Grid_Tile[2];
 		type_variant_counts[0] = 2;
 		tiles[1] = new Grid_Tile[3];
@@ -81,13 +87,19 @@ class Global_Tiles
 public:
 	static Global_Tiles* instance;
 
-	static void init_data()
+	static int init_data()
 	{
 		instance = new Global_Tiles();
+
+		Interior_Variant::init_static_data("bldg_int.vert","bldg_int.frag");
+
+		return 1;
 	}
 	static void term_data()
 	{
 		delete instance;
+
+		Interior_Variant::term_static_data();
 	}
 
 	Interior_Style* style[1];
@@ -98,6 +110,8 @@ public:
 
 	Global_Tiles()
 	{
+		style[0] = new Interior_Style();
+
 		//style[0] = new Tile_Style();
 
 		//style[0]->type[0]->model->load_model();
@@ -130,6 +144,7 @@ public:
 	{
 		if(!instance)
 			return;
+		Interior_Variant::init_gl();
 		instance->test_tiles[0]->model->init_gl();
 		instance->test_tiles[1]->model->init_gl();
 	}
@@ -137,6 +152,7 @@ public:
 	{
 		if(!instance)
 			return;
+		Interior_Variant::term_gl();
 		instance->test_tiles[0]->model->term_gl();
 		instance->test_tiles[1]->model->term_gl();
 	}

@@ -3,3 +3,6 @@
 //
 
 #include "Interior_Variant.hpp"
+
+Shader* Interior_Variant::shader = NULL;
+bool Interior_Variant::shader_gl_initialed = false;

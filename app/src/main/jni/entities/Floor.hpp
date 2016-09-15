@@ -32,6 +32,11 @@ public:
 	//Variant index of tile
 	int tile_variant[MAX_WIDTH][MAX_LENGTH];
 
+	//What tile set are we using?
+	int interior_style;
+	//What material are we using?
+	int interior_variant;
+
 	//For convenience/speed, we're going to hold an array of pointers to models and collision maps
 	Collision_Map* tile_coll_map[MAX_WIDTH][MAX_LENGTH];
 	Static_Model* tile_model[MAX_WIDTH][MAX_LENGTH];
@@ -71,15 +76,38 @@ public:
 	}
 
 
-	//TODO: need vp matrix
-	int render()
+	int render(Mat4 vp)
 	{
 		//how do we get the material?
 		//Need to iterate through all tiles in this floor and draw them
 		//Starting from frontmost tile, render it and all other tiles that use the same model
 		//Then move onto the next unrendered tile
 		//TODO: how will we store tile type in the floors?
+		Global_Tiles::instance->style[0]->variants[0]->bind_variant();
 
+		Material* mat = Global_Tiles::instance->style[0]->variants[0]->mat;
+
+		Mat4 m;
+		Mat4 world_trans = get_world_transform(true);
+
+		//Quick unoptimized test for rendering
+		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				tile_model[i][j]->bind_mesh_data(mat);
+				tile_model[i][j]->render_without_bind();
+
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,j*GRIDSIZE,0));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			}
+		}
 	}
 
 	void clear()
