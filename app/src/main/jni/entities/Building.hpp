@@ -18,14 +18,16 @@ public:
 	static const int MAX_WIDTH = BUILDING_MAX_WIDTH;
 	static const int MAX_LENGTH = BUILDING_MAX_LENGTH;
 
+	//pos is center near bottom of building
+
 	//Size of the building in meters
 	Vec3 size;
 	//Size of the building in tiles (ints)
 	Vec3 dimensions;
 	//Global left near bottom of building
-	Vec3 global_maxs;
-	//Global right far top of building
 	Vec3 global_mins;
+	//Global right far top of building
+	Vec3 global_maxs;
 	//Number of floors this building has
 	int floors = 0;
 
@@ -59,12 +61,12 @@ public:
 
 		dimensions = Vec3(10,10,floors);
 
-		size = GRIDSIZE*dimensions;
+		size = GRIDSIZE*dimensions;//FIXME: how tall in meters are floors? currently they are assumed to be 3 m, which is tiny
 
 		pos = Vec3(0,0,GROUNDLEVEL);
 
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
-		global_maxs = Vec3(global_mins.x + size.x, pos.y, pos.z);
+		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs);
 

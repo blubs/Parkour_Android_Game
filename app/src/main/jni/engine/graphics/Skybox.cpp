@@ -9,7 +9,20 @@
 //
 Skybox::Skybox()
 {
-	shader = new Shader("shaders/skybox.vert","shaders/skybox.frag");
+	//Setting up skybox shader
+	GLuint ptypes[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_CUBE_MAP,
+		Shader::PARAM_MVP_MATRIX
+	};
+	const char *pnames[] =
+	{
+		"vert_pos",
+		"cube_map",
+		"mvp"
+	};
+	shader = new Shader("shaders/skybox.vert","shaders/skybox.frag",ptypes,pnames,3);
 }
 Skybox::~Skybox()
 {
@@ -45,20 +58,8 @@ int Skybox::init_gl()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(tri_vert_count * sizeof(unsigned int)), tri_verts, GL_STATIC_DRAW);
 
 
-	//Setting up skybox shader
-	GLuint param_types[] =
-	{
-		Shader::PARAM_VERTICES,
-		Shader::PARAM_CUBE_MAP,
-		Shader::PARAM_MVP_MATRIX
-	};
-	const char *param_names[] =
-	{
-		"vert_pos",
-		"cube_map",
-		"mvp"
-	};
-	shader->init_gl(param_types, param_names,3);
+
+	shader->init_gl();
 
 	return 1;
 }

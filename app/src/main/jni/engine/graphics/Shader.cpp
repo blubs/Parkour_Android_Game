@@ -18,6 +18,7 @@ int Shader::load(const char* vshader_name, const char* fshader_name)
 	//Loading the raw shader sources
 	vert_shader_src = File_Utils::load_raw_asset(vshader_name);
 	frag_shader_src = File_Utils::load_raw_asset(fshader_name);
+
 }
 
 //Frees the loaded raw shader source
@@ -33,17 +34,61 @@ void Shader::unload()
 		free((void*)frag_shader_src);
 }
 
-Shader::Shader(const char* vshader_name, const char* fshader_name)
+Shader::Shader(const char *vshader_name, const char *fshader_name,const GLuint *ptypes, const char **pnames, uint pcount)
 {
 	load(vshader_name,fshader_name);
+
+
+	param_names = (char**) malloc(sizeof(char*) * pcount);
+	param_types = (GLuint *) malloc(sizeof(GLuint) * pcount);
+	param_locs = (void **) malloc(sizeof(void *) * pcount);
+
+
+
+	for(int i = 0; i < pcount; i++)
+	{
+		param_names[i] = strdup(pnames[i]);
+		param_types[i] = ptypes[i];
+		param_locs[i] = NULL;
+	}
+
+
+	param_count = pcount;
 }
 
 Shader::~Shader()
 {
 	unload();
+
+	if(param_names)
+	{
+		//Freeing allocated param name strings
+		for(int i = 0; i < param_count; i++)
+		{
+			if(param_names[i])
+				free(param_names[i]);
+		}
+		free(param_names);
+	}
+	if(param_types)
+	{
+		free(param_types);
+	}
+	if(param_locs)
+	{
+		//Freeing all allocated values in the pointer array
+		for(int i = 0; i < param_count; i++)
+		{
+			if(param_locs[i])
+				free(param_locs[i]);
+		}
+		free(param_locs);
+	}
+
+	param_count = 0;
 }
 
-int Shader::init_gl (GLuint *param_types, const char **param_identifiers, uint params_count)
+int Shader::init_gl()
 {
 	//Creating the gl program
 	gl_program = glCreateProgram();
@@ -86,14 +131,9 @@ int Shader::init_gl (GLuint *param_types, const char **param_identifiers, uint p
 
 
 	//Create arrays with room for param_count entries
-	param_type = (GLuint *) malloc(sizeof(GLuint) * params_count);
-	param_location = (void **) malloc(sizeof(void *) * params_count);
-	param_count = params_count;
-
 	for(int i = 0; i < param_count; i++)
 	{
-		param_type[i] = param_types[i];
-		param_location[i] = NULL;
+		param_locs[i] = NULL;
 		switch(param_types[i])
 		{
 			//Attributes
@@ -106,9 +146,9 @@ int Shader::init_gl (GLuint *param_types, const char **param_identifiers, uint p
 			case PARAM_VERT_UV2:
 			case PARAM_BONE_WEIGHTS:
 			case PARAM_BONE_INDICES:
-				param_location[i] = (GLint*)malloc(sizeof(GLint));
-				*((GLint*)(param_location[i])) = -1;
-				*((GLint*)(param_location[i])) = glGetAttribLocation(gl_program, param_identifiers[i]);
+				param_locs[i] = (GLint*)malloc(sizeof(GLint));
+				*((GLint*)(param_locs[i])) = -1;
+				*((GLint*)(param_locs[i])) = glGetAttribLocation(gl_program, param_names[i]);
 				break;
 			//Uniforms
 			case PARAM_CUBE_MAP:
@@ -121,9 +161,9 @@ int Shader::init_gl (GLuint *param_types, const char **param_identifiers, uint p
 			case PARAM_COLOR_MULT:
 			case PARAM_COLOR_ADD:
 			case PARAM_TEST_FIELD:
-				param_location[i] = (GLint*)malloc(sizeof(GLint));
-				*((GLint*)(param_location[i])) = -1;
-				*((GLint*)(param_location[i])) = glGetUniformLocation(gl_program, param_identifiers[i]);
+				param_locs[i] = (GLint*)malloc(sizeof(GLint));
+				*((GLint*)(param_locs[i])) = -1;
+				*((GLint*)(param_locs[i])) = glGetUniformLocation(gl_program, param_names[i]);
 				break;
 			//Matrix Arrays
 			case PARAM_BONE_MATRICES:
@@ -136,9 +176,9 @@ int Shader::init_gl (GLuint *param_types, const char **param_identifiers, uint p
 				{
 					char* name = NULL;
 					//Format the matrix index name, i.e. if param_identifiers[i] is "bone_matrix", this yields "bone_matrix[j]", for all values of j
-					if(asprintf(&name, "%s[%d]",param_identifiers[i],j) == -1)
+					if(asprintf(&name, "%s[%d]",param_names[i],j) == -1)
 					{
-						LOGE("asprintf returns -1, failed to alloc char array for bone matrices: %s\n",param_identifiers[i]);
+						LOGE("asprintf returns -1, failed to alloc char array for bone matrices: %s\n",param_names[i]);
 						continue;
 					}
 					if(glGetUniformLocation(gl_program, name) == -1)
@@ -159,15 +199,15 @@ int Shader::init_gl (GLuint *param_types, const char **param_identifiers, uint p
 				{
 					char* name = NULL;
 					//Format the matrix index name, i.e. if param_identifiers[i] is "bone_matrix", this yields "bone_matrix[j]", for all values of j
-					if(asprintf(&name, "%s[%d]",param_identifiers[i],j) == -1)
+					if(asprintf(&name, "%s[%d]",param_names[i],j) == -1)
 					{
-						LOGE("asprintf returns -1, failed to alloc char array for bone matrices: %s\n",param_identifiers[i]);
+						LOGE("asprintf returns -1, failed to alloc char array for bone matrices: %s\n",param_names[i]);
 						continue;
 					}
 					matrix_list_indices[j] = glGetUniformLocation(gl_program, name);
 					free(name);
 				}
-				param_location[i] = matrix_list_indices;
+				param_locs[i] = matrix_list_indices;
 				break;
 			}
 			default:
@@ -190,21 +230,6 @@ void Shader::term_gl ()
 	frag_shader = 0;
 	vert_shader = 0;
 
-	if(param_location)
-	{
-		//Freeing all allocated values in the pointer array
-		for(int i = 0; i < param_count; i++)
-		{
-			if(param_location[i])
-				free(param_location[i]);
-		}
-		free(param_location);
-	}
-	if(param_type)
-	{
-		free(param_type);
-	}
-	param_count = 0;
 	glDeleteProgram(gl_program);
 }
 
@@ -222,7 +247,7 @@ int Shader::bind_shader_value (GLuint type, void *data, int extra_data)
 	//Iterate through all parameters until we find the one we're looking for
 	for(int i = 0; i < param_count; i++)
 	{
-		if(param_type[i] == type)
+		if(param_types[i] == type)
 		{
 			bind_shader_value_by_index(i,data,extra_data);
 			break;
@@ -235,40 +260,40 @@ int Shader::bind_shader_value (GLuint type, void *data, int extra_data)
 //Binds a value to a shader location for rendering, given we already know the index of the data
 int Shader::bind_shader_value_by_index (int index, void *data, int extra_data)
 {
-	if(*((GLint*)(param_location[index])) == -1)
+	if(*((GLint*)(param_locs[index])) == -1)
 	{
-		LOGW("Warning: shader \"%s\" param location at index %d has not been set (type: %d)",vert_shader_name,index,param_type[index]);
+		LOGW("Warning: shader \"%s\" param location at index %d has not been set (type: %d)",vert_shader_name,index,param_types[index]);
 		return 0;
 	}
 	GLint loc = 0;
 	GLuint uloc = 0;
-	switch(param_type[index])
+	switch(param_types[index])
 	{
 		case PARAM_VERTICES:
 		case PARAM_VERT_NORMALS:
 		case PARAM_VERT_TANGENTS:
 		case PARAM_VERT_BINORMALS:
-			uloc = *((GLuint*)(param_location[index]));
+			uloc = *((GLuint*)(param_locs[index]));
 			glVertexAttribPointer(uloc, 3, GL_FLOAT, GL_FALSE, 0, (float *) data);
 			glEnableVertexAttribArray(uloc);
 			break;
 		case PARAM_VERT_COLORS:
-			uloc = *((GLuint*)(param_location[index]));
+			uloc = *((GLuint*)(param_locs[index]));
 			glVertexAttribPointer(uloc, 4, GL_FLOAT, GL_FALSE, 0, (float *) data);
 			glEnableVertexAttribArray(uloc);
 			break;
 		case PARAM_VERT_UV1:
 		case PARAM_VERT_UV2:
-			uloc = *((GLuint*)(param_location[index]));
+			uloc = *((GLuint*)(param_locs[index]));
 			glVertexAttribPointer(uloc, 2, GL_FLOAT, GL_FALSE, 0, (float *) data);
 			glEnableVertexAttribArray(uloc);
 			break;
 		case PARAM_M_IT_MATRIX:
-			loc = *((GLint*)(param_location[index]));
+			loc = *((GLint*)(param_locs[index]));
 			glUniformMatrix3fv(loc, 1, GL_FALSE, ((float *) data));
 			break;
 		case PARAM_MVP_MATRIX:
-			loc = *((GLint*)(param_location[index]));
+			loc = *((GLint*)(param_locs[index]));
 			glUniformMatrix4fv(loc, 1, GL_FALSE, ((float *) data));
 			break;
 		//Textures special case: passed data is a pointer to a texture object
@@ -276,7 +301,7 @@ int Shader::bind_shader_value_by_index (int index, void *data, int extra_data)
 		case PARAM_TEXTURE_NORMAL:
 		case PARAM_TEXTURE_LIGHTMAP:
 		case PARAM_TEXTURE_MISC:
-			loc = *((GLint*)(param_location[index]));
+			loc = *((GLint*)(param_locs[index]));
 			glActiveTexture(GL_Utils::tex_index_to_enum(bound_textures));
 			glBindTexture(GL_TEXTURE_2D, ((Texture*)data)->gl_id);
 			glUniform1i(loc, bound_textures);
@@ -284,7 +309,7 @@ int Shader::bind_shader_value_by_index (int index, void *data, int extra_data)
 			break;
 		//Cube map special case: passed data is a pointer to a cube map object
 		case PARAM_CUBE_MAP:
-			loc = *((GLint*)(param_location[index]));
+			loc = *((GLint*)(param_locs[index]));
 			glActiveTexture(GL_Utils::tex_index_to_enum(bound_textures));
 			glBindTexture(GL_TEXTURE_CUBE_MAP, ((Cube_Map*)data)->gl_id);
 			glUniform1i(loc, bound_textures);
@@ -300,7 +325,7 @@ int Shader::bind_shader_value_by_index (int index, void *data, int extra_data)
 
 			//In the case that all bone matrices are contiguous and sequential in memory, we can just use the line below
 			//This line just placed all matrices starting at the location of the first matrix
-			glUniformMatrix4fv( (((GLint*)param_location[index])[0]), extra_data, GL_FALSE, ((float*) data));
+			glUniformMatrix4fv( (((GLint*)param_locs[index])[0]), extra_data, GL_FALSE, ((float*) data));
 			break;
 		}
 		case PARAM_BONE_IT_MATRICES:
@@ -309,23 +334,23 @@ int Shader::bind_shader_value_by_index (int index, void *data, int extra_data)
 			//{
 			//	glUniformMatrix3fv( (((GLint*)param_location[index])[i]), 1, GL_FALSE, ((float*) data)+(9*i));
 			//}
-			glUniformMatrix3fv( (((GLint*)param_location[index])[0]), extra_data, GL_FALSE, ((float*) data));
+			glUniformMatrix3fv( (((GLint*)param_locs[index])[0]), extra_data, GL_FALSE, ((float*) data));
 			break;
 		}
 		case PARAM_BONE_WEIGHTS:
-			uloc = *((GLuint*)(param_location[index]));
+			uloc = *((GLuint*)(param_locs[index]));
 			glVertexAttribPointer(uloc, 3, GL_FLOAT, GL_FALSE, 0, (float*) data);
 			glEnableVertexAttribArray(uloc);
 			break;
 		case PARAM_BONE_INDICES:
-			uloc = *((GLuint*)(param_location[index]));
+			uloc = *((GLuint*)(param_locs[index]));
 			glVertexAttribPointer(uloc, 3, GL_FLOAT, GL_FALSE, 0, (float*) data);
 			glEnableVertexAttribArray(uloc);
 			break;
 		case PARAM_COLOR_MULT:
 		case PARAM_COLOR_ADD:
 		case PARAM_TEST_FIELD:
-			loc = *((GLint*)(param_location[index]));
+			loc = *((GLint*)(param_locs[index]));
 			glUniform4f(loc, ((float*)data)[0],((float*)data)[1],((float*)data)[2],((float*)data)[3]);
 			break;
 		default:
@@ -384,8 +409,6 @@ void Shader::term_global_params()
 		global_param_loc[i] = -1;
 	}
 }
-//TODO: a method for unbinding used global params?
-//this would be required because we search on init_gl, so we should destroy on term_gl
 //Binds any of the global params that this shader uses
 void Shader::bind_used_global_params()
 {

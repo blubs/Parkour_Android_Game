@@ -159,6 +159,8 @@ public:
 
 	float player_runspeed = 6.0f;
 
+	Vec3 player_phys_vel;
+
 	//From center to edge of the player bbox's square base
 	float player_bbox_half_size = 0.5f;
 

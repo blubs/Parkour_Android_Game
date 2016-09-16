@@ -50,20 +50,21 @@ public:
 
 
 	//Arrays that hold arbitrary types of parameters
-	void **param_location;
-	GLuint *param_type;
 	uint param_count;
+	char **param_names;
+	GLuint *param_types;
+	void **param_locs;
 
 	//Running count of how many textures we have bound. Resets every time bind is initiated.
 	int bound_textures;
 
 	//Constructs and loads shader
-	Shader(const char *vshader_name, const char *fshader_name);
+	Shader(const char *vshader_name, const char *fshader_name, const GLuint *ptypes, const char **pnames, uint pcount);
 	//Destroys and unloads shader
 	~Shader();
 
 	//Initializes the shader given vertex / fragment shader src and name, as well as a list of parameter types and values (including the number of parameters)
-	int init_gl(GLuint *param_types, const char **param_identifiers, uint params_count);
+	int init_gl();
 
 	//Freeing the shader and allocated memory
 	void term_gl();

@@ -23,6 +23,7 @@ public:
 	int width;
 	int length;
 
+	//center near bottom of floor
 	Vec3 global_pos;
 	Vec3 global_mins;
 	Vec3 global_maxs;
@@ -53,9 +54,10 @@ public:
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
 		altitude = p.z + floor_num*GRIDSIZE;
-		global_pos = p + Vec3(0,0,altitude);
+		global_pos = p + Vec3(0,0,floor_num*GRIDSIZE);
 		global_mins = mins;
 		global_maxs = maxs;
+		global_mins.z = global_maxs.z = altitude;
 		width = (int)(global_maxs.x - global_mins.x)/GRIDSIZE;
 		length = (int)(global_maxs.y - global_mins.y)/GRIDSIZE;
 
@@ -88,7 +90,7 @@ public:
 		Material* mat = Global_Tiles::instance->style[0]->variants[0]->mat;
 
 		Mat4 m;
-		Mat4 world_trans = get_world_transform(true);
+		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
 		//Quick unoptimized test for rendering
 		for(int i = 0; i < width; i++)
@@ -96,7 +98,6 @@ public:
 			for(int j = 0; j < length; j++)
 			{
 				tile_model[i][j]->bind_mesh_data(mat);
-				tile_model[i][j]->render_without_bind();
 
 				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,j*GRIDSIZE,0));
 
@@ -106,6 +107,7 @@ public:
 				Mat3 m_it = m.inverted_then_transposed().get_mat3();
 				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
+				tile_model[i][j]->render_without_bind();
 			}
 		}
 	}

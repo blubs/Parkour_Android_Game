@@ -89,9 +89,40 @@ public:
 
 	static int init_data()
 	{
-		instance = new Global_Tiles();
+		GLuint shader_ptypes[] =
+		{
+			Shader::PARAM_VERTICES,
+			Shader::PARAM_VERT_UV1,
+			Shader::PARAM_VERT_UV2,
+			Shader::PARAM_VERT_NORMALS,
+			Shader::PARAM_VERT_BINORMALS,
+			Shader::PARAM_VERT_TANGENTS,
+			Shader::PARAM_MVP_MATRIX,
+			Shader::PARAM_M_IT_MATRIX,
+			Shader::PARAM_TEXTURE_DIFFUSE,
+			Shader::PARAM_TEXTURE_NORMAL,
+			Shader::PARAM_TEXTURE_LIGHTMAP
+			//,Shader::PARAM_COLOR_MULT
+		};
+		const char *shader_pnames[] =
+		{
+			"vert_pos",
+			"vert_uv_1",
+			"vert_uv_2",
+			"vert_nor",
+			"vert_binor",
+			"vert_tan",
+			"mvp",
+			"m_IT",
+			"tex_diff",
+			"tex_nor",
+			"tex_lm"
+			//,"color"
+		};
 
-		Interior_Variant::init_static_data("bldg_int.vert","bldg_int.frag");
+		Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,11);
+
+		instance = new Global_Tiles();
 
 		return 1;
 	}
@@ -111,6 +142,11 @@ public:
 	Global_Tiles()
 	{
 		style[0] = new Interior_Style();
+
+		style[0]->variants[0]->diffuse_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
+		style[0]->variants[0]->normal_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
+		style[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
+		//style[0]->variants[0]->misc_map = new Texture();
 
 		//style[0] = new Tile_Style();
 
@@ -134,6 +170,8 @@ public:
 	}
 	~Global_Tiles()
 	{
+		delete style[0];
+
 		delete test_tiles[0]->model;
 		delete test_tiles[1]->model;
 		delete test_tiles[0];
@@ -144,7 +182,7 @@ public:
 	{
 		if(!instance)
 			return;
-		Interior_Variant::init_gl();
+		instance->style[0]->variants[0]->init_gl();
 		instance->test_tiles[0]->model->init_gl();
 		instance->test_tiles[1]->model->init_gl();
 	}
@@ -152,7 +190,7 @@ public:
 	{
 		if(!instance)
 			return;
-		Interior_Variant::term_gl();
+		instance->style[0]->variants[0]->term_gl();
 		instance->test_tiles[0]->model->term_gl();
 		instance->test_tiles[1]->model->term_gl();
 	}

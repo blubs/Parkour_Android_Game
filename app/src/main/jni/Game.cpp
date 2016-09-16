@@ -7,11 +7,135 @@
 
 int Game::load_shaders ()
 {
-	test_shader = new Shader("shaders/minimal.vert","shaders/minimal.frag");
-	skel_color_shader = new Shader("shaders/skeletal_color.vert","shaders/skeletal_color.frag");
-	static_color_shader = new Shader("shaders/static_color.vert","shaders/static_color.frag");
-	text_shader = new Shader("shaders/monochrome_transparent.vert","shaders/monochrome_transparent.frag");
-	player_skin_shader = new Shader("shaders/player_skin.vert","shaders/player_skin.frag");
+	//Initializing shaders
+
+	//Test shader
+	GLuint pt1[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_COLORS,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_TEXTURE_DIFFUSE,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_TEST_FIELD
+	};
+	const char *pn1[] =
+	{
+		"vert_pos",
+		"fill_color",
+		"src_tex_coord",
+		"tex",
+		"mvp",
+		"test_color_param"
+	};
+	test_shader = new Shader("shaders/minimal.vert","shaders/minimal.frag",pt1,pn1,6);
+
+	//Text shader
+	GLuint pt2[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_TEXTURE_DIFFUSE,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_COLOR_MULT,
+		Shader::PARAM_COLOR_ADD
+	};
+	const char *pn2[] =
+	{
+		"vert_pos",
+		"src_tex_coord",
+		"tex",
+		"mvp",
+		"mult_color",
+		"add_color"
+	};
+	text_shader = new Shader("shaders/monochrome_transparent.vert","shaders/monochrome_transparent.frag",pt2,pn2,6);
+
+	//Skeleton test shader
+	GLuint pt3[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_VERT_NORMALS,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_IT_MATRIX,
+		Shader::PARAM_BONE_INDICES,
+		Shader::PARAM_BONE_WEIGHTS,
+		Shader::PARAM_BONE_MATRICES,
+		Shader::PARAM_BONE_IT_MATRICES
+	};
+	const char *pn3[] =
+	{
+		"vert_pos",
+		"vert_uv",
+		"vert_nor",
+		"mvp",
+		"m_IT",
+		"bone_index",
+		"bone_weight",
+		"bone",
+		"bone_IT"
+	};
+	skel_color_shader = new Shader("shaders/skeletal_color.vert","shaders/skeletal_color.frag",pt3,pn3,9);
+
+	//Player skin shader
+	GLuint pt4[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_VERT_NORMALS,
+		Shader::PARAM_VERT_TANGENTS,
+		Shader::PARAM_VERT_BINORMALS,
+		Shader::PARAM_TEXTURE_NORMAL,
+		Shader::PARAM_TEXTURE_DIFFUSE,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_IT_MATRIX,
+		Shader::PARAM_BONE_INDICES,
+		Shader::PARAM_BONE_WEIGHTS,
+		Shader::PARAM_BONE_MATRICES,
+		Shader::PARAM_BONE_IT_MATRICES
+	};
+	const char *pn4[] =
+	{
+		"vert_pos",
+		"vert_uv",
+		"vert_nor",
+		"vert_tan",
+		"vert_binor",
+		"tex_nor",
+		"tex_diff",
+		"mvp",
+		"m_IT",
+		"bone_index",
+		"bone_weight",
+		"bone",
+		"bone_IT"
+	};
+	player_skin_shader = new Shader("shaders/player_skin.vert","shaders/player_skin.frag",pt4,pn4,13);
+
+	//Test static model shader
+	GLuint pt5[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_VERT_UV2,
+		Shader::PARAM_VERT_NORMALS,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_IT_MATRIX,
+		Shader::PARAM_COLOR_MULT
+	};
+	const char *pn5[] =
+	{
+		"vert_pos",
+		"vert_uv_1",
+		"vert_uv_2",
+		"vert_nor",
+		"mvp",
+		"m_IT",
+		"color"
+	};
+	static_color_shader = new Shader("shaders/static_color.vert","shaders/static_color.frag",pt5,pn5,7);
+
 	return 1;
 }
 void Game::unload_shaders ()
@@ -132,132 +256,12 @@ void Game::unload_assets()
 //Initialize GL aspects of all assets
 int Game::init_gl()
 {
-	//Initializing shaders
-	GLuint param_types[] =
-	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_COLORS,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_TEXTURE_DIFFUSE,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_TEST_FIELD
-	};
-	const char *param_names[] =
-	{
-	"vert_pos",
-	"fill_color",
-	"src_tex_coord",
-	"tex",
-	"mvp",
-	"test_color_param"
-	};
-	test_shader->init_gl(param_types, param_names,6);
-
-	//======================================= Initializing the UI text shader =================================
-	GLuint text_param_types[] =
-	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_TEXTURE_DIFFUSE,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_COLOR_MULT,
-	Shader::PARAM_COLOR_ADD
-	};
-	const char *text_param_names[] =
-	{
-	"vert_pos",
-	"src_tex_coord",
-	"tex",
-	"mvp",
-	"mult_color",
-	"add_color"
-	};
-	text_shader->init_gl(text_param_types, text_param_names,6);
-
-	//========================================= Initializing the skeletal mesh shader ================================
-	GLuint skel_mesh_params[] =
-	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_VERT_NORMALS,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_M_IT_MATRIX,
-	Shader::PARAM_BONE_INDICES,
-	Shader::PARAM_BONE_WEIGHTS,
-	Shader::PARAM_BONE_MATRICES,
-	Shader::PARAM_BONE_IT_MATRICES
-	};
-	const char *skel_mesh_param_names[] =
-	{
-	"vert_pos",
-	"vert_uv",
-	"vert_nor",
-	"mvp",
-	"m_IT",
-	"bone_index",
-	"bone_weight",
-	"bone",
-	"bone_IT"
-	};
-	skel_color_shader->init_gl(skel_mesh_params, skel_mesh_param_names, 9);
-
-	//========================================= Initializing Player Skin Skeletal Shader =============================
-	GLuint player_skin_params[] =
-	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_VERT_NORMALS,
-	Shader::PARAM_VERT_TANGENTS,
-	Shader::PARAM_VERT_BINORMALS,
-	Shader::PARAM_TEXTURE_NORMAL,
-	Shader::PARAM_TEXTURE_DIFFUSE,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_M_IT_MATRIX,
-	Shader::PARAM_BONE_INDICES,
-	Shader::PARAM_BONE_WEIGHTS,
-	Shader::PARAM_BONE_MATRICES,
-	Shader::PARAM_BONE_IT_MATRICES
-	};
-	const char *player_skin_param_names[] =
-	{
-	"vert_pos",
-	"vert_uv",
-	"vert_nor",
-	"vert_tan",
-	"vert_binor",
-	"tex_nor",
-	"tex_diff",
-	"mvp",
-	"m_IT",
-	"bone_index",
-	"bone_weight",
-	"bone",
-	"bone_IT"
-	};
-	player_skin_shader->init_gl(player_skin_params,player_skin_param_names,13);
-
-	//=========================================== Initializing Static Mesh Color Shader =====================
-	GLuint static_mesh_params[] =
-	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_VERT_UV2,
-	Shader::PARAM_VERT_NORMALS,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_M_IT_MATRIX,
-	Shader::PARAM_COLOR_MULT
-	};
-	const char *static_mesh_param_names[] =
-	{
-	"vert_pos",
-	"vert_uv_1",
-	"vert_uv_2",
-	"vert_nor",
-	"mvp",
-	"m_IT",
-	"color"
-	};
-	static_color_shader->init_gl(static_mesh_params, static_mesh_param_names, 7);
+	//=================================== Initializing shaders ====================================
+	test_shader->init_gl();
+	text_shader->init_gl();
+	skel_color_shader->init_gl();
+	player_skin_shader->init_gl();
+	static_color_shader->init_gl();
 
 	//==================================== Loading textures =======================================
 	test_texture->init_gl();
@@ -555,6 +559,9 @@ void Game::update()
 		test_sound_source->play_sound(test_pulse);
 	}
 
+	player->angles.y = -(input_x-0.5f)*TWO_PI;
+	player->angles.x = (input_y-0.5f)*PI;
+
 	//TODO: handle input here
 	//TODO: check for maneuvers and traversals
 
@@ -586,6 +593,7 @@ void Game::update()
 		if(player->pos.z > current_building->active_floor->altitude)
 		{
 			player_state = PLAYER_STATE_FALLING;
+			return;
 		}
 
 
@@ -593,7 +601,6 @@ void Game::update()
 		Vec3 movement_vel = Vec3(0,player_runspeed,0);
 
 		player->pos = player->pos + Time::delta_time * movement_vel;
-
 		if(current_building->is_box_out_of_bounds(player->pos,0.5f))//TODO: make 0.5f be the player size
 		{
 			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
@@ -604,18 +611,23 @@ void Game::update()
 	if(player_state == PLAYER_STATE_FALLING)
 	{
 		//TODO: slide logic
-		//TODO: add physics velocity and acceleration
 		Vec3 movement_vel;
-		//physics_vel = physics_vel + Time::delta_time * gravity;
-		//movement_vel = physics_vel
-		Vec3 delta_pos = Time::delta_time * movement_vel;
+
+
+
+		player_phys_vel.z += -9.8 * Time::delta_time;
+		if(player_phys_vel.z < -40.0f)//terminal vel
+			player_phys_vel.z = -40.0f;
+
+		Vec3 delta_pos = Time::delta_time * player_phys_vel;
 
 		if(player->pos.z + delta_pos.z < current_building->active_floor->altitude)
 		{
 			player_state = PLAYER_STATE_RUNNING;
-			player->pos.y = current_building->active_floor->altitude;
+			player->pos.z = current_building->active_floor->altitude;
+			player_phys_vel = Vec3::ZERO();
+			return;
 		}
-
 		player->pos = player->pos + delta_pos;
 	}
 	//TODO: other states

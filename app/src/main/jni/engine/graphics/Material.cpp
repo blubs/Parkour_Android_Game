@@ -61,7 +61,7 @@ int Material::set_fixed_shader_param (GLint type, void *value, int param_length)
 	//iterate through shader parameter types, and place it in our parameter array at the same index
 	for(int i = 0; i < param_count; i++)
 	{
-		if(type == shader->param_type[i])
+		if(type == shader->param_types[i])
 		{
 			//Actually allocate our own memory for the pointer
 			alloced_params[i] = malloc(param_length);
@@ -87,7 +87,7 @@ int Material::set_fixed_shader_param_ptr (GLint type, void *value)
 	//iterate through shader parameter types, and place it in our parameter array at the same index
 	for(int i = 0; i < param_count; i++)
 	{
-		if(type == shader->param_type[i])
+		if(type == shader->param_types[i])
 		{
 			//Just copy the pointer value
 			params[i] = value;

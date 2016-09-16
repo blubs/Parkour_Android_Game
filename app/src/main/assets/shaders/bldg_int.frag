@@ -46,5 +46,6 @@ void main()
 
 	vec3 color = texture2D(tex_diff,v_uv_1).rgb;
 	gl_FragColor = vec4(color*light_power, 1.0);
+	//gl_FragColor = vec4(1.0,0.0,0.0,1.0);
 
 }

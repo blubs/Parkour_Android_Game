@@ -17,15 +17,7 @@ int Player::render(Mat4 vp)
 }
 
 //Update method that is ran every frame
-//Most of the actual game logic is contained here
 int Player::update()
 {
-	//6 m/s * frame time
-	pos.y += 6.0f * 1/60.0f;
-
-	if(pos.y >= 20)
-	{
-		pos.y = -20;
-	}
 	return 1;
 }
