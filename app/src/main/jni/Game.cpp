@@ -197,7 +197,7 @@ int Game::load_models()
 	player_skel = new Skeleton("animations/player_skeleton.sksf");
 	player_skel->load_animation("animations/run.skaf");
 	player_skel->load_animation("animations/speed_vault.skaf");
-	//player_skel->load_animation("animations/speed_vault.skaf");
+	player_skel->load_animation("animations/run_jump.skaf");
 	player_skel->load_animation("animations/showcase_hands.skaf");
 
 	skybox = new Skybox();
@@ -328,13 +328,13 @@ void Game::handle_input(float x, float y, int event)
 		//
 		//}
 	else if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
-		{
-			input_turning = false;
-			input_sent_command = false;
-			input_touching = false;
-			input_start_x = 0.0f;
-			input_start_y = 0.0f;
-		}
+	{
+		input_turning = false;
+		input_sent_command = false;
+		input_touching = false;
+		input_start_x = 0.0f;
+		input_start_y = 0.0f;
+	}
 
 	switch(event)
 	{
@@ -401,6 +401,7 @@ void Game::start()
 	//===== Setting up relationships between game objects ======
 	audio_listener = camera;
 
+	//Setting run anim as default anim
 	player_skel->set_default_anim(0,Skeleton::END_TYPE_LOOP);
 	player->mat = player_skin_mat;
 	test_arms->skel = player_skel;
@@ -512,9 +513,42 @@ void Game::update()
 	if(!played_anim)
 	{
 		played_anim = true;
-		//player_skel->play_anim(2,Skeleton::END_TYPE_DEFAULT_ANIM);
-		player_skel->play_anim(2,Skeleton::END_TYPE_LOOP);
+		//player_skel->play_anim(3,Skeleton::END_TYPE_DEFAULT_ANIM); 3 is showcase hands
+		player_skel->play_anim(0,Skeleton::END_TYPE_LOOP);
 	}
+
+	//=================================================================
+	//test printing of input states
+
+	if(input_touching)
+	{
+		LOGE("Touching at: (%.2f,%.2f)",input_x,input_y);
+	}
+	if(input_turning)
+	{
+		LOGE("Turning at: (%.2f)",input_turn);
+	}
+	if(input_sent_command)
+	{
+		switch(input_swipe)
+		{
+			case INPUT_SWIPE_UP:
+				LOGE("Swipe up detected");
+				break;
+			case INPUT_SWIPE_DOWN:
+				LOGE("Swipe down detected");
+				break;
+			case INPUT_SWIPE_LEFT:
+				LOGE("Swipe left detected");
+				break;
+			case INPUT_SWIPE_RIGHT:
+				LOGE("Swipe right detected");
+				break;
+		}
+	}
+	//=================================================================
+	
+
 	//if(state.x < 0.10f)
 	//{
 	//	if( player_skel->current_anim != 2 && !played_anim)
