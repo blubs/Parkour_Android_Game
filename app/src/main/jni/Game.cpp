@@ -547,7 +547,7 @@ void Game::update()
 		}
 	}
 	//=================================================================
-	
+
 
 	//if(state.x < 0.10f)
 	//{
@@ -593,8 +593,18 @@ void Game::update()
 		test_sound_source->play_sound(test_pulse);
 	}
 
-	player->angles.y = -(input_x-0.5f)*TWO_PI;
-	player->angles.x = (input_y-0.5f)*PI;
+	//player->angles.y = -(input_x-0.5f)*TWO_PI;
+	//player->angles.x = (input_y-0.5f)*PI;
+
+	if(player_state == PLAYER_STATE_NOCLIP)
+	{
+		//TODO: differentiate touch input zones to evaluate noclip controls
+		//zones:
+		//look left/right/up/down
+		//move left/right/forward/back
+		//move up/down
+		return;
+	}
 
 	//TODO: handle input here
 	//TODO: check for maneuvers and traversals

@@ -174,6 +174,8 @@ public:
 	static const int PLAYER_STATE_MANEUVERING = 4;
 	static const int PLAYER_STATE_TRAVERSING = 5;
 
+	static const int PLAYER_STATE_NOCLIP = 6;
+
 
 	//Updates the game state / logic
 	void update();
