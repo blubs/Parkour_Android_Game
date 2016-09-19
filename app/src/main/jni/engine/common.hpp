@@ -12,7 +12,8 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "native-activity",__VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "native-activity",__VA_ARGS__))
 
-extern "C" {
+extern "C"
+{
 #include "native_app_glue/android_native_app_glue.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -25,13 +26,12 @@ extern "C" {
 #include <string.h>
 #include <android/asset_manager.h>
 #include <time.h>
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 //#include <SLES/OpenSLES_AndroidConfiguration.h>
-
 //#include <errno.h>
 //#include <unistd.h>
 }

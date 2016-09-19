@@ -2,6 +2,7 @@
 // Created by F1 on 3/29/2016.
 //
 
+
 #ifndef ENGINE_MATH_H
 #define ENGINE_MATH_H
 
@@ -12,6 +13,7 @@
 #define TWO_PI 6.28318530718f
 #define DEG_TO_RAD 0.01745329251f
 #define RAD_TO_DEG 57.2957795131f
+
 
 struct Vec3
 {
@@ -166,106 +168,21 @@ struct Vec3
 		return result;
 	}
 
+	//Given (pitch,yaw,roll) as a Vec3
+		//(we first apply yaw, then pitch, then roll)
 	//Returns forward vector from angles
-	Vec3 angles_to_forward() const
-	{
-		Vec3 frwd;
-
-		Quat pitch(x, Vec3::RIGHT());
-		//Rotating angles.y about UP vector for yaw
-		Quat yaw(y, Vec3::UP());
-
-		Quat rot = yaw*pitch;
-		frwd = rot * Vec3::FRONT();
-
-		return frwd;
-	}
+	Vec3 angles_to_forward() const;
 	//Returns right vector from angles
-	Vec3 angles_to_right() const
-	{
-		Vec3 right;
-		Quat pitch(x, Vec3::RIGHT());
-		//Rotating angles.y about UP vector for yaw
-		Quat yaw(y, Vec3::UP());
-
-		Quat rot = yaw*pitch;
-		Vec3 forward = rot * Vec3::FRONT();
-
-		//Rotating angles.z about the forward vector for the roll
-		Quat roll(z, forward);
-		//Adding roll to pitch * yaw
-		rot = roll * rot;
-		right = rot * Vec3::RIGHT();
-		return right;
-	}
+	Vec3 angles_to_right() const;
 	//Returns up angle from vector
-	Vec3 angles_to_up() const
-	{
-		Vec3 up;
-		Quat pitch(x, Vec3::RIGHT());
-		//Rotating angles.y about UP vector for yaw
-		Quat yaw(y, Vec3::UP());
-
-		Quat rot = yaw*pitch;
-		Vec3 forward = rot * Vec3::FRONT();
-
-		//Rotating angles.z about the forward vector for the roll
-		Quat roll(z, forward);
-		//Adding roll to pitch * yaw
-		rot = roll * rot;
-		up = rot * Vec3::UP();
-		return up;
-	}
+	Vec3 angles_to_up() const;
 
 	//Returns forward, right, and up vector from angles
-	//This is done for convenience since many calculations overlap when doing any of these by themselves
-	void angles_to_dirs(Vec3 *forward, Vec3 *right, Vec3 *up) const
-	{
-		Quat pitch(x, Vec3::RIGHT());
-		//Rotating angles.y about UP vector for yaw
-		Quat yaw(y, Vec3::UP());
-
-		Quat rot = yaw*pitch;
-		*forward = rot * Vec3::FRONT();
-
-		//Rotating angles.z about the forward vector for the roll
-		Quat roll(z, *forward);
-		//Adding roll to pitch * yaw
-		rot = roll * rot;
-		*right = rot * Vec3::RIGHT();
-		*up = Vec3::cross(*right,*forward);
-	}
-
-	//For these rotations, we first apply yaw, then pitch, then roll
-	//Given pitch yaw and roll as a Vec3, returns the forward vector (no roll)
-	/*static Vec3 ANGLES_TO_FORWARD(Vec3 angles)
-	{
-		Vec3 result;
-		float cos_pitch = cosf(angles.x);
-		result.x = cos_pitch * cosf(angles.y);
-		result.y = cos_pitch * sinf(angles.y);
-		result.z = sinf(angles.x);
-		return result;
-	}
-	//Given pitch yaw and roll as a Vec3, returns the right vector
-	static Vec3 ANGLES_TO_RIGHT(Vec3 angles)
-	{
-		Vec3 result;
-		result.x = cosf(angles.x) +
-		return result;
-	}
-
-	//Given pitch yaw and roll as a Vec3, returns the up vector
-	static Vec3 ANGLES_TO_UP(Vec3 angles)
-	{
-		Vec3 result;
-		result.x = cosf(angles.x) +
-		return result;
-	}*/ //wait a sec, I may be able to do this with quaternions instead
+	//This is for convenience since many calculations are duplicated when doing any of {up,right,forward} by themselves
+	void angles_to_dirs(Vec3 *forward, Vec3 *right, Vec3 *up) const;
 
 	//TODO:
 	// vec to angle
-	// angle to vec
 
 };
 

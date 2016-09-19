@@ -334,6 +334,7 @@ void Game::handle_input(float x, float y, int event)
 		input_touching = false;
 		input_start_x = 0.0f;
 		input_start_y = 0.0f;
+		return;
 	}
 
 	switch(event)
@@ -374,12 +375,12 @@ void Game::handle_input(float x, float y, int event)
 	//Check if we are swiping vertically
 	if(delta_y_abs > delta_x_abs)
 	{
-		if(delta_y_abs > input_sensitivity*screen_ratio)
+		if(delta_y > input_sensitivity*screen_ratio)
 		{
 			input_swipe = INPUT_SWIPE_UP;
 			input_sent_command = true;
 		}
-		if(delta_y_abs < -input_sensitivity*screen_ratio)
+		if(delta_y < -input_sensitivity*screen_ratio)
 		{
 			input_swipe = INPUT_SWIPE_DOWN;
 			input_sent_command = true;
@@ -476,7 +477,7 @@ void Game::start()
 	current_building = buildings[0];
 
 	player->pos.y = 1;
-	player_state = PLAYER_STATE_RUNNING;
+	player_state = PLAYER_STATE_NOCLIP;
 }
 
 //Ran on last frame
@@ -519,7 +520,7 @@ void Game::update()
 
 	//=================================================================
 	//test printing of input states
-
+/*
 	if(input_touching)
 	{
 		LOGE("Touching at: (%.2f,%.2f)",input_x,input_y);
@@ -533,19 +534,19 @@ void Game::update()
 		switch(input_swipe)
 		{
 			case INPUT_SWIPE_UP:
-				LOGE("Swipe up detected");
+			//	LOGE("Swipe up detected");
 				break;
 			case INPUT_SWIPE_DOWN:
-				LOGE("Swipe down detected");
+			//	LOGE("Swipe down detected");
 				break;
 			case INPUT_SWIPE_LEFT:
-				LOGE("Swipe left detected");
+			//	LOGE("Swipe left detected");
 				break;
 			case INPUT_SWIPE_RIGHT:
-				LOGE("Swipe right detected");
+			//	LOGE("Swipe right detected");
 				break;
 		}
-	}
+	}*/
 	//=================================================================
 
 
@@ -603,6 +604,55 @@ void Game::update()
 		//look left/right/up/down
 		//move left/right/forward/back
 		//move up/down
+
+
+		//Camera velocity
+		float cam_vel = 40.0f;
+
+		//Camera angular velocity
+		float cam_ang_vel = 80.0f * DEG_TO_RAD;
+
+		//bottom third right half is camera view direction
+		if(input_x > 0.5f)
+		{
+			if(input_y < 0.33f)
+			{
+				float delta_y = fmaxf(fminf((input_y - 0.165f) / 0.17f,1.0f),-1.0f);
+				float delta_x = -1.0f * fmaxf(fminf((input_x - 0.75f) / 0.25f,1.0f),-1.0f);
+				delta_x *= cam_ang_vel;
+				delta_y *= cam_ang_vel;
+				player->angles.x += delta_y * Time::delta_time;
+				player->angles.y += delta_x * Time::delta_time;
+			}
+		}
+		//bottom third left half is camera movement
+		if(input_x < 0.5f)
+		{
+			if(input_y < 0.33f)
+			{
+				float delta_y = fmaxf(fminf((input_y - 0.165f) / 0.17f,1.0f),-1.0f);
+				float delta_x = fmaxf(fminf((input_x - 0.25f) / 0.25f,1.0f),-1.0f);
+				delta_x *= cam_vel;
+				delta_y *= cam_vel;
+				Vec3 forward, right, up;
+				player->angles.angles_to_dirs(&forward,&right,&up);
+				player->pos = player->pos + (forward * delta_y * Time::delta_time) + (right * delta_x * Time::delta_time);
+			}
+		}
+
+		//second third left half is camera height
+		if(input_x < 0.5f)
+		{
+			if(input_y >= 0.33f && input_y < 0.66f)
+			{
+				float delta_y = fminf((input_y - 0.5f) / 0.17f,1.0f);
+				delta_y *= cam_vel;
+				Vec3 forward, right, up;
+				player->angles.angles_to_dirs(&forward,&right,&up);
+				player->pos = player->pos + (up * delta_y * Time::delta_time);
+			}
+		}
+
 		return;
 	}
 
