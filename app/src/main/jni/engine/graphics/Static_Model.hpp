@@ -39,6 +39,9 @@ public:
 	//Binds all data except MVP matrix
 	int bind_mesh_data(Material* mat);
 
+	//Binds all data except MVP matrix and second uv coordinates
+	int bind_mesh_data2(Material* mat);
+
 	//Assumes all data is already bound
 	int render_without_bind();
 

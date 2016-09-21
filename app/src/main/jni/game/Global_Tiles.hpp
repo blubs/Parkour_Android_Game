@@ -137,6 +137,10 @@ public:
 
 	//temp remove this
 	Grid_Tile* test_tiles[2];
+	Static_Model* window_model;
+	Material* window_mat;
+	Shader* window_shad;
+	Texture* window_tex0;
 	//end temp
 
 	Global_Tiles()
@@ -167,6 +171,38 @@ public:
 		}
 		test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
 		test_tiles[TILE_TYPE_SOLD]->model = new Static_Model("models/tiles/style0/sold0.stmf");
+		window_model = new Static_Model("models/windows/style0.stmf");
+
+		//Initializing window exterior shader
+
+		GLuint shader_ptypes[] =
+		{
+			Shader::PARAM_VERTICES,
+			Shader::PARAM_VERT_UV1,
+			Shader::PARAM_VERT_NORMALS,
+			Shader::PARAM_VERT_BINORMALS,
+			Shader::PARAM_VERT_TANGENTS,
+			Shader::PARAM_MVP_MATRIX,
+			Shader::PARAM_M_IT_MATRIX,
+			Shader::PARAM_TEXTURE_DIFFUSE,
+			Shader::PARAM_TEXTURE_NORMAL
+		};
+		const char *shader_pnames[] =
+		{
+			"vert_pos",
+			"vert_uv_1",
+			"vert_nor",
+			"vert_binor",
+			"vert_tan",
+			"mvp",
+			"m_IT",
+			"tex_diff",
+			"tex_nor"
+		};
+		window_shad = new Shader("shaders/bldg_ext.vert","shaders/bldg_ext.frag",shader_ptypes,shader_pnames,9);
+		window_mat = new Material();
+		window_mat->set_shader(window_shad);
+		window_tex0 = new Texture("textures/windows/variant0.pkm",512,512);
 	}
 	~Global_Tiles()
 	{
@@ -176,6 +212,10 @@ public:
 		delete test_tiles[1]->model;
 		delete test_tiles[0];
 		delete test_tiles[1];
+		delete window_model;
+		delete window_mat;
+		delete window_shad;
+		delete window_tex0;
 	}
 
 	static void init_gl()
@@ -185,6 +225,9 @@ public:
 		instance->style[0]->variants[0]->init_gl();
 		instance->test_tiles[0]->model->init_gl();
 		instance->test_tiles[1]->model->init_gl();
+		instance->window_model->init_gl();
+		instance->window_shad->init_gl();
+		instance->window_tex0->init_gl();
 	}
 	static void term_gl()
 	{
@@ -193,6 +236,9 @@ public:
 		instance->style[0]->variants[0]->term_gl();
 		instance->test_tiles[0]->model->term_gl();
 		instance->test_tiles[1]->model->term_gl();
+		instance->window_model->term_gl();
+		instance->window_shad->term_gl();
+		instance->window_tex0->term_gl();
 	}
 };
 

@@ -115,6 +115,63 @@ public:
 	{
 		//TODO: if this building is generated
 		//TODO: render this building
+
+		Global_Tiles::instance->window_mat->bind_material();
+
+		Material* mat = Global_Tiles::instance->window_mat;
+		mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_tex0);
+		mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_tex0);
+
+		Mat4 m;
+		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
+
+		Static_Model* model = Global_Tiles::instance->window_model;
+
+		//Quick unoptimized test for rendering
+
+
+		//Rendering the front wall of the building
+		for(int i = 0; i < dimensions.x; i++)
+		{
+			for(int j = 0; j < dimensions.z; j++)
+			{
+				model->bind_mesh_data2(mat);
+
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,j*GRIDSIZE,0));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+		}
+
+		Mat4 wall_orientation = Mat4::ROTATE(Quat(PI,Vec3::UP())) * ;
+
+		//Rendering the back wall of the building
+		for(int i = 0; i < dimensions.x; i++)
+		{
+			for(int j = 0; j < dimensions.z; j++)
+			{
+				model->bind_mesh_data2(mat);
+
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,size.y,j*GRIDSIZE));
+				//TODO: rotate the window tiles
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+		}
+
+
 		if(active_floor)
 			active_floor->render(vp);
 	}
