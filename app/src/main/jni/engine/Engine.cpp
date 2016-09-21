@@ -117,21 +117,62 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 
 	if(type == AINPUT_EVENT_TYPE_MOTION)
 	{
-		eng->animating = 1;
-		eng->state.x = AMotionEvent_getX(event, 0) / eng->width;
-		eng->state.y = AMotionEvent_getY(event, 0) / eng->height;
-
 		int32_t motion_action = AMotionEvent_getAction(event);
-		int motion_type = motion_action & AMOTION_EVENT_ACTION_MASK;
 
+		int motion_type = motion_action & AMOTION_EVENT_ACTION_MASK;
 		int event_type = 0;
+
+		//if move: only update the fingers that have moved.
+		int touch_count = AMotionEvent_getPointerCount(event);
+
+		if(touch_count > 1)
+		{
+			//Only update the touch locations that have moved
+			if(motion_type == AMOTION_EVENT_ACTION_MOVE)
+			{
+				float x = 0;
+				float y = 0;
+				int id = -1;
+				event_type = Game::INPUT_EVENT_ON_TOUCH_MOVE;
+				for(size_t i = 0; i < touch_count; i++)
+				{
+					x = AMotionEvent_getX(event, i) / eng->width;
+					y = AMotionEvent_getY(event, i) / eng->height;
+					id = AMotionEvent_getPointerId(event,i);
+					if(eng->state.inp_x[id] != x || eng->state.inp_y[id] != y)
+					{
+						eng->state.inp_x[id] = x;
+						eng->state.inp_y[id] = y;
+						//Update this touch
+						if(eng->game)
+						{
+							eng->game->handle_input(x,y,event_type,id);
+						}
+					}
+				}
+				return 1;
+			}
+		}
+
+		size_t pointer_index = (size_t) (motion_action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+
+		//for non-multi touch (just 1 finger), replace index in the next two with 0
+		float touch_x = AMotionEvent_getX(event, pointer_index) / eng->width;
+		float touch_y = AMotionEvent_getY(event, pointer_index) / eng->height;
+
+		int pointer_id = AMotionEvent_getPointerId(event,pointer_index);
+
+		eng->state.inp_x[pointer_id] = touch_x;
+		eng->state.inp_y[pointer_id] = touch_y;
 
 		switch(motion_type)
 		{
 			case AMOTION_EVENT_ACTION_DOWN:
+			case AMOTION_EVENT_ACTION_POINTER_DOWN:
 				event_type = Game::INPUT_EVENT_ON_TOUCH_DOWN;
 				break;
 			case AMOTION_EVENT_ACTION_UP:
+			case AMOTION_EVENT_ACTION_POINTER_UP:
 				event_type = Game::INPUT_EVENT_ON_TOUCH_RELEASE;
 				break;
 			case AMOTION_EVENT_ACTION_MOVE:
@@ -142,7 +183,7 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 		}
 		if(eng->game && event_type)
 		{
-			eng->game->handle_input(eng->state.x,eng->state.y,event_type);
+			eng->game->handle_input(touch_x,touch_y,event_type,pointer_id);
 		}
 		return 1;
 	}
@@ -200,8 +241,6 @@ int Engine::init_display ()
 	egl_surface = surface;
 	width = w;
 	height = h;
-	//state->angle = 0;
-	state.angle = 0;
 
 	animating = 1;
 

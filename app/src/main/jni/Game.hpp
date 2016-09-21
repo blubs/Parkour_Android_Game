@@ -131,13 +131,13 @@ public:
 	const static int INPUT_EVENT_ON_TOUCH_MOVE = 2;
 	const static int INPUT_EVENT_ON_TOUCH_RELEASE = 3;
 
-	//Temp test input variables
-	bool input_touching = false;
-	float input_x = 0.0f;
-	float input_y = 0.0f;
-
-	float input_start_x = 0.0f;
-	float input_start_y = 0.0f;
+	//input variables
+	#define MAX_INPUT_TOUCHES 10
+	bool input_touching[10] = {false,false,false,false,false,false,false,false,false,false};
+	float input_x[10] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+	float input_y[10] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+	float input_start_x[10] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+	float input_start_y[10] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
 
 	bool input_turning = false;
 	bool input_sent_command = false;
@@ -154,7 +154,7 @@ public:
 	float input_sensitivity = 0.0625f;
 
 
-	void handle_input(float x, float y, int event);
+	void handle_input(float x, float y, int event,int pointer_id);
 
 
 	float player_runspeed = 6.0f;

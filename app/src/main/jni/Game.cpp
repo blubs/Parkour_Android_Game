@@ -311,29 +311,59 @@ void Game::term_gl()
 	test_texture->term_gl();
 }
 
-void Game::handle_input(float x, float y, int event)
+void Game::handle_input(float x, float y, int event, int pointer_id)
 {
 	y = 1.0f - y;
+
+	//Only do general stuff for other pointers, not 0th one
+	//	(more complex input handling for 0th pointer is done below)
+	//		(the handling for the 0th pointer also includes this general stuff)
+	if(pointer_id != 0)
+	{
+		//General input handling stuff:
+		if(event == INPUT_EVENT_ON_TOUCH_DOWN)
+		{
+			input_touching[pointer_id] = true;
+			input_x[pointer_id] = x;
+			input_y[pointer_id] = y;
+			input_start_x[pointer_id] = x;
+			input_start_y[pointer_id] = y;
+		}
+		if(event == INPUT_EVENT_ON_TOUCH_MOVE)
+		{
+			input_x[pointer_id] = x;
+			input_y[pointer_id] = y;
+		}
+		if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
+		{
+			input_x[pointer_id] = 0.0f;
+			input_y[pointer_id] = 0.0f;
+			input_start_x[pointer_id] = 0.0f;
+			input_start_y[pointer_id] = 0.0f;
+			input_touching[pointer_id] = false;
+		}
+		return;
+	}
+
 	//TODO: handle gamestates such as menu / pause menu
+
 	if(event == INPUT_EVENT_ON_TOUCH_DOWN)
 	{
 		input_turning = false;
 		input_sent_command = false;
-		input_touching = true;
-		input_start_x = x;
-		input_start_y = y;
+		input_touching[0] = true;
+		input_start_x[0] = x;
+		input_start_y[0] = y;
 	}
-		//else if(event == INPUT_EVENT_ON_TOUCH_MOVE)
-		//{
-		//
-		//}
 	else if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
 	{
 		input_turning = false;
 		input_sent_command = false;
-		input_touching = false;
-		input_start_x = 0.0f;
-		input_start_y = 0.0f;
+		input_touching[0] = false;
+		input_x[0] = 0.0f;
+		input_y[0] = 0.0f;
+		input_start_x[0] = 0.0f;
+		input_start_y[0] = 0.0f;
 		return;
 	}
 
@@ -342,8 +372,8 @@ void Game::handle_input(float x, float y, int event)
 		case INPUT_EVENT_ON_TOUCH_DOWN:
 		case INPUT_EVENT_ON_TOUCH_MOVE:
 		case INPUT_EVENT_ON_TOUCH_RELEASE:
-			input_x = x;
-			input_y = y;
+			input_x[0] = x;
+			input_y[0] = y;
 			break;
 		default:
 			break;
@@ -565,16 +595,16 @@ void Game::update()
 
 	//====Test show/hide ad calls====
 	static bool ad_visible = false;
-	if(input_x < 0.10f && ad_visible)
+	if(input_x[4] < 0.10f && input_touching[4] && ad_visible)
 	{
 		jnii->hide_ad();
 		ad_visible = false;
 	}
-	else if(input_x > 0.90f && !ad_visible)
-		{
-			jnii->show_ad();
-			ad_visible = true;
-		}
+	else if(input_x[4] > 0.90f && input_touching[4] && !ad_visible)
+	{
+		jnii->show_ad();
+		ad_visible = true;
+	}
 	//============================
 
 
@@ -599,57 +629,67 @@ void Game::update()
 
 	if(player_state == PLAYER_STATE_NOCLIP)
 	{
-		//TODO: differentiate touch input zones to evaluate noclip controls
 		//zones:
 		//look left/right/up/down
 		//move left/right/forward/back
 		//move up/down
 
-
 		//Camera velocity
-		float cam_vel = 40.0f;
+		float cam_vel = 60.0f;
 
 		//Camera angular velocity
 		float cam_ang_vel = 80.0f * DEG_TO_RAD;
 
-		//bottom third right half is camera view direction
-		if(input_x > 0.5f)
+		//Checking input from all fingers:
+		for(int i = 0; i < MAX_INPUT_TOUCHES; i++)
 		{
-			if(input_y < 0.33f)
-			{
-				float delta_y = fmaxf(fminf((input_y - 0.165f) / 0.17f,1.0f),-1.0f);
-				float delta_x = -1.0f * fmaxf(fminf((input_x - 0.75f) / 0.25f,1.0f),-1.0f);
-				delta_x *= cam_ang_vel;
-				delta_y *= cam_ang_vel;
-				player->angles.x += delta_y * Time::delta_time;
-				player->angles.y += delta_x * Time::delta_time;
-			}
-		}
-		//bottom third left half is camera movement
-		if(input_x < 0.5f)
-		{
-			if(input_y < 0.33f)
-			{
-				float delta_y = fmaxf(fminf((input_y - 0.165f) / 0.17f,1.0f),-1.0f);
-				float delta_x = fmaxf(fminf((input_x - 0.25f) / 0.25f,1.0f),-1.0f);
-				delta_x *= cam_vel;
-				delta_y *= cam_vel;
-				Vec3 forward, right, up;
-				player->angles.angles_to_dirs(&forward,&right,&up);
-				player->pos = player->pos + (forward * delta_y * Time::delta_time) + (right * delta_x * Time::delta_time);
-			}
-		}
+			if(!(input_touching[i]))
+				continue;
+			float x = input_x[i];
+			float y = input_y[i];
 
-		//second third left half is camera height
-		if(input_x < 0.5f)
-		{
-			if(input_y >= 0.33f && input_y < 0.66f)
+			//bottom third right half is camera view direction
+			if(x > 0.5f)
 			{
-				float delta_y = fminf((input_y - 0.5f) / 0.17f,1.0f);
-				delta_y *= cam_vel;
-				Vec3 forward, right, up;
-				player->angles.angles_to_dirs(&forward,&right,&up);
-				player->pos = player->pos + (up * delta_y * Time::delta_time);
+				if(y < 0.33f)
+				{
+					float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);
+					float delta_x = -1.0f * fmaxf(fminf((x - 0.75f) / 0.25f,1.0f),-1.0f);
+					delta_x *= cam_ang_vel;
+					delta_y *= cam_ang_vel;
+					player->angles.x += delta_y * Time::delta_time;
+					player->angles.y += delta_x * Time::delta_time;
+					continue;
+				}
+			}
+			//bottom third left half is camera movement
+			if(x < 0.5f)
+			{
+				if(y < 0.33f)
+				{
+					float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);
+					float delta_x = fmaxf(fminf((x - 0.25f) / 0.25f,1.0f),-1.0f);
+					delta_x *= cam_vel;
+					delta_y *= cam_vel;
+					Vec3 forward, right, up;
+					player->angles.angles_to_dirs(&forward,&right,&up);
+					player->pos = player->pos + (forward * delta_y * Time::delta_time) + (right * delta_x * Time::delta_time);
+					continue;
+				}
+			}
+
+			//second third left half is camera height
+			if(x < 0.5f)
+			{
+				if(y >= 0.33f && y < 0.66f)
+				{
+					float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);
+					delta_y *= cam_vel;
+					Vec3 forward, right, up;
+					player->angles.angles_to_dirs(&forward,&right,&up);
+					player->pos = player->pos + (up * delta_y * Time::delta_time);
+					continue;
+				}
 			}
 		}
 
@@ -666,10 +706,10 @@ void Game::update()
 		//Testing viewbob code
 		static bool stepped = true;
 
-		if(input_y <= 0.1f && !stepped)
+		if(input_y[1] <= 0.1f && !stepped)
 		{
 			stepped = true;
-			if(input_x > 0.5f)
+			if(input_x[1] > 0.5f)
 			{
 				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
 			}
@@ -678,7 +718,7 @@ void Game::update()
 				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
 			}
 		}
-		else if(input_y > 0.1f)
+		else if(input_y[1] > 0.1f)
 				stepped = false;
 		//========================= end test viewbob code
 

@@ -82,14 +82,6 @@ void android_main(struct android_app *app)
 			//No guarantees that the we're actually drawing until gl_initialized is 1
 			if(engine.gl_initialized)
 			{
-				//===== Temporary variable stuff =======
-				engine.state.angle += 0.01f;
-				if(engine.state.angle > 1)
-				{
-					engine.state.angle = 0;
-				}
-				//======================================
-
 				//Drawing throttled by screen update rate, no timing code needed here
 				static long frame = 0;
 				//if(frame % 60 == 0)

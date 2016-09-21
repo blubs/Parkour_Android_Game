@@ -28,9 +28,9 @@
 // Saved State Data
 struct saved_state
 {
-	float angle = 0.0f;
-	float x = 0.0f;
-	float y = 0.0f;
+	//Input coordinates
+	float inp_x[10];
+	float inp_y[10];
 };
 
 class Engine

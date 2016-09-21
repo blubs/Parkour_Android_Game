@@ -131,13 +131,13 @@ public:
 
 
 		//Rendering the front wall of the building
-		for(int i = 0; i < dimensions.x; i++)
+		for(int i = 0; i < dimensions.x; i+= 2)
 		{
-			for(int j = 0; j < dimensions.z; j++)
+			for(int j = 0; j < dimensions.z; j+= 2)
 			{
 				model->bind_mesh_data2(mat);
 
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,j*GRIDSIZE,0));
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -149,17 +149,56 @@ public:
 			}
 		}
 
-		Mat4 wall_orientation = Mat4::ROTATE(Quat(PI,Vec3::UP())) * ;
 
 		//Rendering the back wall of the building
-		for(int i = 0; i < dimensions.x; i++)
+		Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+		for(int i = 0; i < dimensions.x; i+= 2)
 		{
-			for(int j = 0; j < dimensions.z; j++)
+			for(int j = 0; j < dimensions.z; j+= 2)
 			{
 				model->bind_mesh_data2(mat);
 
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,size.y,j*GRIDSIZE));
-				//TODO: rotate the window tiles
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+		}
+
+		//Rendering the right wall of the building
+		wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+		for(int i = 0; i < dimensions.x; i+= 2)
+		{
+			for(int j = 0; j < dimensions.z; j+= 2)
+			{
+				model->bind_mesh_data2(mat);
+
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+		}
+
+		//Rendering the left wall of the building
+		wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+		for(int i = 0; i < dimensions.x; i+= 2)
+		{
+			for(int j = 0; j < dimensions.z; j+= 2)
+			{
+				model->bind_mesh_data2(mat);
+
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
