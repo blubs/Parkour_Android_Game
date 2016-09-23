@@ -23,6 +23,7 @@ public:
 	//Size of the building in meters
 	Vec3 size;
 	//Size of the building in tiles (ints)
+	//x & y are in floor tiles, z is in windowgridtiles
 	Vec3 dimensions;
 	//Global left near bottom of building
 	Vec3 global_mins;
@@ -61,7 +62,7 @@ public:
 
 		dimensions = Vec3(10,10,floors);
 
-		size = GRIDSIZE*dimensions;//FIXME: how tall in meters are floors? currently they are assumed to be 3 m, which is tiny
+		size = Vec3(dimensions.x * GRIDSIZE, dimensions.y * GRIDSIZE, dimensions.z * WINDOWGRIDSIZE);
 
 		pos = Vec3(0,0,GROUNDLEVEL);
 
@@ -69,8 +70,6 @@ public:
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs);
-
-		//TODO: generate building mesh and floor
 	}
 	//Clears the created building, zeroes everything out
 	void clear()
@@ -129,15 +128,16 @@ public:
 
 		//Quick unoptimized test for rendering
 
-
+		//Only have to bind the mesh once
+		model->bind_mesh_data2(mat);
 		//Rendering the front wall of the building
-		for(int i = 0; i < dimensions.x; i+= 2)
+		for(int i = 0; i < dimensions.x; i++)
 		{
-			for(int j = 0; j < dimensions.z; j+= 2)
+			for(int j = 0; j < dimensions.z; j++)
 			{
-				model->bind_mesh_data2(mat);
+				//model->bind_mesh_data2(mat);
 
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -152,13 +152,13 @@ public:
 
 		//Rendering the back wall of the building
 		Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.x; i+= 2)
+		for(int i = 0; i < dimensions.x; i++)
 		{
-			for(int j = 0; j < dimensions.z; j+= 2)
+			for(int j = 0; j < dimensions.z; j++)
 			{
-				model->bind_mesh_data2(mat);
+				//model->bind_mesh_data2(mat);
 
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -172,13 +172,13 @@ public:
 
 		//Rendering the right wall of the building
 		wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.x; i+= 2)
+		for(int i = 0; i < dimensions.y; i++)
 		{
-			for(int j = 0; j < dimensions.z; j+= 2)
+			for(int j = 0; j < dimensions.z; j++)
 			{
-				model->bind_mesh_data2(mat);
+				//model->bind_mesh_data2(mat);
 
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -192,13 +192,13 @@ public:
 
 		//Rendering the left wall of the building
 		wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.x; i+= 2)
+		for(int i = 0; i < dimensions.y; i++)
 		{
-			for(int j = 0; j < dimensions.z; j+= 2)
+			for(int j = 0; j < dimensions.z; j++)
 			{
-				model->bind_mesh_data2(mat);
+				//model->bind_mesh_data2(mat);
 
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*GRIDSIZE));
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -210,10 +210,107 @@ public:
 			}
 		}
 
-
 		if(active_floor)
 			active_floor->render(vp);
+		return 1;
+	}
+
+	//Rendering method called at the end to render transparent windows and tiles
+	int render_transparent_meshes(Mat4 vp)
+	{
+		//TODO: if this building is generated
+		//TODO: render this building
+
+		Global_Tiles::instance->window_int_mat->bind_material();
+
+		Material* mat = Global_Tiles::instance->window_int_mat;
+		mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_int_tex0);
+		mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_int_tex0);
+		mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) Global_Tiles::instance->window_int_misc_tex0);
+
+		//Drawing the interior windows only on the active floor number
+		//TODO: skip drawing of broken interior windows (and draw their skeletal animations)
+		Mat4 m;
+		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOWGRIDSIZE));
+
+		Static_Model* model = Global_Tiles::instance->window_int_model;
+
+		//Quick unoptimized test for rendering
+
+		//Only have to bind the mesh once
+		model->bind_mesh_data2(mat);
+		//Rendering the front transparent windows
+		for(int i = 0; i < dimensions.x; i++)
+		{
+			//model->bind_mesh_data2(mat);
+
+			m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+
+			Mat4 mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			Mat3 m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+		}
+
+
+		//Rendering the back transparent windows
+		Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+		for(int i = 0; i < dimensions.x; i++)
+		{
+			//model->bind_mesh_data2(mat);
+
+			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+
+			Mat4 mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			Mat3 m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+		}
+
+		//Rendering the right transparent windows
+		wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+		for(int i = 0; i < dimensions.y; i++)
+		{
+			//model->bind_mesh_data2(mat);
+
+			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+
+			Mat4 mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			Mat3 m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+		}
+
+		//Rendering the left transparent windows
+		wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+		for(int i = 0; i < dimensions.y; i++)
+		{
+			//model->bind_mesh_data2(mat);
+
+			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+
+			Mat4 mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			Mat3 m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+		}
+
+		//FIXME: if we end up using transparency in tiles, call transparent render for floor
+		//if(active_floor)
+		//	active_floor->render(vp);
+		return 1;
 	}
 };
-
 #endif //PARKOUR_BUILDING_HPP

@@ -10,7 +10,7 @@
 
 //Size of tiles (6 units x 6 units x 6 units)
 #define GRIDSIZE 3
-#define WINDOWSIZE 6
+#define WINDOWGRIDSIZE 6
 
 #define BUILDING_MAX_WIDTH 60
 #define BUILDING_MAX_LENGTH 120

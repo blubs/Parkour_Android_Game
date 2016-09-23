@@ -491,6 +491,7 @@ void Game::start()
 	cam_to_bone->parent_bone_index = 8; //head bone is at index 8, we could add methods for finding the bone
 	// but we don't need all of that at the moment (since we are never going to parent anything to any other bone)
 	player_skel->parent = player;
+	player_skel->pos.z = 1.0f;
 	camera->set_persp_view(90.0f * DEG_TO_RAD, screen_width,screen_height, 0.01f, 1000.0f);
 	camera->set_ortho_view(screen_width,screen_height,0.0001f,1.0f);
 
@@ -648,6 +649,37 @@ void Game::update()
 			float x = input_x[i];
 			float y = input_y[i];
 
+			//top right corner: go back to player run mode
+			if(x >= 0.66f)
+			{
+				if(y >= 0.66f)
+				{
+					input_touching[i] = false;
+					player_state = PLAYER_STATE_RUNNING;
+					player->angles.x = 0.0f;
+					player->angles.y = 0.0f;
+					player->angles.z = 0.0f;
+					if(player->pos.z <= current_building->active_floor->altitude)
+					{
+						player->pos.z = current_building->active_floor->altitude + 5.0f;
+					}
+					if(player->pos.x >= current_building->active_floor->global_maxs.x - 0.5f)
+					{
+						player->pos.x = current_building->active_floor->global_maxs.x - 1.0f;
+					}
+					if(player->pos.x <= current_building->active_floor->global_mins.x + 0.5f)
+					{
+						player->pos.x = current_building->active_floor->global_mins.x + 1.0f;
+					}
+
+					if(player->pos.y <= current_building->active_floor->global_mins.y + 0.5f)
+					{
+						player->pos.y = current_building->active_floor->global_mins.y + 1.0f;
+					}
+					break;
+				}
+			}
+
 			//bottom third right half is camera view direction
 			if(x > 0.5f)
 			{
@@ -698,9 +730,48 @@ void Game::update()
 
 	//TODO: handle input here
 	//TODO: check for maneuvers and traversals
+	//Checking touch button interactions
+	//Checking input from all fingers:
+	for(int i = 0; i < MAX_INPUT_TOUCHES; i++)
+	{
+		if(!(input_touching[i]))
+			continue;
+		input_touching[i] = false;
+		float x = input_x[i];
+		float y = input_y[i];
+
+		//top right corner: go to player noclip mode
+		if(x >= 0.66f && y >= 0.66f)
+		{
+			player_state = PLAYER_STATE_NOCLIP;
+			player->angles.x = 0.0f;
+			player->angles.y = 0.0f;
+			player->angles.z = 0.0f;
+			return;
+		}
+	}
 
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
+		//TODO: put this frame handling stuff in a different location
+		//==============================================================
+		if(player_skel->playing_anim)
+		{
+			if(player_skel->current_anim == 0)
+			{
+				if(player_skel->current_frame == 9)//left foot hit ground
+				{
+					//TODO: play footstep sounds
+					camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD,0.0f);
+				}
+				if(player_skel->current_frame == 24)//right foot hit ground
+				{
+					camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD,0.0f);
+				}
+			}
+		}
+		//==============================================================
+
 		camera->set_viewbob(Camera::VIEWBOB_RUNNING);
 
 		//Testing viewbob code
@@ -812,12 +883,14 @@ void Game::render()
 	player->render(vp);
 	Mat4 view_no_translation = camera->inf_proj_m * ((camera->view_m).pos_removed());
 
+	buildings[0]->render(vp);
+
 	skybox->render(view_no_translation);
 
 	//Have to draw transparent objects after skybox
 	test_sound_source->render(vp);
 
-	buildings[0]->render(vp);
+	buildings[0]->render_transparent_meshes(vp);
 
 
 	//Test UI image

@@ -137,6 +137,13 @@ public:
 
 	//temp remove this
 	Grid_Tile* test_tiles[2];
+
+	Static_Model* window_int_model;
+	Material* window_int_mat;
+	Shader* window_int_shad;
+	Texture* window_int_tex0;
+	Texture* window_int_misc_tex0;
+
 	Static_Model* window_model;
 	Material* window_mat;
 	Shader* window_shad;
@@ -172,6 +179,7 @@ public:
 		test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
 		test_tiles[TILE_TYPE_SOLD]->model = new Static_Model("models/tiles/style0/sold0.stmf");
 		window_model = new Static_Model("models/windows/style0.stmf");
+		window_int_model = new Static_Model("models/windows/style0_int.stmf");
 
 		//Initializing window exterior shader
 
@@ -200,9 +208,45 @@ public:
 			"tex_nor"
 		};
 		window_shad = new Shader("shaders/bldg_ext.vert","shaders/bldg_ext.frag",shader_ptypes,shader_pnames,9);
+
 		window_mat = new Material();
 		window_mat->set_shader(window_shad);
 		window_tex0 = new Texture("textures/windows/variant0.pkm",512,512);
+
+
+		GLuint ptypes2[] =
+		{
+			Shader::PARAM_VERTICES,
+			Shader::PARAM_VERT_UV1,
+			Shader::PARAM_VERT_NORMALS,
+			Shader::PARAM_VERT_BINORMALS,
+			Shader::PARAM_VERT_TANGENTS,
+			Shader::PARAM_MVP_MATRIX,
+			Shader::PARAM_M_IT_MATRIX,
+			Shader::PARAM_TEXTURE_DIFFUSE,
+			Shader::PARAM_TEXTURE_NORMAL,
+			Shader::PARAM_TEXTURE_MISC
+		};
+		const char *pnames2[] =
+		{
+			"vert_pos",
+			"vert_uv_1",
+			"vert_nor",
+			"vert_binor",
+			"vert_tan",
+			"mvp",
+			"m_IT",
+			"tex_diff",
+			"tex_nor",
+			"tex_misc"
+		};
+		window_int_shad = new Shader("shaders/bldgwin_int.vert","shaders/bldgwin_int.frag",ptypes2,pnames2,10);
+
+		window_int_mat = new Material();
+		window_int_mat->set_shader(window_int_shad);
+		window_int_tex0 = new Texture("textures/windows/variant0.pkm",512,512);
+		window_int_misc_tex0 = new Texture("textures/windows/variant0_int_misc.pkm",512,512);
+
 	}
 	~Global_Tiles()
 	{
@@ -216,6 +260,12 @@ public:
 		delete window_mat;
 		delete window_shad;
 		delete window_tex0;
+
+		delete window_int_model;
+		delete window_int_mat;
+		delete window_int_shad;
+		delete window_int_tex0;
+		delete window_int_misc_tex0;
 	}
 
 	static void init_gl()
@@ -228,6 +278,11 @@ public:
 		instance->window_model->init_gl();
 		instance->window_shad->init_gl();
 		instance->window_tex0->init_gl();
+
+		instance->window_int_model->init_gl();
+		instance->window_int_shad->init_gl();
+		instance->window_int_tex0->init_gl();
+		instance->window_int_misc_tex0->init_gl();
 	}
 	static void term_gl()
 	{
@@ -239,6 +294,11 @@ public:
 		instance->window_model->term_gl();
 		instance->window_shad->term_gl();
 		instance->window_tex0->term_gl();
+
+		instance->window_int_model->term_gl();
+		instance->window_int_shad->term_gl();
+		instance->window_int_tex0->term_gl();
+		instance->window_int_misc_tex0->term_gl();
 	}
 };
 

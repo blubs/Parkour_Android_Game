@@ -53,8 +53,8 @@ public:
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
-		altitude = p.z + floor_num*GRIDSIZE;
-		global_pos = p + Vec3(0,0,floor_num*GRIDSIZE);
+		altitude = p.z + floor_num*(WINDOWGRIDSIZE);
+		global_pos = p + Vec3(0,0,floor_num*WINDOWGRIDSIZE);
 		global_mins = mins;
 		global_maxs = maxs;
 		global_mins.z = global_maxs.z = altitude;

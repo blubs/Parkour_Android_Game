@@ -74,7 +74,7 @@ void Camera::update_viewbob ()
 			//Going to simulate a spring, make the camera accelerate towards neutral
 			Vec3 force(-angles.x,-angles.y,-angles.z);
 			//Adding resistance to the spring
-			float spring_constant = 100.0;
+			float spring_constant = 1000.0;
 			float resistance = 0.9;
 			force = spring_constant*force - resistance*viewbob_vel;
 			viewbob_vel = viewbob_vel + Time::delta_time * force;

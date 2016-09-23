@@ -12,7 +12,7 @@ int Player::render(Mat4 vp)
 	//TODO: render all playermodels
 	mat->bind_material();
 	skel->update_frame();
-	player_model->render(get_world_transform(true),vp,mat);
+	player_model->render(Mat4::IDENTITY(),vp,mat);
 	return 1;
 }
 

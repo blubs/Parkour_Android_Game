@@ -23,10 +23,11 @@ int Skel_Model::render(Mat4 m,Mat4 vp, Material* mat)
 	mat->bind_value(Shader::PARAM_VERT_TANGENTS, (void*) tangents);
 	mat->bind_value(Shader::PARAM_VERT_BINORMALS, (void*) binormals);
 
-	Mat4 mvp = vp * m;
+	Mat4 world_transform = skel->get_world_transform(true) * m;
+	Mat4 mvp = vp * world_transform;
 	mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
 
-	Mat3 m_it = m.inverted_then_transposed().get_mat3();
+	Mat3 m_it = world_transform.inverted_then_transposed().get_mat3();
 	mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
 	mat->bind_value(Shader::PARAM_BONE_INDICES, (void*) bone_indices);
