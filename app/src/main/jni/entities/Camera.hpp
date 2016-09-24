@@ -17,7 +17,6 @@ public:
 	float near_plane;
 	float far_plane;
 
-
 	Vec3 up;
 	Vec3 forward;
 	Vec3 right;
@@ -43,6 +42,12 @@ public:
 	static const int VIEWBOB_SLIDING = 2;
 	int viewbob;
 	Vec3 viewbob_vel;
+
+	float viewbob_spring_constant = 1000.0f;
+	float viewbob_resistance = 0.9f;
+	float viewbob_max_stray = 30.0f;
+
+
 	void set_viewbob(int type);
 	void viewbob_run_footstep(float pitch_v,float yaw_v, float roll_v);
 	void update_viewbob();

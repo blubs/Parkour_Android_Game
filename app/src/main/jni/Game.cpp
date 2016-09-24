@@ -652,7 +652,7 @@ void Game::update()
 			//top right corner: go back to player run mode
 			if(x >= 0.66f)
 			{
-				if(y >= 0.66f)
+				if(y >= 0.85f)
 				{
 					input_touching[i] = false;
 					player_state = PLAYER_STATE_RUNNING;
@@ -728,6 +728,11 @@ void Game::update()
 		return;
 	}
 
+	//FIXME: remove this
+	float pitch_viewbob = 0.0f;
+	float yaw_viewbob = 0.0f;
+	float roll_viewbob = 0.0f;
+	float spring_constant = 0.0f;
 	//TODO: handle input here
 	//TODO: check for maneuvers and traversals
 	//Checking touch button interactions
@@ -736,18 +741,87 @@ void Game::update()
 	{
 		if(!(input_touching[i]))
 			continue;
-		input_touching[i] = false;
 		float x = input_x[i];
 		float y = input_y[i];
 
 		//top right corner: go to player noclip mode
-		if(x >= 0.66f && y >= 0.66f)
+		if(x >= 0.66f && y >= 0.85f)
 		{
 			player_state = PLAYER_STATE_NOCLIP;
+			input_touching[i] = false;
 			player->angles.x = 0.0f;
 			player->angles.y = 0.0f;
 			player->angles.z = 0.0f;
+			camera->angles = Vec3::ZERO();
+			camera->viewbob_vel = Vec3::ZERO();
 			return;
+		}
+		//For toggling viewbob edit menu
+		if(x <= 0.33f && y >= 0.85f)
+		{
+			input_touching[i] = false;
+			viewbob_menu_state++;
+			if(viewbob_menu_state >= 3)
+				viewbob_menu_state = 0;
+			continue;
+		}
+		//For zeroing out the viewbob
+		if(x > 0.33f && x < 0.66f && y >= 0.85f)
+		{
+			input_touching[i] = false;
+
+			camera->viewbob_vel = Vec3::ZERO();
+			camera->angles = Vec3::ZERO();
+		}
+
+		//left 10% = 0, right 10% = 1.0
+		float clipped_x = fmaxf(fminf((x-0.1f)/0.8f,1.0f),0.0f);
+		//Altering run viewbob values
+		if(viewbob_menu_state == 1)
+		{
+			//range is [0-100]
+			//Edit top field
+			if(y > 0.72 && y < 0.80)
+			{
+				viewbob_pitch = 100 * clipped_x;
+				continue;
+			}
+			//Edit middle field
+			if(y > 0.64 && y < 0.72)
+			{
+				viewbob_yaw = 100 * clipped_x;
+				continue;
+			}
+			//Edit bottom field
+			if(y > 0.56 && y < 0.64)
+			{
+				viewbob_roll = 100 * clipped_x;
+				continue;
+			}
+		}
+		//Altering camera parameters
+		if(viewbob_menu_state == 2)
+		{
+			//Edit top field
+			if(y > 0.72 && y < 0.80)
+			{
+				//due to massive range, I want this to be on a cubic scale
+				camera->viewbob_spring_constant = 10000 * clipped_x * clipped_x * clipped_x;
+				continue;
+			}
+			//Edit middle field
+			if(y > 0.64 && y < 0.72)
+			{
+				//I want this to be on a cubic scale as well
+				camera->viewbob_resistance = 10 * clipped_x * clipped_x * clipped_x;
+				continue;
+			}
+			//Edit bottom field
+			if(y > 0.56 && y < 0.64)
+			{
+				camera->viewbob_max_stray = 90 * clipped_x;
+				continue;
+			}
 		}
 	}
 
@@ -762,11 +836,17 @@ void Game::update()
 				if(player_skel->current_frame == 9)//left foot hit ground
 				{
 					//TODO: play footstep sounds
-					camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD,0.0f);
+					//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,2.0f*DEG_TO_RAD,0.0f);
+					//test viewbob: no pitch bob, only yaw and roll
+					//camera->viewbob_run_footstep(0.0f,2.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD);
+					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
 				}
 				if(player_skel->current_frame == 24)//right foot hit ground
 				{
-					camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD,0.0f);
+					//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-2.0f*DEG_TO_RAD,0.0f);
+					//test viewbob
+					//camera->viewbob_run_footstep(0.0f,-2.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD);
+					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
 				}
 			}
 		}
@@ -900,5 +980,31 @@ void Game::render()
 	//char time_str[20];
 	//snprintf(time_str,20,"t=%f",t);
 	//test_text->set_text(time_str);
-	//test_text->render(camera->ortho_proj_m);
+
+	if(player_state != PLAYER_STATE_NOCLIP)
+	{
+		//"Edit	Reset Vbob"
+		if(viewbob_menu_state == 0)
+		{
+			char test_viewbob_str[40];
+			snprintf(test_viewbob_str,40,"[Edit]\t[Zero]");
+			test_text->set_text(test_viewbob_str);
+		}
+		if(viewbob_menu_state == 1)
+		{
+			char test_viewbob_str[120];
+			snprintf(test_viewbob_str,120,"[Edit]\t[Zero]\n\nEdit run velocities\nPitch\n\t%.2f\nYaw\n\t%.2f\nRoll\n\t%.2f",viewbob_pitch,viewbob_yaw,viewbob_roll);
+			test_text->set_text(test_viewbob_str);
+		}
+		if(viewbob_menu_state == 2)
+		{
+			char test_viewbob_str[120];
+			snprintf(test_viewbob_str,120,"[Edit]\t[Zero]\n\nEdit cam properties\nSpring Constant\n\t%.2f\nResistance\n\t%.2f\nMax Stray\n\t%.2f",camera->viewbob_spring_constant,camera->viewbob_resistance,camera->viewbob_max_stray);
+			test_text->set_text(test_viewbob_str);
+		}
+		//char test_viewbob_str[40];
+		//snprintf(test_viewbob_str,40,"t=%f",t);
+		//test_text->set_text(test_viewbob_str);
+		test_text->render(camera->ortho_proj_m);
+	}
 }

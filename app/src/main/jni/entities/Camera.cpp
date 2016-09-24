@@ -65,6 +65,7 @@ void Camera::viewbob_run_footstep (float pitch_v,float yaw_v, float roll_v)
 	viewbob_vel.z += roll_v;
 }
 
+//FIXME: these params are just for testing
 void Camera::update_viewbob ()
 {
 	switch(viewbob)
@@ -74,13 +75,16 @@ void Camera::update_viewbob ()
 			//Going to simulate a spring, make the camera accelerate towards neutral
 			Vec3 force(-angles.x,-angles.y,-angles.z);
 			//Adding resistance to the spring
-			float spring_constant = 1000.0;
-			float resistance = 0.9;
+			//float spring_constant = 100.0;
+			float spring_constant = viewbob_spring_constant;
+			//float resistance = 0.9;
+			float resistance = viewbob_resistance;
 			force = spring_constant*force - resistance*viewbob_vel;
 			viewbob_vel = viewbob_vel + Time::delta_time * force;
 			//Don't let angles stray too far
 
-			float max_stray = 30.0f * DEG_TO_RAD;
+			//float max_stray = 30.0f * DEG_TO_RAD;
+			float max_stray = viewbob_max_stray * DEG_TO_RAD;
 
 			//Damping pitch velocity
 			if((angles.x > max_stray && viewbob_vel.x > 0) || (angles.x < -max_stray && viewbob_vel.x < 0))

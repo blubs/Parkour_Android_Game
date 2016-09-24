@@ -167,6 +167,14 @@ public:
 	int player_state = 0;
 	float player_substate = 0.0f;
 
+	//FIXME: remove this
+	//===================
+	int viewbob_menu_state = 0;
+	float viewbob_pitch;
+	float viewbob_yaw;
+	float viewbob_roll;
+	//===================
+
 	static const int PLAYER_STATE_MENU = 0;
 	static const int PLAYER_STATE_RUNNING = 1;
 	static const int PLAYER_STATE_FALLING = 2;
