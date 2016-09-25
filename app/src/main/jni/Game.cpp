@@ -729,10 +729,6 @@ void Game::update()
 	}
 
 	//FIXME: remove this
-	float pitch_viewbob = 0.0f;
-	float yaw_viewbob = 0.0f;
-	float roll_viewbob = 0.0f;
-	float spring_constant = 0.0f;
 	//TODO: handle input here
 	//TODO: check for maneuvers and traversals
 	//Checking touch button interactions
