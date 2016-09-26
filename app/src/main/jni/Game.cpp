@@ -737,8 +737,8 @@ void Game::update()
 	{
 		if(!(input_touching[i]))
 			continue;
-		float x = input_x[i];
-		float y = input_y[i];
+		float x = input_start_x[i];
+		float y = input_start_y[i];
 
 		//top right corner: go to player noclip mode
 		if(x >= 0.66f && y >= 0.85f)
@@ -850,6 +850,7 @@ void Game::update()
 
 		camera->set_viewbob(Camera::VIEWBOB_RUNNING);
 
+
 		//Testing viewbob code
 		static bool stepped = true;
 
@@ -877,9 +878,19 @@ void Game::update()
 			return;
 		}
 
+		//Player turning code:
+		float turn_angle = 0.0f;
+		if(input_turning)
+		{
+			turn_angle = 45 * (2*input_turn - 1) * DEG_TO_RAD;
+		}
+		player->angles.y += (turn_angle - player->angles.y) * 0.5f;
+		//TODO: camera roll rotation from turning
+
+
 
 		//Make the player move forward, if runs outside of building bounds, reset at building start
-		Vec3 movement_vel = Vec3(0,player_runspeed,0);
+		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0);
 
 		player->pos = player->pos + Time::delta_time * movement_vel;
 		if(current_building->is_box_out_of_bounds(player->pos,0.5f))//TODO: make 0.5f be the player size
