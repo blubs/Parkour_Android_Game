@@ -823,6 +823,23 @@ void Game::update()
 
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
+		if(input_swipe)
+		{
+			if(input_swipe == INPUT_SWIPE_UP)
+			{
+				//TODO: if not in maneuver area, generic jump
+				player_state = PLAYER_STATE_FALLING;
+				player_phys_vel.z = 10.0f;
+				//TODO: play jump animation
+				return;
+			}
+			if(input_swipe == INPUT_SWIPE_DOWN)
+			{
+				//player_state == PLAYER_STATE_SLIDING;
+				//TODO: if not in maneuver area, generic slide
+			}
+
+		}
 		//TODO: put this frame handling stuff in a different location
 		//==============================================================
 		if(player_skel->playing_anim)
