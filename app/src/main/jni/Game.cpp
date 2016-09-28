@@ -385,8 +385,8 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 	if(input_sent_command)
 		return;
 
-	float delta_x = input_x - input_start_x;
-	float delta_y = input_y - input_start_y;
+	float delta_x = input_x[0] - input_start_x[0];
+	float delta_y = input_y[0] - input_start_y[0];
 	float delta_x_abs = fabsf(delta_x);
 	float delta_y_abs = fabsf(delta_y);
 
@@ -396,7 +396,7 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 		//if input_sensitivity is 1/16, the 16.0f and it annihilate each other
 		//Making us only have to swipe 1/3rd of the screen width to go through the full range of motion
 		input_turn = 3.0f * 16.0f * delta_x * input_sensitivity;
-		input_turn = fmaxf(0.0f,fminf(1.0f,input_turn));
+		input_turn = fmaxf(-1.0f,fminf(1.0f,input_turn));
 
 		input_turning = true;
 		return;
@@ -830,6 +830,9 @@ void Game::update()
 				//TODO: if not in maneuver area, generic jump
 				player_state = PLAYER_STATE_FALLING;
 				player_phys_vel.z = 10.0f;
+				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0));
+
+
 				//TODO: play jump animation
 				return;
 			}
@@ -899,11 +902,10 @@ void Game::update()
 		float turn_angle = 0.0f;
 		if(input_turning)
 		{
-			turn_angle = 45 * (2*input_turn - 1) * DEG_TO_RAD;
+			turn_angle = -45.0f * input_turn * DEG_TO_RAD;
 		}
 		player->angles.y += (turn_angle - player->angles.y) * 0.5f;
 		//TODO: camera roll rotation from turning
-
 
 
 		//Make the player move forward, if runs outside of building bounds, reset at building start

@@ -118,6 +118,7 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 	if(type == AINPUT_EVENT_TYPE_MOTION)
 	{
 		int32_t motion_action = AMotionEvent_getAction(event);
+		eng->animating = 1;
 
 		int motion_type = motion_action & AMOTION_EVENT_ACTION_MASK;
 		int event_type = 0;
