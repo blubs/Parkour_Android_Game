@@ -829,6 +829,10 @@ void Game::update()
 			{
 				//TODO: if not in maneuver area, generic jump
 				player_state = PLAYER_STATE_FALLING;
+				float jump_height = 0.75f;
+
+				float jump_vel = sqrtf(jump_height * 2.0f * 9.8f);//9.8f is gravity
+
 				player_phys_vel.z = 10.0f;
 				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0));
 
