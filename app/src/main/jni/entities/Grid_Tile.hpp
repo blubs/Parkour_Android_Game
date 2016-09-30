@@ -9,8 +9,8 @@
 #include "../engine/graphics/Static_Model.hpp"
 
 //Size of tiles (6 units x 6 units x 6 units)
-#define GRIDSIZE 3
-#define WINDOWGRIDSIZE 6
+#define GRIDSIZE 3.5f
+#define WINDOWGRIDSIZE 7.0f
 
 #define BUILDING_MAX_WIDTH 60
 #define BUILDING_MAX_LENGTH 120
