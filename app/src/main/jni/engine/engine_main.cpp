@@ -25,10 +25,10 @@ void android_main(struct android_app *app)
 
 
 	//Reads saved data and writes saved data
-/*	const char* data = File_Utils::read_savedata("test.dat");
+	const char* data = File_Utils::read_savedata("test.dat");
 	LOGI("Read file: %s.\n",data);
 	free((char*)data);
-	File_Utils::write_savedata("test.dat");*/
+	File_Utils::write_savedata("test.dat");
 
 	//run the engine loop
 	while(1)
