@@ -74,7 +74,7 @@ public:
 	Interior_Style* style[1];
 
 	//temp remove this
-	Grid_Tile* test_tiles[2];
+	Grid_Tile* test_tiles[4];
 
 	Static_Model* window_int_model;
 	Material* window_int_mat;

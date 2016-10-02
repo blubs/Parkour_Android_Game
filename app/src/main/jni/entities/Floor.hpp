@@ -67,6 +67,28 @@ public:
 			for(int j = 0; j < length; j++)
 			{
 				int ttype = TILE_TYPE_EMPT;
+
+				//Setting a few of the tiles as something else
+				//FIXME: the following logic hand picks a few tiles to place them at specific floor indices
+				if(j == 3)
+				{
+					if(i == 2)
+					{
+						ttype = TILE_TYPE_SOLD;
+					}
+					if(i == 4)
+					{
+						//FIXME: generic 2 is not a type, replace ths
+						//test vent
+						ttype = 2;
+					}
+					if(i == 6)
+					{
+						//test vent 2
+						ttype = 3;
+					}
+				}
+				//FIXME: end temp section
 				tile_type[i][j] = ttype;
 				//TODO: get random variant number of this type
 				tile_variant[i][j] = 0;

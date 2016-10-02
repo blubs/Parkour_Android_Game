@@ -33,7 +33,7 @@ void Camera::update_view_matrix()
 	if(use_quaternion)
 		transform = Mat4::ROT_TRANS(rot,pos,&right,&up,&forward) * Mat4::ROTATE(flip_y_and_z);
 	else
-		transform = Mat4::ROT_TRANS(angles,pos,&right,&up,&forward) * Mat4::ROTATE(flip_y_and_z);
+		transform = Mat4::ROT_TRANS(angles + viewbob_angles,pos,&right,&up,&forward) * Mat4::ROTATE(flip_y_and_z);
 
 	if(parent)
 	{
@@ -73,7 +73,7 @@ void Camera::update_viewbob ()
 		case VIEWBOB_RUNNING:
 		{
 			//Going to simulate a spring, make the camera accelerate towards neutral
-			Vec3 force(-angles.x,-angles.y,-angles.z);
+			Vec3 force(-viewbob_angles.x,-viewbob_angles.y,-viewbob_angles.z);
 			//Adding resistance to the spring
 			//float spring_constant = 100.0;
 			float spring_constant = viewbob_spring_constant;
@@ -87,22 +87,22 @@ void Camera::update_viewbob ()
 			float max_stray = viewbob_max_stray * DEG_TO_RAD;
 
 			//Damping pitch velocity
-			if((angles.x > max_stray && viewbob_vel.x > 0) || (angles.x < -max_stray && viewbob_vel.x < 0))
+			if((viewbob_angles.x > max_stray && viewbob_vel.x > 0) || (viewbob_angles.x < -max_stray && viewbob_vel.x < 0))
 			{
 				viewbob_vel.x *= 0.5;
 			}
 			//Damping yaw velocity
-			if((angles.y > max_stray && viewbob_vel.y > 0) || (angles.y < -max_stray && viewbob_vel.y < 0))
+			if((viewbob_angles.y > max_stray && viewbob_vel.y > 0) || (viewbob_angles.y < -max_stray && viewbob_vel.y < 0))
 			{
 				viewbob_vel.y *= 0.5;
 			}
 			//Damping roll velocity
-			if((angles.z > max_stray && viewbob_vel.z > 0) || (angles.z < -max_stray && viewbob_vel.z < 0))
+			if((viewbob_angles.z > max_stray && viewbob_vel.z > 0) || (viewbob_angles.z < -max_stray && viewbob_vel.z < 0))
 			{
 				viewbob_vel.z *= 0.5;
 			}
 
-			angles = angles + Time::delta_time * viewbob_vel;
+			viewbob_angles = viewbob_angles + Time::delta_time * viewbob_vel;
 
 			break;
 		}

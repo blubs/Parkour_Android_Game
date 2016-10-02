@@ -92,6 +92,10 @@ Global_Tiles::Global_Tiles()
 	test_tiles[TILE_TYPE_EMPT] = new Grid_Tile();
 	test_tiles[TILE_TYPE_SOLD] = new Grid_Tile();
 
+	//Two obstacle test tiles
+	test_tiles[2] = new Grid_Tile();
+	test_tiles[3] = new Grid_Tile();
+
 	//Setting solid tile's voxels as solid
 	for(int i = 0; i < 6; i++)
 	{
@@ -102,6 +106,8 @@ Global_Tiles::Global_Tiles()
 	}
 	test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
 	test_tiles[TILE_TYPE_SOLD]->model = new Static_Model("models/tiles/style0/sold0.stmf");
+	test_tiles[2]->model = new Static_Model("models/tiles/style0/test_vent.stmf");
+	test_tiles[3]->model = new Static_Model("models/tiles/style0/test_vent2.stmf");
 	window_model = new Static_Model("models/windows/style0.stmf");
 	window_int_model = new Static_Model("models/windows/style0_int.stmf");
 
@@ -178,8 +184,12 @@ Global_Tiles::~Global_Tiles()
 
 	delete test_tiles[0]->model;
 	delete test_tiles[1]->model;
+	delete test_tiles[2]->model;
+	delete test_tiles[3]->model;
 	delete test_tiles[0];
 	delete test_tiles[1];
+	delete test_tiles[2];
+	delete test_tiles[3];
 	delete window_model;
 	delete window_mat;
 	delete window_shad;
@@ -199,6 +209,8 @@ void Global_Tiles::init_gl()
 	instance->style[0]->variants[0]->init_gl();
 	instance->test_tiles[0]->model->init_gl();
 	instance->test_tiles[1]->model->init_gl();
+	instance->test_tiles[2]->model->init_gl();
+	instance->test_tiles[3]->model->init_gl();
 	instance->window_model->init_gl();
 	instance->window_shad->init_gl();
 	instance->window_tex0->init_gl();
@@ -215,6 +227,8 @@ void Global_Tiles::term_gl()
 	instance->style[0]->variants[0]->term_gl();
 	instance->test_tiles[0]->model->term_gl();
 	instance->test_tiles[1]->model->term_gl();
+	instance->test_tiles[2]->model->term_gl();
+	instance->test_tiles[3]->model->term_gl();
 	instance->window_model->term_gl();
 	instance->window_shad->term_gl();
 	instance->window_tex0->term_gl();

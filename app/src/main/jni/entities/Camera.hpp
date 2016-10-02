@@ -43,6 +43,8 @@ public:
 	int viewbob;
 	Vec3 viewbob_vel;
 
+	Vec3 viewbob_angles;
+
 	float viewbob_spring_constant = 1000.0f;
 	float viewbob_resistance = 0.9f;
 	float viewbob_max_stray = 30.0f;
