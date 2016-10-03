@@ -535,6 +535,113 @@ void Game::finish()
 	delete cam_to_bone;
 }
 
+//TODO: handle precedence of collisions
+//Returns type of collision player bbox encounters
+char Game::clip_player_bbox(Vec3 p)
+{
+	//check for collisions at certain points
+	//We need global positions for certain coords
+
+	Vec3 pos = p;
+
+	char result;
+
+	//Front of triangle
+	//TODO: calculate the following variables once and store them, not exactly the fastest calculation
+	float tri_slope = tanf((90.0f - PLAYER_MAX_TURN_ANGLE) * DEG_TO_RAD);
+	float tri_height = tri_slope * PLAYER_SIZE;
+
+	float lcorner_cmpr = -tri_slope * (fmodf(pos.x,GRID_SIZE)) + GRID_SIZE;
+	float rcorner_cmpr = tri_slope * (fmodf(pos.x,GRID_SIZE) - GRID_SIZE) + GRID_SIZE;
+
+	float mod_y = fmodf(pos.y,GRID_SIZE);
+	if(mod_y >= lcorner_cmpr)
+	{
+		//Check front left voxel
+		result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
+		if(result != 0)
+			return result;
+
+	}
+	if(mod_y >= rcorner_cmpr)
+	{
+		//Check front right voxel
+		result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
+		if(result != 0)
+			return result;
+	}
+
+	result = current_building->is_solid_at(pos + Vec3(0,tri_height,0));
+	if(result != 0)
+		return result;
+
+	//Front right
+	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,PLAYER_SIZE,0));
+	if(result != 0)
+		return result;
+
+	//Front left
+	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE,0));
+	if(result != 0)
+		return result;
+
+	//back right
+	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
+	if(result != 0)
+		return result;
+
+	//back left
+	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0));
+	if(result != 0)
+		return result;
+	return 0;
+	//TODO: make precedence array for which collision type takes higher precedence, we only return the clip type that has the highest precedence
+}
+
+//returns true if move was succesfull, returns false if we collided with something and set state to DEAD
+bool Game::move_player(Vec3 v)
+{
+	//Split up movement into forward, sideways, and vertical movement
+	float delta_y = v.y * Time::delta_time;
+	float delta_x = v.x * Time::delta_time;
+	float delta_z = v.z * Time::delta_time;
+
+	//Checking forward collisions
+	Vec3 test_pos = player->pos + Vec3(0,delta_y,0);
+
+	char clip = clip_player_bbox(test_pos);
+
+	if(clip == 0)
+	{
+		player->pos.y = test_pos.y;
+	}
+	else
+	{
+		//TODO: we collided! handle death
+	}
+
+	//Checking sideways collisions
+	test_pos = player->pos + Vec3(delta_x,0,0);
+
+	clip = clip_player_bbox(test_pos);
+
+	if(clip == 0)
+	{
+		player->pos.x = test_pos.x;
+	}
+	else
+	{
+		//TODO: we collided! handle death
+	}
+
+
+	//Don't do collision detection in z-axis (we let PLAYER_STATE_FALLING logic handle that)
+	player->pos.z += delta_z;
+
+
+	return true;
+}
+
 void Game::update()
 {
 	//if(state.x > 0.95f && player_skel->playing_anim)
@@ -635,6 +742,7 @@ void Game::update()
 		//move left/right/forward/back
 		//move up/down
 
+
 		//Camera velocity
 		float cam_vel = 60.0f;
 
@@ -677,6 +785,15 @@ void Game::update()
 						player->pos.y = current_building->active_floor->global_mins.y + 1.0f;
 					}
 					break;
+				}
+			}
+			//top left corner to test collision
+			if(x <= 0.33f)
+			{
+				if(y >= 0.85f)
+				{
+					input_touching[i] = false;
+					move_player(Vec3::ZERO());
 				}
 			}
 
@@ -833,7 +950,7 @@ void Game::update()
 
 				float jump_vel = sqrtf(jump_height * 2.0f * 9.8f);//9.8f is gravity
 
-				player_phys_vel.z = 10.0f;
+				player_phys_vel.z = jump_vel;
 				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0));
 
 
@@ -906,7 +1023,7 @@ void Game::update()
 		float turn_angle = 0.0f;
 		if(input_turning)
 		{
-			turn_angle = -45.0f * input_turn * DEG_TO_RAD;
+			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
 		player->angles.y += (turn_angle - player->angles.y) * 0.5f;
 		//TODO: camera roll rotation from turning
@@ -915,8 +1032,11 @@ void Game::update()
 		//Make the player move forward, if runs outside of building bounds, reset at building start
 		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0);
 
-		player->pos = player->pos + Time::delta_time * movement_vel;
-		if(current_building->is_box_out_of_bounds(player->pos,0.5f))//TODO: make 0.5f be the player size
+		if(!move_player(movement_vel))
+			return;
+
+		//player->pos = player->pos + Time::delta_time * movement_vel;
+		if(current_building->is_box_out_of_bounds(player->pos,PLAYER_SIZE))//TODO: make 0.5f be the player size
 		{
 			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
 		}

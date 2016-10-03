@@ -62,7 +62,7 @@ public:
 
 		dimensions = Vec3(10,10,floors);
 
-		size = Vec3(dimensions.x * GRIDSIZE, dimensions.y * GRIDSIZE, dimensions.z * WINDOWGRIDSIZE);
+		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
 		pos = Vec3(0,0,GROUNDLEVEL);
 
@@ -87,7 +87,7 @@ public:
 
 	char is_solid_at(Vec3 p)
 	{
-		return active_floor->is_solid_at(p-pos);
+		return active_floor->is_solid_at(p-global_mins);
 	}
 
 	bool is_out_of_bounds(Vec3 p)
@@ -137,7 +137,7 @@ public:
 			{
 				//model->bind_mesh_data2(mat);
 
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -158,7 +158,7 @@ public:
 			{
 				//model->bind_mesh_data2(mat);
 
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -178,7 +178,7 @@ public:
 			{
 				//model->bind_mesh_data2(mat);
 
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -198,7 +198,7 @@ public:
 			{
 				//model->bind_mesh_data2(mat);
 
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,j*WINDOWGRIDSIZE));
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -231,7 +231,7 @@ public:
 		//Drawing the interior windows only on the active floor number
 		//TODO: skip drawing of broken interior windows (and draw their skeletal animations)
 		Mat4 m;
-		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOWGRIDSIZE));
+		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
 
 		Static_Model* model = Global_Tiles::instance->window_int_model;
 
@@ -244,7 +244,7 @@ public:
 		{
 			//model->bind_mesh_data2(mat);
 
-			m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+			m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
 
 			Mat4 mvp = vp * m;
 			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -262,7 +262,7 @@ public:
 		{
 			//model->bind_mesh_data2(mat);
 
-			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
 
 			Mat4 mvp = vp * m;
 			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -279,7 +279,7 @@ public:
 		{
 			//model->bind_mesh_data2(mat);
 
-			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
 
 			Mat4 mvp = vp * m;
 			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -296,7 +296,7 @@ public:
 		{
 			//model->bind_mesh_data2(mat);
 
-			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,0,0));
+			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
 
 			Mat4 mvp = vp * m;
 			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);

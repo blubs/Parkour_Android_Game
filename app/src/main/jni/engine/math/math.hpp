@@ -15,6 +15,7 @@
 #define RAD_TO_DEG 57.2957795131f
 
 
+
 struct Vec3
 {
 	float x, y, z;

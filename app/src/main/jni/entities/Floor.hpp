@@ -53,13 +53,13 @@ public:
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
-		altitude = p.z + floor_num*(WINDOWGRIDSIZE);
-		global_pos = p + Vec3(0,0,floor_num*WINDOWGRIDSIZE);
+		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
+		global_pos = p + Vec3(0,0,floor_num*WINDOW_TILE_SIZE);
 		global_mins = mins;
 		global_maxs = maxs;
 		global_mins.z = global_maxs.z = altitude;
-		width = (int)(global_maxs.x - global_mins.x)/GRIDSIZE;
-		length = (int)(global_maxs.y - global_mins.y)/GRIDSIZE;
+		width = (int)(global_maxs.x - global_mins.x)/TILE_SIZE;
+		length = (int)(global_maxs.y - global_mins.y)/TILE_SIZE;
 
 		//For now, populate floor with empty tiles.
 		for(int i = 0; i < width; i++)
@@ -121,7 +121,7 @@ public:
 			{
 				tile_model[i][j]->bind_mesh_data(mat);
 
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*GRIDSIZE,j*GRIDSIZE,0));
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,j*TILE_SIZE,0));
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -144,8 +144,35 @@ public:
 
 	char is_solid_at(Vec3 p)
 	{
-		//TODO: reach into tile at position
-		return false;
+		//position given is in floor space, 0,0 being near left corner
+		//get tile indices for the position
+		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
+			return Collision_Map::VOX_SOLID;
+
+		Vec3 vox_p = Vec3(fmodf(p.x,TILE_SIZE),fmodf(p.y,TILE_SIZE),0);
+
+		int tile_x = (int) floorf((p.x - vox_p.x)/TILE_SIZE);
+		int tile_y = (int) floorf((p.y - vox_p.y)/TILE_SIZE);
+
+		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
+		{
+			LOGE("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
+			return Collision_Map::VOX_EMPTY;
+		}
+
+		int vox_x = (int) (floorf(vox_p.x/GRID_SIZE));
+		int vox_y = (int) (floorf(vox_p.y/GRID_SIZE));
+
+		if(vox_x < 0 || vox_y < 0 || vox_x >= TILE_VOXEL_DIMS || vox_y >= TILE_VOXEL_DIMS)
+		{
+			LOGE("Warning: tried reaching out of bounds voxel: (index: (%d x %d))",vox_x,vox_y);
+			return Collision_Map::VOX_EMPTY;
+		}
+
+		char rank = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
+		LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,rank);
+
+		return tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
 	}
 
 	bool is_y_out_of_bounds(Vec3 p)

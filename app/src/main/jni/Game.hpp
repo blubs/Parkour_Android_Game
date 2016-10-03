@@ -184,12 +184,21 @@ public:
 
 	static const int PLAYER_STATE_NOCLIP = 6;
 
+	#define PLAYER_SIZE 0.5f
+	#define PLAYER_MAX_TURN_ANGLE 60.0f
+
 
 	//Updates the game state / logic
 	void update();
 
 	//Draws the scene
 	void render();
+
+	//Game logic specific methods
+	//Handles player collision detection and player movement
+	bool move_player(Vec3 v);
+	//Handles player bbox hull collision with building->floor->tile voxels
+	char clip_player_bbox(Vec3 p);
 
 };
 
