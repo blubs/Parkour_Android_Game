@@ -571,7 +571,7 @@ char Game::clip_player_bbox(Vec3 p)
 			return result;
 	}
 
-	result = current_building->is_solid_at(pos + Vec3(0,tri_height,0));
+	result = current_building->is_solid_at(pos + Vec3(0,PLAYER_SIZE + tri_height,0));
 	if(result != 0)
 		return result;
 
@@ -610,6 +610,7 @@ bool Game::move_player(Vec3 v)
 	Vec3 test_pos = player->pos + Vec3(0,delta_y,0);
 
 	char clip = clip_player_bbox(test_pos);
+	LOGE("forward clip: %d",clip);
 
 	if(clip == 0)
 	{
@@ -624,6 +625,7 @@ bool Game::move_player(Vec3 v)
 	test_pos = player->pos + Vec3(delta_x,0,0);
 
 	clip = clip_player_bbox(test_pos);
+	LOGE("side clip: %d",clip);
 
 	if(clip == 0)
 	{
@@ -747,7 +749,7 @@ void Game::update()
 		float cam_vel = 60.0f;
 
 		//Camera angular velocity
-		float cam_ang_vel = 80.0f * DEG_TO_RAD;
+		float cam_ang_vel = 140.0f * DEG_TO_RAD;
 
 		//Checking input from all fingers:
 		for(int i = 0; i < MAX_INPUT_TOUCHES; i++)

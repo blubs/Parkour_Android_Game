@@ -87,7 +87,7 @@ public:
 
 	char is_solid_at(Vec3 p)
 	{
-		return active_floor->is_solid_at(p-global_mins);
+		return active_floor->is_solid_at(p);
 	}
 
 	bool is_out_of_bounds(Vec3 p)

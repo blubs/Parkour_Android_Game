@@ -147,7 +147,13 @@ public:
 		//position given is in floor space, 0,0 being near left corner
 		//get tile indices for the position
 		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
+		{
+			LOGE("X or Y coord is out of bounds: coords:(%f,%f), mins: (%f,%f), maxs: (%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
 			return Collision_Map::VOX_SOLID;
+		}
+
+		//finding player pos relative to left near corner of floor
+		p = p - global_mins;
 
 		Vec3 vox_p = Vec3(fmodf(p.x,TILE_SIZE),fmodf(p.y,TILE_SIZE),0);
 

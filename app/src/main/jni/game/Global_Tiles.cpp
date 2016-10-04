@@ -97,9 +97,9 @@ Global_Tiles::Global_Tiles()
 	test_tiles[3] = new Grid_Tile();
 
 	//Setting solid tile's voxels as solid
-	for(int i = 0; i < 6; i++)
+	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
 	{
-		for(int j = 0; j < 6; j++)
+		for(int j = 0; j < TILE_VOXEL_DIMS; j++)
 		{
 			test_tiles[TILE_TYPE_SOLD]->coll_map->tile[i][j] = Collision_Map::VOX_SOLID;
 		}
