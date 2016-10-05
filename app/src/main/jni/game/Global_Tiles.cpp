@@ -106,8 +106,18 @@ Global_Tiles::Global_Tiles()
 	}
 	test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
 	test_tiles[TILE_TYPE_SOLD]->model = new Static_Model("models/tiles/style0/sold0.stmf");
+
+
 	test_tiles[2]->model = new Static_Model("models/tiles/style0/test_vent.stmf");
 	test_tiles[3]->model = new Static_Model("models/tiles/style0/test_vent2.stmf");
+
+	//Setting test tiles collision maps
+	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
+	{
+		test_tiles[2]->coll_map->tile[i][3] = Collision_Map::VOX_SOLID;
+		test_tiles[3]->coll_map->tile[i][3] = Collision_Map::VOX_SOLID;
+	}
+
 	window_model = new Static_Model("models/windows/style0.stmf");
 	window_int_model = new Static_Model("models/windows/style0_int.stmf");
 

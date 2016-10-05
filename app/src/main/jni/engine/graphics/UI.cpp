@@ -61,6 +61,15 @@ int UI_Text::render(Mat4 vp)
 	-0.5f,0.5f,0.0f
 	};
 
+	mat->bind_material();
+	mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
+	mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE, (void *) charset);
+	const float mult_col[] = { color.x,color.y,color.z,opacity };
+	const float add_col[] = { add_color.x,add_color.y,add_color.z,0.0f };
+	mat->bind_value(Shader::PARAM_COLOR_MULT, (void *) mult_col);
+	mat->bind_value(Shader::PARAM_COLOR_ADD, (void *) add_col);
+
+
 	Vec3 char_ofs = Vec3::ZERO();
 
 	for(int i = 0; i < text_length; i++)
@@ -109,18 +118,9 @@ int UI_Text::render(Mat4 vp)
 			char_ofs.x -= char_pre_space[c];
 		}
 
-		const float mult_col[] = { color.x,color.y,color.z,opacity };
-		const float add_col[] = { add_color.x,add_color.y,add_color.z,0.0f };
-
 		Mat4 mvp = vp * Mat4::ROT_TRANS(angles,pos) * Mat4::SCALE(font_size,font_size,font_size) * Mat4::TRANSLATE(char_ofs);
-		mat->bind_material();
-		mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
 		mat->bind_value(Shader::PARAM_VERT_UV1,(void*) quad_uvs);
-		mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE, (void *) charset);
 		mat->bind_value(Shader::PARAM_MVP_MATRIX, (void *) mvp.m);
-
-		mat->bind_value(Shader::PARAM_COLOR_MULT, (void *) mult_col);
-		mat->bind_value(Shader::PARAM_COLOR_ADD, (void *) add_col);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -185,6 +185,112 @@ UI_Text::UI_Text (Material *m, Texture *tex)
 UI_Text::~UI_Text()
 {
 	term();
+}
+
+Material* UI_Text::default_mat = NULL;
+Texture* UI_Text::default_tex = NULL;
+
+void UI_Text::set_default_values(Material* mat, Texture* charset)
+{
+	default_mat = mat;
+	default_tex = charset;
+}
+
+void UI_Text::draw_text(const char* text, Vec3 pos, Vec3 angles, float font_size, Vec3 color, Vec3 add_color, float opacity, bool monospaced, Mat4 vp)
+{
+	if(default_mat == NULL || default_tex == NULL)
+	{
+		LOGW("Warning: Tried static drawing text without setting default material or texture");
+		return;
+	}
+
+	int text_length = strlen(text);
+	if(text_length == 0)
+	{
+		LOGW("Warning: Tried drawing text with string length of 0!");
+		return;
+	}
+
+	//Default quad is facing the positive z axis direction
+	const float quad_verts[] =
+	{
+	-0.5f,0.5f,0.0f,
+	-0.5f,-0.5f,0.0f,
+	0.5f,-0.5f,0.0f,
+	0.5f,-0.5f,0.0f,
+	0.5f,0.5f,0.0f,
+	-0.5f,0.5f,0.0f
+	};
+
+	default_mat->bind_material();
+	default_mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
+	default_mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE, (void *) default_tex);
+	const float mult_col[] = { color.x,color.y,color.z,opacity };
+	const float add_col[] = { add_color.x,add_color.y,add_color.z,0.0f };
+	default_mat->bind_value(Shader::PARAM_COLOR_MULT, (void *) mult_col);
+	default_mat->bind_value(Shader::PARAM_COLOR_ADD, (void *) add_col);
+
+
+	Vec3 char_ofs = Vec3::ZERO();
+
+	for(int i = 0; i < text_length; i++)
+	{
+		char c = text[i];
+		if(c == '\n')
+		{
+			char_ofs.x = 0.0f;
+			char_ofs.y -= 1.0f;
+			continue;
+		}
+
+
+		if(c <= ' ' || c > '~')
+		{
+			char_ofs.x += 0.9f;
+			continue;
+		}
+		c = c - '!';
+
+		float index_x = char_index_x[c];
+		float index_y = char_index_y[c];
+
+		float cell_size = 0.09765625f;//this is 10 cells of size 100 px fitting in 1024 pixels, with 24 wasted pixels
+
+		float corner_x = cell_size * index_x;
+		float corner_y = cell_size * index_y;
+
+		float left = corner_x;
+		float top = corner_y;
+		float bottom = corner_y + cell_size;
+		float right = corner_x + cell_size;
+
+		const float quad_uvs[] =
+		{
+		left,top,
+		left,bottom,
+		right,bottom,
+		right,bottom,
+		right,top,
+		left,top
+		};
+
+		if(!monospaced)
+		{
+			char_ofs.x -= char_pre_space[c];
+		}
+
+		Mat4 mvp = vp * Mat4::ROT_TRANS(angles,pos) * Mat4::SCALE(font_size,font_size,font_size) * Mat4::TRANSLATE(char_ofs);
+		default_mat->bind_value(Shader::PARAM_VERT_UV1,(void*) quad_uvs);
+		default_mat->bind_value(Shader::PARAM_MVP_MATRIX, (void *) mvp.m);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		if(monospaced)
+			char_ofs.x += 1.1f;
+		else
+			char_ofs.x += 1.0f - char_suf_space[c];
+	}
+
 }
 
 

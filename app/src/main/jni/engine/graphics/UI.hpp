@@ -12,6 +12,17 @@
 class UI_Text
 {
 public:
+	//Methods and variables for drawing text without class instance
+	static Material* default_mat;
+	static Texture* default_tex;
+
+	//Sets default text material and charset texture that static drawing uses
+	static void set_default_values(Material* mat, Texture* tex);
+	//Draws text without a class instance
+	static void draw_text(const char* text, Vec3 pos, Vec3 angles, float font_size, Vec3 color, Vec3 add_color, float opacity, bool monospaced, Mat4 vp);
+
+	//Actual class members
+
 	//Null terminated text
 	char* text;
 	//number of characters in text

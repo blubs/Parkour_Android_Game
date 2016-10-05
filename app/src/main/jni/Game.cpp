@@ -467,6 +467,8 @@ void Game::start()
 
 	//===== Instantiating Game Objects =====
 	test_text = new UI_Text(text_mat,char_set);
+	//Setting default text mat/shader/charset tex
+	UI_Text::set_default_values(text_mat,char_set);
 	//test_text->set_text("test\nT  E\n\nST !@\n#$%^&*()");
 	//test_text->set_text("Pause\npause\nPAUSE\n\nPlay\nplay\nPLAY\n\nExit\nexit\nEXIT\n\ntest_text->set_text(\"Stuff\")");
 	test_text->set_text(" ");
@@ -1159,4 +1161,6 @@ void Game::render()
 		//test_text->set_text(test_viewbob_str);
 		test_text->render(camera->ortho_proj_m);
 	}
+
+	UI_Text::draw_text("hi mom", Vec3(-screen_width * 0.4f,screen_height * 0.4f,0), Vec3(0,0,0), 100, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 }
