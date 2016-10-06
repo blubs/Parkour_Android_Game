@@ -101,7 +101,7 @@ Global_Tiles::Global_Tiles()
 	{
 		for(int j = 0; j < TILE_VOXEL_DIMS; j++)
 		{
-			test_tiles[TILE_TYPE_SOLD]->coll_map->tile[i][j] = Collision_Map::VOX_SOLID;
+			test_tiles[TILE_TYPE_SOLD]->coll_map->voxel[i][j] = Collision_Map::VOX_SOLID;
 		}
 	}
 	test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
@@ -114,8 +114,8 @@ Global_Tiles::Global_Tiles()
 	//Setting test tiles collision maps
 	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
 	{
-		test_tiles[2]->coll_map->tile[i][3] = Collision_Map::VOX_SOLID;
-		test_tiles[3]->coll_map->tile[i][3] = Collision_Map::VOX_SOLID;
+		test_tiles[2]->coll_map->voxel[i][3] = Collision_Map::VOX_SOLID;
+		test_tiles[3]->coll_map->voxel[i][3] = Collision_Map::VOX_SOLID;
 	}
 
 	window_model = new Static_Model("models/windows/style0.stmf");

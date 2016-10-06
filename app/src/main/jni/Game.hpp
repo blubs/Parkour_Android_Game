@@ -47,6 +47,7 @@ public:
 	Shader *static_color_shader = NULL;
 	Shader *text_shader = NULL;
 	Shader *player_skin_shader = NULL;
+	Shader *solid_shader = NULL;
 
 	//------------- Materials -----------------
 	Material *mat_red = NULL;
@@ -55,6 +56,7 @@ public:
 	Material *static_color_mat = NULL;
 	Material *text_mat = NULL;
 	Material *player_skin_mat = NULL;
+	Material *solid_mat = NULL;
 
 	//------------ Textures -------------------
 	Texture *test_texture = NULL;
@@ -183,9 +185,12 @@ public:
 	static const int PLAYER_STATE_TRAVERSING = 5;
 
 	static const int PLAYER_STATE_NOCLIP = 6;
+	static const int PLAYER_STATE_CAM_FLY = 7;
 
 	#define PLAYER_SIZE 0.5f
 	#define PLAYER_MAX_TURN_ANGLE 60.0f
+	float player_bbox_tri_slope = 0.0f;
+	float player_bbox_tri_height = 0.0f;
 
 
 	//Updates the game state / logic

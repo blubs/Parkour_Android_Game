@@ -12,6 +12,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ActionMenuView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -149,6 +150,18 @@ public class Launcher extends NativeActivity
 			}
 		);
 	}
+
+	public void showKeyboard()
+	{
+		InputMethodManager keyboard = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+		keyboard.toggleSoftInput(InputMethodManager.SHOW_FORCED,0);
+	}
+	public void hideKeyboard()
+	{
+		InputMethodManager keyboard = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+		keyboard.toggleSoftInput(0,0);
+	}
+
 	public void loge(String msg)
 	{
 		Log.println(Log.ERROR,"jni",msg);

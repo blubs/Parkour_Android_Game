@@ -155,7 +155,7 @@ public:
 		//finding player pos relative to left near corner of floor
 		p = p - global_mins;
 
-		Vec3 vox_p = Vec3(fmodf(p.x,TILE_SIZE),fmodf(p.y,TILE_SIZE),0);
+		Vec3 vox_p = Vec3(efmodf(p.x,TILE_SIZE),efmodf(p.y,TILE_SIZE),0);
 
 		int tile_x = (int) floorf((p.x - vox_p.x)/TILE_SIZE);
 		int tile_y = (int) floorf((p.y - vox_p.y)/TILE_SIZE);
@@ -176,7 +176,8 @@ public:
 		}
 
 		char rank = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
-		LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,rank);
+		if(rank != 0)
+			LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,rank);
 
 		return tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
 	}

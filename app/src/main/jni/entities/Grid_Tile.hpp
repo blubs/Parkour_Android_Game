@@ -29,7 +29,7 @@ public:
 	//static const char VOX_DOORWAY = 2;
 	//...etc
 
-	char tile[TILE_VOXEL_DIMS][TILE_VOXEL_DIMS];
+	char voxel[TILE_VOXEL_DIMS][TILE_VOXEL_DIMS];
 	Collision_Map();
 	~Collision_Map();
 

@@ -6,13 +6,13 @@
 
 Collision_Map::Collision_Map()
 {
-	tile[0][0] = tile[0][1] = tile[0][2] = tile[0][3] = tile[0][4] = tile[0][5] = tile[0][6] =
-	tile[1][0] = tile[1][1] = tile[1][2] = tile[1][3] = tile[1][4] = tile[1][5] = tile[1][6] =
-	tile[2][0] = tile[2][1] = tile[2][2] = tile[2][3] = tile[2][4] = tile[2][5] = tile[2][6] =
-	tile[3][0] = tile[3][1] = tile[3][2] = tile[3][3] = tile[3][4] = tile[3][5] = tile[3][6] =
-	tile[4][0] = tile[4][1] = tile[4][2] = tile[4][3] = tile[4][4] = tile[4][5] = tile[4][6] =
-	tile[5][0] = tile[5][1] = tile[5][2] = tile[5][3] = tile[5][4] = tile[5][5] = tile[5][6] =
-	tile[6][0] = tile[6][1] = tile[6][2] = tile[6][3] = tile[6][4] = tile[6][5] = tile[6][6] =  VOX_EMPTY;
+	voxel[0][0] = voxel[0][1] = voxel[0][2] = voxel[0][3] = voxel[0][4] = voxel[0][5] = voxel[0][6] =
+	voxel[1][0] = voxel[1][1] = voxel[1][2] = voxel[1][3] = voxel[1][4] = voxel[1][5] = voxel[1][6] =
+	voxel[2][0] = voxel[2][1] = voxel[2][2] = voxel[2][3] = voxel[2][4] = voxel[2][5] = voxel[2][6] =
+	voxel[3][0] = voxel[3][1] = voxel[3][2] = voxel[3][3] = voxel[3][4] = voxel[3][5] = voxel[3][6] =
+	voxel[4][0] = voxel[4][1] = voxel[4][2] = voxel[4][3] = voxel[4][4] = voxel[4][5] = voxel[4][6] =
+	voxel[5][0] = voxel[5][1] = voxel[5][2] = voxel[5][3] = voxel[5][4] = voxel[5][5] = voxel[5][6] =
+	voxel[6][0] = voxel[6][1] = voxel[6][2] = voxel[6][3] = voxel[6][4] = voxel[6][5] = voxel[6][6] =  VOX_EMPTY;
 }
 Collision_Map::~Collision_Map()
 {
@@ -20,7 +20,7 @@ Collision_Map::~Collision_Map()
 
 char Collision_Map::get_vox_at(int x, int y)
 {
-	return tile[x][y];
+	return voxel[x][y];
 }
 
 Grid_Tile::Grid_Tile()

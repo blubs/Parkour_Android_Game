@@ -24,6 +24,9 @@ public:
 	jmethodID show_ad_method;
 	jmethodID hide_ad_method;
 
+	jmethodID show_keyboard_method;
+	jmethodID hide_keyboard_method;
+
 	JNI_Interface(ANativeActivity* act);
 
 	~JNI_Interface();
@@ -36,6 +39,11 @@ public:
 	void show_ad();
 	//Hides ads
 	void hide_ad();
+
+	//Shows keyboard
+	void show_keyboard();
+	//Hides keyboard
+	void hide_keyboard();
 
 	//Method which calls the test java method
 	void test_function();

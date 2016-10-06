@@ -14,7 +14,11 @@
 #define DEG_TO_RAD 0.01745329251f
 #define RAD_TO_DEG 57.2957795131f
 
-
+//Gives mathematical floored modulo that works for negative numbers as well (unlike standard fmodf, which truncates towards 0)
+inline float efmodf(float a, float m)
+{
+	return a < 0 ? (fmodf(a,m) + m) : fmodf(a,m);
+}
 
 struct Vec3
 {

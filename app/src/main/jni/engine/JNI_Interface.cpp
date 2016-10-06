@@ -29,6 +29,9 @@ JNI_Interface::JNI_Interface(ANativeActivity* act)
 	show_ad_method = jni->GetMethodID(activity_class,"showAd","()V");
 	hide_ad_method = jni->GetMethodID(activity_class,"hideAd","()V");
 
+	show_keyboard_method = jni->GetMethodID(activity_class,"showKeyboard","()V");
+	hide_keyboard_method = jni->GetMethodID(activity_class,"hideKeyboard","()V");
+
 	jobject local_activity_instance = activity->clazz;
 	activity_instance = jni->NewGlobalRef(local_activity_instance);
 
@@ -93,6 +96,31 @@ void JNI_Interface::hide_ad()
 
 	bool attached_jni_thread = get_jni_env(&jni);
 	jni->CallVoidMethod(activity_instance,hide_ad_method);
+	if(attached_jni_thread)
+	{
+		detach_thread();
+	}
+}
+
+//Shows keyboard
+void JNI_Interface::show_keyboard()
+{
+	JNIEnv* jni;
+
+	bool attached_jni_thread = get_jni_env(&jni);
+	jni->CallVoidMethod(activity_instance,show_keyboard_method);
+	if(attached_jni_thread)
+	{
+		detach_thread();
+	}
+}
+//Hides keyboard
+void JNI_Interface::hide_keyboard()
+{
+	JNIEnv* jni;
+
+	bool attached_jni_thread = get_jni_env(&jni);
+	jni->CallVoidMethod(activity_instance,hide_keyboard_method);
 	if(attached_jni_thread)
 	{
 		detach_thread();

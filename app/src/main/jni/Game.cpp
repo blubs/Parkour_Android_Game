@@ -136,6 +136,24 @@ int Game::load_shaders ()
 	};
 	static_color_shader = new Shader("shaders/static_color.vert","shaders/static_color.frag",pt5,pn5,7);
 
+
+	//Solid shader (draws as fullbright single color)
+	//Test shader
+	GLuint pt6[] =
+	{
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_COLOR_ADD
+	};
+	const char *pn6[] =
+	{
+		"vert_pos",
+		"mvp",
+		"color"
+	};
+	solid_shader= new Shader("shaders/solid_color.vert","shaders/solid_color.frag",pt6,pn6,3);
+
+
 	return 1;
 }
 void Game::unload_shaders ()
@@ -145,6 +163,7 @@ void Game::unload_shaders ()
 	delete static_color_shader;
 	delete text_shader;
 	delete player_skin_shader;
+	delete solid_shader;
 }
 
 int Game::load_materials()
@@ -155,6 +174,7 @@ int Game::load_materials()
 	static_color_mat = new Material();
 	text_mat = new Material();
 	player_skin_mat = new Material();
+	solid_mat = new Material();
 
 	return 1;
 }
@@ -165,6 +185,7 @@ void Game::unload_materials()
 	delete skel_color_mat;
 	delete text_mat;
 	delete player_skin_mat;
+	delete solid_mat;
 }
 
 int Game::load_textures()
@@ -262,6 +283,7 @@ int Game::init_gl()
 	skel_color_shader->init_gl();
 	player_skin_shader->init_gl();
 	static_color_shader->init_gl();
+	solid_shader->init_gl();
 
 	//==================================== Loading textures =======================================
 	test_texture->init_gl();
@@ -291,6 +313,7 @@ void Game::term_gl()
 	skel_color_shader->term_gl();
 	static_color_shader->term_gl();
 	text_shader->term_gl();
+	solid_shader->term_gl();
 
 	//Terminating all loaded models
 	test_arms->term_gl();
@@ -444,6 +467,7 @@ void Game::start()
 	skel_color_mat->set_shader(skel_color_shader);
 	static_color_mat->set_shader(static_color_shader);
 	player_skin_mat->set_shader(player_skin_shader);
+	solid_mat->set_shader(solid_shader);
 
 	player_skin_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_NORMAL,(void*) tex_arm_nor);
 	player_skin_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_DIFFUSE,(void*) tex_arm_diff);
@@ -497,6 +521,11 @@ void Game::start()
 	camera->set_persp_view(90.0f * DEG_TO_RAD, screen_width,screen_height, 0.01f, 1000.0f);
 	camera->set_ortho_view(screen_width,screen_height,0.0001f,1.0f);
 
+	//Evaluating player bounding box triangle constants
+	player_bbox_tri_slope = tanf((90.0f - PLAYER_MAX_TURN_ANGLE) * DEG_TO_RAD);
+	player_bbox_tri_height = player_bbox_tri_slope * PLAYER_SIZE;
+
+
 	//Start of game logic code
 	buildings = new Building*[MAX_BUILDINGS];
 
@@ -549,16 +578,13 @@ char Game::clip_player_bbox(Vec3 p)
 	char result;
 
 	//Front of triangle
-	//TODO: calculate the following variables once and store them, not exactly the fastest calculation
-	float tri_slope = tanf((90.0f - PLAYER_MAX_TURN_ANGLE) * DEG_TO_RAD);
-	float tri_height = tri_slope * PLAYER_SIZE;
+	float rcorner_cmpr = -player_bbox_tri_slope * (efmodf(pos.x,GRID_SIZE)) + GRID_SIZE;
+	float lcorner_cmpr = player_bbox_tri_slope * (efmodf(pos.x,GRID_SIZE) - GRID_SIZE) + GRID_SIZE;
 
-	float lcorner_cmpr = -tri_slope * (fmodf(pos.x,GRID_SIZE)) + GRID_SIZE;
-	float rcorner_cmpr = tri_slope * (fmodf(pos.x,GRID_SIZE) - GRID_SIZE) + GRID_SIZE;
-
-	float mod_y = fmodf(pos.y,GRID_SIZE);
+	float mod_y = efmodf(pos.y,GRID_SIZE);
 	if(mod_y >= lcorner_cmpr)
 	{
+		LOGE("Checking front left voxel: pos(%f,%f), pos_mod(%f,%f), cmpr(%f)",pos.x,pos.y,efmodf(pos.x,GRID_SIZE),efmodf(pos.y,GRID_SIZE),lcorner_cmpr);
 		//Check front left voxel
 		result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
 		if(result != 0)
@@ -567,13 +593,14 @@ char Game::clip_player_bbox(Vec3 p)
 	}
 	if(mod_y >= rcorner_cmpr)
 	{
+		LOGE("Checking front right voxel: pos(%f,%f), pos_mod(%f,%f), cmpr(%f)",pos.x,pos.y,efmodf(pos.x,GRID_SIZE),efmodf(pos.y,GRID_SIZE),rcorner_cmpr);
 		//Check front right voxel
 		result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
 		if(result != 0)
 			return result;
 	}
 
-	result = current_building->is_solid_at(pos + Vec3(0,PLAYER_SIZE + tri_height,0));
+	result = current_building->is_solid_at(pos + Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0));
 	if(result != 0)
 		return result;
 
@@ -587,6 +614,15 @@ char Game::clip_player_bbox(Vec3 p)
 	if(result != 0)
 		return result;
 
+	//Mid right
+	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,0,0));
+	if(result != 0)
+		return result;
+	//Mid left
+	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,0,0));
+	if(result != 0)
+		return result;
+
 	//back right
 	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
 	if(result != 0)
@@ -596,6 +632,12 @@ char Game::clip_player_bbox(Vec3 p)
 	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0));
 	if(result != 0)
 		return result;
+
+	//Back center
+	result = current_building->is_solid_at(pos + Vec3(0,-PLAYER_SIZE,0));
+	if(result != 0)
+		return result;
+
 	return 0;
 	//TODO: make precedence array for which collision type takes higher precedence, we only return the clip type that has the highest precedence
 }
@@ -609,14 +651,15 @@ bool Game::move_player(Vec3 v)
 	float delta_z = v.z * Time::delta_time;
 
 	//Checking forward collisions
-	Vec3 test_pos = player->pos + Vec3(0,delta_y,0);
+	Vec3 forward_pos = player->pos + Vec3(0,delta_y,0);
 
-	char clip = clip_player_bbox(test_pos);
-	LOGE("forward clip: %d",clip);
+	char clip = clip_player_bbox(forward_pos);
+	if(clip)
+		LOGE("forward clip: %d",clip);
 
 	if(clip == 0)
 	{
-		player->pos.y = test_pos.y;
+		player->pos.y = forward_pos.y;
 	}
 	else
 	{
@@ -624,19 +667,24 @@ bool Game::move_player(Vec3 v)
 	}
 
 	//Checking sideways collisions
-	test_pos = player->pos + Vec3(delta_x,0,0);
+	Vec3 side_pos = player->pos + Vec3(delta_x,0,0);
 
-	clip = clip_player_bbox(test_pos);
-	LOGE("side clip: %d",clip);
+
+
+	clip = clip_player_bbox(side_pos);
+	if(clip)
+		LOGE("side clip: %d",clip);
 
 	if(clip == 0)
 	{
-		player->pos.x = test_pos.x;
+		player->pos.x = side_pos.x;
 	}
 	else
 	{
 		//TODO: we collided! handle death
 	}
+
+	LOGE("Pos:(%f,%f), Forward Pos(%f,%f), Right Pos(%f,%f)",player->pos.x,player->pos.y,forward_pos.x,forward_pos.y,side_pos.x,side_pos.y);
 
 
 	//Don't do collision detection in z-axis (we let PLAYER_STATE_FALLING logic handle that)
@@ -709,12 +757,14 @@ void Game::update()
 	static bool ad_visible = false;
 	if(input_x[4] < 0.10f && input_touching[4] && ad_visible)
 	{
-		jnii->hide_ad();
+		//jnii->hide_ad();
+		jnii->hide_keyboard();
 		ad_visible = false;
 	}
 	else if(input_x[4] > 0.90f && input_touching[4] && !ad_visible)
 	{
-		jnii->show_ad();
+		//jnii->show_ad();
+		jnii->show_keyboard();
 		ad_visible = true;
 	}
 	//============================
@@ -739,7 +789,7 @@ void Game::update()
 	//player->angles.y = -(input_x-0.5f)*TWO_PI;
 	//player->angles.x = (input_y-0.5f)*PI;
 
-	if(player_state == PLAYER_STATE_NOCLIP)
+	if(player_state == PLAYER_STATE_NOCLIP || player_state == PLAYER_STATE_CAM_FLY)
 	{
 		//zones:
 		//look left/right/up/down
@@ -753,6 +803,13 @@ void Game::update()
 		//Camera angular velocity
 		float cam_ang_vel = 140.0f * DEG_TO_RAD;
 
+		Entity* move_ent = NULL;
+
+		if(player_state == PLAYER_STATE_NOCLIP)
+			move_ent = player;
+		else
+			move_ent = camera;
+
 		//Checking input from all fingers:
 		for(int i = 0; i < MAX_INPUT_TOUCHES; i++)
 		{
@@ -761,43 +818,64 @@ void Game::update()
 			float x = input_x[i];
 			float y = input_y[i];
 
+			float sx = input_start_x[i];
+			float sy = input_start_y[i];
+
 			//top right corner: go back to player run mode
 			if(x >= 0.66f)
 			{
 				if(y >= 0.85f)
 				{
 					input_touching[i] = false;
-					player_state = PLAYER_STATE_RUNNING;
-					player->angles.x = 0.0f;
-					player->angles.y = 0.0f;
-					player->angles.z = 0.0f;
-					if(player->pos.z <= current_building->active_floor->altitude)
+					if(player_state == PLAYER_STATE_NOCLIP)
 					{
-						player->pos.z = current_building->active_floor->altitude + 5.0f;
+						player_state = PLAYER_STATE_CAM_FLY;
+						player->angles = Vec3::ZERO();
+						if(player->pos.z <= current_building->active_floor->altitude)
+						{
+							player->pos.z = current_building->active_floor->altitude+0.01f;
+						}
+						if(player->pos.x >= current_building->active_floor->global_maxs.x - 0.5f)
+						{
+							player->pos.x = current_building->active_floor->global_maxs.x - 1.0f;
+						}
+						if(player->pos.x <= current_building->active_floor->global_mins.x + 0.5f)
+						{
+							player->pos.x = current_building->active_floor->global_mins.x + 1.0f;
+						}
+
+						if(player->pos.y <= current_building->active_floor->global_mins.y + 0.5f)
+						{
+							player->pos.y = current_building->active_floor->global_mins.y + 1.0f;
+						}
+						return;
 					}
-					if(player->pos.x >= current_building->active_floor->global_maxs.x - 0.5f)
+					else
 					{
-						player->pos.x = current_building->active_floor->global_maxs.x - 1.0f;
-					}
-					if(player->pos.x <= current_building->active_floor->global_mins.x + 0.5f)
-					{
-						player->pos.x = current_building->active_floor->global_mins.x + 1.0f;
+						player_state = PLAYER_STATE_RUNNING;
+						return;
 					}
 
-					if(player->pos.y <= current_building->active_floor->global_mins.y + 0.5f)
-					{
-						player->pos.y = current_building->active_floor->global_mins.y + 1.0f;
-					}
 					break;
 				}
 			}
-			//top left corner to test collision
+			//top left corner
 			if(x <= 0.33f)
 			{
 				if(y >= 0.85f)
 				{
-					input_touching[i] = false;
-					move_player(Vec3::ZERO());
+					//Test collision
+					if(player_state == PLAYER_STATE_NOCLIP)
+					{
+						input_touching[i] = false;
+						move_player(Vec3::ZERO());
+					}
+					//Reset camera offset
+					if(player_state == PLAYER_STATE_CAM_FLY)
+					{
+						camera->pos = Vec3::ZERO();
+						camera->angles = Vec3::ZERO();
+					}
 				}
 			}
 
@@ -806,12 +884,14 @@ void Game::update()
 			{
 				if(y < 0.33f)
 				{
-					float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);
-					float delta_x = -1.0f * fmaxf(fminf((x - 0.75f) / 0.25f,1.0f),-1.0f);
+					//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
+					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
+					//float delta_x = -1.0f * fmaxf(fminf((x - 0.75f) / 0.25f,1.0f),-1.0f);//measured from area center
+					float delta_x = -1.0f * fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
 					delta_x *= cam_ang_vel;
 					delta_y *= cam_ang_vel;
-					player->angles.x += delta_y * Time::delta_time;
-					player->angles.y += delta_x * Time::delta_time;
+					move_ent->angles.x += delta_y * Time::delta_time;
+					move_ent->angles.y += delta_x * Time::delta_time;
 					continue;
 				}
 			}
@@ -820,13 +900,15 @@ void Game::update()
 			{
 				if(y < 0.33f)
 				{
-					float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);
-					float delta_x = fmaxf(fminf((x - 0.25f) / 0.25f,1.0f),-1.0f);
+					//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
+					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
+					//float delta_x = fmaxf(fminf((x - 0.25f) / 0.25f,1.0f),-1.0f);//measured from area center
+					float delta_x = fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
 					delta_x *= cam_vel;
 					delta_y *= cam_vel;
 					Vec3 forward, right, up;
-					player->angles.angles_to_dirs(&forward,&right,&up);
-					player->pos = player->pos + (forward * delta_y * Time::delta_time) + (right * delta_x * Time::delta_time);
+					move_ent->angles.angles_to_dirs(&forward,&right,&up);
+					move_ent->pos = move_ent->pos + (forward * delta_y * Time::delta_time) + (right * delta_x * Time::delta_time);
 					continue;
 				}
 			}
@@ -836,11 +918,12 @@ void Game::update()
 			{
 				if(y >= 0.33f && y < 0.66f)
 				{
-					float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);
+					//float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);//measured from area center
+					float delta_y = fminf((y - sy) / 0.17f,1.0f);//measured from touch start pos
 					delta_y *= cam_vel;
 					Vec3 forward, right, up;
-					player->angles.angles_to_dirs(&forward,&right,&up);
-					player->pos = player->pos + (up * delta_y * Time::delta_time);
+					move_ent->angles.angles_to_dirs(&forward,&right,&up);
+					move_ent->pos = move_ent->pos + (up * delta_y * Time::delta_time);
 					continue;
 				}
 			}
@@ -869,7 +952,7 @@ void Game::update()
 			player->angles.x = 0.0f;
 			player->angles.y = 0.0f;
 			player->angles.z = 0.0f;
-			camera->angles = Vec3::ZERO();
+			camera->viewbob_angles = Vec3::ZERO();
 			camera->viewbob_vel = Vec3::ZERO();
 			return;
 		}
@@ -1128,14 +1211,14 @@ void Game::render()
 
 
 	//Test UI image
-	//test_img->render(camera->ortho_proj_m);
+	test_img->render(camera->ortho_proj_m);
 
 	//Test UI Text
 	//char time_str[20];
 	//snprintf(time_str,20,"t=%f",t);
 	//test_text->set_text(time_str);
 
-	if(player_state != PLAYER_STATE_NOCLIP)
+	if(player_state != PLAYER_STATE_NOCLIP && player_state != PLAYER_STATE_CAM_FLY)
 	{
 		//"Edit	Reset Vbob"
 		if(viewbob_menu_state == 0)
@@ -1162,5 +1245,107 @@ void Game::render()
 		test_text->render(camera->ortho_proj_m);
 	}
 
-	UI_Text::draw_text("hi mom", Vec3(-screen_width * 0.4f,screen_height * 0.4f,0), Vec3(0,0,0), 100, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+	if(player_state == PLAYER_STATE_NOCLIP)
+	{
+		UI_Text::draw_text("Mode:\n NOCLIP", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+	}
+	if(player_state == PLAYER_STATE_CAM_FLY)
+	{
+		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+	}
+
+	//============== Rendering all voxel collision maps ==================
+	Vec3 building_org = current_building->active_floor->global_mins + Vec3(0,0,0.5f)*GRID_SIZE;
+	Vec3 tile_pos;
+	Vec3 voxel_pos;
+	char voxel_rank;
+
+	glLineWidth(4.0f);
+
+	const float voxel_box[] =
+	{
+		//Top of box
+		0,0,GRID_SIZE,		0,GRID_SIZE,GRID_SIZE,
+		0,0,GRID_SIZE,		GRID_SIZE,0,GRID_SIZE,
+
+		//Box x
+		0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+		GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	};
+
+	solid_mat->bind_material();
+	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_box);
+	Mat4 vox_trans;
+
+	for(int i = 0; i < current_building->active_floor->width; i++)
+	{
+		for(int j = 0; j < current_building->active_floor->length; j++)
+		{
+			tile_pos = building_org + Vec3(i*TILE_SIZE,j*TILE_SIZE,0.0f);
+			for(int k = 0; k < TILE_VOXEL_DIMS; k++)
+			{
+				for(int l = 0; l < TILE_VOXEL_DIMS; l++)
+				{
+					voxel_rank = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
+
+					if(voxel_rank == 0)
+					{
+						continue;
+					}
+					if(voxel_rank == 1)
+					{
+						float color[] = {0.75f,0.25f,0.25f,1.0f};
+						solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+					}
+					voxel_pos = tile_pos + Vec3(k*GRID_SIZE,l*GRID_SIZE,0.0f);
+					vox_trans = vp * Mat4::TRANSLATE(voxel_pos);
+					solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) vox_trans.m);
+					glDrawArrays(GL_LINES, 0, 8);
+				}
+			}
+		}
+	}
+	//====================================================================
+
+	//=============== Rendering Player bounding box ======================
+	//Drawing bounding box
+	const float bounding_box[] =
+	{
+		//Box portion
+		//Bottom of box
+		-PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,PLAYER_SIZE,0.0f,
+		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	PLAYER_SIZE,PLAYER_SIZE,0.0f,
+		PLAYER_SIZE,PLAYER_SIZE,0.0f,		PLAYER_SIZE,-PLAYER_SIZE,0.0f,
+		PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,-PLAYER_SIZE,0.0f,
+		//Top of box
+		-PLAYER_SIZE,-PLAYER_SIZE,2.0f,	-PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		-PLAYER_SIZE,PLAYER_SIZE,2.0f,	PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,PLAYER_SIZE,2.0f,		PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,-PLAYER_SIZE,2.0f,	-PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+		//Corners of box
+		-PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	-PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,PLAYER_SIZE,0.0f,		PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,-PLAYER_SIZE,0.0f,	PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+
+		//Triangle portion
+		//Bottom of triangle
+		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,
+		PLAYER_SIZE,PLAYER_SIZE,0.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,
+		//Top of triangle
+		-PLAYER_SIZE,PLAYER_SIZE,2.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+		PLAYER_SIZE,PLAYER_SIZE,2.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+		//Edge of triangle
+		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+	};
+
+	solid_mat->bind_material();
+	Mat4 bbox_pos = vp * Mat4::TRANSLATE(player->pos);
+	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) bbox_pos.m);//TODO: get player pos
+
+	float color[] = {0.0f,1.0f,0.0f,1.0f};
+	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
+	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+	glDrawArrays(GL_LINES, 0, 34);
+	//====================================================================
 }
