@@ -584,7 +584,6 @@ char Game::clip_player_bbox(Vec3 p)
 	float mod_y = efmodf(pos.y,GRID_SIZE);
 	if(mod_y >= lcorner_cmpr)
 	{
-		LOGE("Checking front left voxel: pos(%f,%f), pos_mod(%f,%f), cmpr(%f)",pos.x,pos.y,efmodf(pos.x,GRID_SIZE),efmodf(pos.y,GRID_SIZE),lcorner_cmpr);
 		//Check front left voxel
 		result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
 		if(result != 0)
@@ -593,7 +592,6 @@ char Game::clip_player_bbox(Vec3 p)
 	}
 	if(mod_y >= rcorner_cmpr)
 	{
-		LOGE("Checking front right voxel: pos(%f,%f), pos_mod(%f,%f), cmpr(%f)",pos.x,pos.y,efmodf(pos.x,GRID_SIZE),efmodf(pos.y,GRID_SIZE),rcorner_cmpr);
 		//Check front right voxel
 		result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
 		if(result != 0)
@@ -654,8 +652,6 @@ bool Game::move_player(Vec3 v)
 	Vec3 forward_pos = player->pos + Vec3(0,delta_y,0);
 
 	char clip = clip_player_bbox(forward_pos);
-	if(clip)
-		LOGE("forward clip: %d",clip);
 
 	if(clip == 0)
 	{
@@ -672,8 +668,6 @@ bool Game::move_player(Vec3 v)
 
 
 	clip = clip_player_bbox(side_pos);
-	if(clip)
-		LOGE("side clip: %d",clip);
 
 	if(clip == 0)
 	{
@@ -684,12 +678,8 @@ bool Game::move_player(Vec3 v)
 		//TODO: we collided! handle death
 	}
 
-	LOGE("Pos:(%f,%f), Forward Pos(%f,%f), Right Pos(%f,%f)",player->pos.x,player->pos.y,forward_pos.x,forward_pos.y,side_pos.x,side_pos.y);
-
-
 	//Don't do collision detection in z-axis (we let PLAYER_STATE_FALLING logic handle that)
 	player->pos.z += delta_z;
-
 
 	return true;
 }
@@ -822,9 +812,9 @@ void Game::update()
 			float sy = input_start_y[i];
 
 			//top right corner: go back to player run mode
-			if(x >= 0.66f)
+			if(sx >= 0.66f)
 			{
-				if(y >= 0.85f)
+				if(sy >= 0.85f)
 				{
 					input_touching[i] = false;
 					if(player_state == PLAYER_STATE_NOCLIP)
@@ -855,14 +845,12 @@ void Game::update()
 						player_state = PLAYER_STATE_RUNNING;
 						return;
 					}
-
-					break;
 				}
 			}
 			//top left corner
-			if(x <= 0.33f)
+			if(sx <= 0.33f)
 			{
-				if(y >= 0.85f)
+				if(sy >= 0.85f)
 				{
 					//Test collision
 					if(player_state == PLAYER_STATE_NOCLIP)
@@ -880,9 +868,9 @@ void Game::update()
 			}
 
 			//bottom third right half is camera view direction
-			if(x > 0.5f)
+			if(sx > 0.5f)
 			{
-				if(y < 0.33f)
+				if(sy < 0.33f)
 				{
 					//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
 					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
@@ -896,9 +884,9 @@ void Game::update()
 				}
 			}
 			//bottom third left half is camera movement
-			if(x < 0.5f)
+			if(sx < 0.5f)
 			{
-				if(y < 0.33f)
+				if(sy < 0.33f)
 				{
 					//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
 					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
@@ -914,9 +902,9 @@ void Game::update()
 			}
 
 			//second third left half is camera height
-			if(x < 0.5f)
+			if(sx < 0.5f)
 			{
-				if(y >= 0.33f && y < 0.66f)
+				if(sy >= 0.33f && sy < 0.66f)
 				{
 					//float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);//measured from area center
 					float delta_y = fminf((y - sy) / 0.17f,1.0f);//measured from touch start pos

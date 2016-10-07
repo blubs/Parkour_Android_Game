@@ -159,7 +159,7 @@ public class Launcher extends NativeActivity
 	public void hideKeyboard()
 	{
 		InputMethodManager keyboard = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-		keyboard.toggleSoftInput(0,0);
+		keyboard.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY,0);
 	}
 
 	public void loge(String msg)

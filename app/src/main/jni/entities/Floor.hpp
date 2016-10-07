@@ -148,7 +148,7 @@ public:
 		//get tile indices for the position
 		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
 		{
-			LOGE("X or Y coord is out of bounds: coords:(%f,%f), mins: (%f,%f), maxs: (%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
 			return Collision_Map::VOX_SOLID;
 		}
 
@@ -162,7 +162,7 @@ public:
 
 		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
 		{
-			LOGE("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
+			LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
 			return Collision_Map::VOX_EMPTY;
 		}
 
@@ -171,7 +171,7 @@ public:
 
 		if(vox_x < 0 || vox_y < 0 || vox_x >= TILE_VOXEL_DIMS || vox_y >= TILE_VOXEL_DIMS)
 		{
-			LOGE("Warning: tried reaching out of bounds voxel: (index: (%d x %d))",vox_x,vox_y);
+			LOGW("Warning: tried reaching out of bounds voxel: (index: (%d x %d))",vox_x,vox_y);
 			return Collision_Map::VOX_EMPTY;
 		}
 
