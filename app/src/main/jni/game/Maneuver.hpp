@@ -23,18 +23,28 @@ class Keyframe
 	float lerp_data;
 
 	//Turn the player towards a direction
-	int face_something;
-	Vec3 face_position;//x & y coordinates of point that player faces as we head towards keyframe
+	int orient;
+	Vec3 orient_pos;//x & y coordinates of point that player faces as we head towards keyframe
 
 	//Animation to play starting at this keyframe
-	int animation;
+	int anim;
 
 	//Special keyframe data (for letting the player know to do special things)
-	int special_flag;
+	int spec_flag;
 
-	void set_info(Vec3 _mins, Vec3 _maxs, Vec3 )
+	void set_info(Vec3 _mins, Vec3 _maxs, float _y_vel, float _dy_vel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _spec_flag)
 	{
-
+		this->mins = _mins;
+		this->maxs = _maxs;
+		this->y_vel = _y_vel;
+		this->dy_vel = _dy_vel;
+		this->min_y_vel = _min_y_vel;
+		this->lerp_type = _lerp_type;
+		this->lerp_data = _lerp_data;
+		this->orient = _orient;
+		this->orient_pos = _orient_pos;
+		this->anim = _anim;
+		this->spec_flag = _spec_flag;
 	}
 };
 
@@ -42,6 +52,7 @@ class Maneuver
 {
 public:
 	Keyframe keyframes[];
+	//what variable holds the input required for this maneuver?
 };
 
 class Traversal : Maneuver
