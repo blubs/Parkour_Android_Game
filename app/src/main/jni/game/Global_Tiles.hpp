@@ -53,7 +53,7 @@ public:
 
 	Interior_Variant* variants[1];
 
-	Grid_Tile* tiles[TILE_TYPES];
+	Grid_Tile** tiles[TILE_TYPES];
 
 	//Holds the number of variants per type (also the length of each array pointed to by tiles pointer array)
 	int type_variant_counts[TILE_TYPES];

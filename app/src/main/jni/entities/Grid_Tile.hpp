@@ -7,6 +7,7 @@
 
 
 #include "../engine/graphics/Static_Model.hpp"
+#include "../game/Maneuver.hpp"
 
 //Size of tiles (6 units x 6 units x 6 units)
 #define TILE_SIZE 3.5f
@@ -41,10 +42,16 @@ class Grid_Tile
 public:
 	//TODO: store maneuver data
 	//TODO: store traversal data
+	Maneuver* maneuvers[];
+	int maneuver_count;
+
+	Traversal* traversals[];
+	int traversal_count;
+
 	Static_Model* model;
 	Collision_Map* coll_map;
 
-	Grid_Tile();
+	Grid_Tile(int man_count, int trav_count);
 	~Grid_Tile();
 };
 

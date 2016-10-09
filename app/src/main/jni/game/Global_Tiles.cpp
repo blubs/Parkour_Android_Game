@@ -9,9 +9,9 @@ Interior_Style::Interior_Style()
 {
 	variants[0] = new Interior_Variant();
 
-	tiles[0] = new Grid_Tile[2];
+	tiles[0] = new Grid_Tile*[2];
 	type_variant_counts[0] = 2;
-	tiles[1] = new Grid_Tile[3];
+	tiles[1] = new Grid_Tile*[3];
 	type_variant_counts[1] = 3;
 
 	//TODO: populate tile models and collision maps
@@ -31,33 +31,33 @@ int Global_Tiles::init_data()
 {
 	GLuint shader_ptypes[] =
 	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_VERT_UV2,
-	Shader::PARAM_VERT_NORMALS,
-	Shader::PARAM_VERT_BINORMALS,
-	Shader::PARAM_VERT_TANGENTS,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_M_IT_MATRIX,
-	Shader::PARAM_TEXTURE_DIFFUSE,
-	Shader::PARAM_TEXTURE_NORMAL,
-	Shader::PARAM_TEXTURE_LIGHTMAP
-	//,Shader::PARAM_COLOR_MULT
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_VERT_UV2,
+		Shader::PARAM_VERT_NORMALS,
+		Shader::PARAM_VERT_BINORMALS,
+		Shader::PARAM_VERT_TANGENTS,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_IT_MATRIX,
+		Shader::PARAM_TEXTURE_DIFFUSE,
+		Shader::PARAM_TEXTURE_NORMAL,
+		Shader::PARAM_TEXTURE_LIGHTMAP
+		//,Shader::PARAM_COLOR_MULT
 	};
 	const char *shader_pnames[] =
 	{
-	"vert_pos",
-	"vert_uv_1",
-	"vert_uv_2",
-	"vert_nor",
-	"vert_binor",
-	"vert_tan",
-	"mvp",
-	"m_IT",
-	"tex_diff",
-	"tex_nor",
-	"tex_lm"
-	//,"color"
+		"vert_pos",
+		"vert_uv_1",
+		"vert_uv_2",
+		"vert_nor",
+		"vert_binor",
+		"vert_tan",
+		"mvp",
+		"m_IT",
+		"tex_diff",
+		"tex_nor",
+		"tex_lm"
+		//,"color"
 	};
 
 	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,11);
@@ -89,12 +89,12 @@ Global_Tiles::Global_Tiles()
 	//style[0]->type[0]->collision_map = new Collision_Map();
 
 	//For now just hold the 2 tiles explicitly
-	test_tiles[TILE_TYPE_EMPT] = new Grid_Tile();
-	test_tiles[TILE_TYPE_SOLD] = new Grid_Tile();
+	test_tiles[TILE_TYPE_EMPT] = new Grid_Tile(0,0);
+	test_tiles[TILE_TYPE_SOLD] = new Grid_Tile(0,0);
 
 	//Two obstacle test tiles
-	test_tiles[2] = new Grid_Tile();
-	test_tiles[3] = new Grid_Tile();
+	test_tiles[2] = new Grid_Tile(1,0);
+	test_tiles[3] = new Grid_Tile(1,0);
 
 	//Setting solid tile's voxels as solid
 	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
@@ -107,7 +107,6 @@ Global_Tiles::Global_Tiles()
 	test_tiles[TILE_TYPE_EMPT]->model = new Static_Model("models/tiles/style0/empt0.stmf");
 	test_tiles[TILE_TYPE_SOLD]->model = new Static_Model("models/tiles/style0/sold0.stmf");
 
-
 	test_tiles[2]->model = new Static_Model("models/tiles/style0/test_vent.stmf");
 	test_tiles[3]->model = new Static_Model("models/tiles/style0/test_vent2.stmf");
 
@@ -118,6 +117,12 @@ Global_Tiles::Global_Tiles()
 		test_tiles[3]->coll_map->voxel[i][3] = Collision_Map::VOX_SOLID;
 	}
 
+	//Setting up test maneuver
+	test_tiles[2]->maneuvers[0] = new Maneuver(4);//4 keyframes
+	test_tiles[2]->maneuvers[0]->keyframes[0].set_info(Vec3(1,0,0),Vec3(2,2,0),6,0,0,1,0,0,Vec3::ZERO(),0,0);
+	//TODO: continue the rest of the frames
+	//(Vec3 _mins, Vec3 _maxs, float _y_vel, float _dy_vel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _spec_flag)
+
 	window_model = new Static_Model("models/windows/style0.stmf");
 	window_int_model = new Static_Model("models/windows/style0_int.stmf");
 
@@ -125,27 +130,27 @@ Global_Tiles::Global_Tiles()
 
 	GLuint shader_ptypes[] =
 	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_VERT_NORMALS,
-	Shader::PARAM_VERT_BINORMALS,
-	Shader::PARAM_VERT_TANGENTS,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_M_IT_MATRIX,
-	Shader::PARAM_TEXTURE_DIFFUSE,
-	Shader::PARAM_TEXTURE_NORMAL
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_VERT_NORMALS,
+		Shader::PARAM_VERT_BINORMALS,
+		Shader::PARAM_VERT_TANGENTS,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_IT_MATRIX,
+		Shader::PARAM_TEXTURE_DIFFUSE,
+		Shader::PARAM_TEXTURE_NORMAL
 	};
 	const char *shader_pnames[] =
 	{
-	"vert_pos",
-	"vert_uv_1",
-	"vert_nor",
-	"vert_binor",
-	"vert_tan",
-	"mvp",
-	"m_IT",
-	"tex_diff",
-	"tex_nor"
+		"vert_pos",
+		"vert_uv_1",
+		"vert_nor",
+		"vert_binor",
+		"vert_tan",
+		"mvp",
+		"m_IT",
+		"tex_diff",
+		"tex_nor"
 	};
 	window_shad = new Shader("shaders/bldg_ext.vert","shaders/bldg_ext.frag",shader_ptypes,shader_pnames,9);
 
@@ -156,29 +161,29 @@ Global_Tiles::Global_Tiles()
 
 	GLuint ptypes2[] =
 	{
-	Shader::PARAM_VERTICES,
-	Shader::PARAM_VERT_UV1,
-	Shader::PARAM_VERT_NORMALS,
-	Shader::PARAM_VERT_BINORMALS,
-	Shader::PARAM_VERT_TANGENTS,
-	Shader::PARAM_MVP_MATRIX,
-	Shader::PARAM_M_IT_MATRIX,
-	Shader::PARAM_TEXTURE_DIFFUSE,
-	Shader::PARAM_TEXTURE_NORMAL,
-	Shader::PARAM_TEXTURE_MISC
+		Shader::PARAM_VERTICES,
+		Shader::PARAM_VERT_UV1,
+		Shader::PARAM_VERT_NORMALS,
+		Shader::PARAM_VERT_BINORMALS,
+		Shader::PARAM_VERT_TANGENTS,
+		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_IT_MATRIX,
+		Shader::PARAM_TEXTURE_DIFFUSE,
+		Shader::PARAM_TEXTURE_NORMAL,
+		Shader::PARAM_TEXTURE_MISC
 	};
 	const char *pnames2[] =
 	{
-	"vert_pos",
-	"vert_uv_1",
-	"vert_nor",
-	"vert_binor",
-	"vert_tan",
-	"mvp",
-	"m_IT",
-	"tex_diff",
-	"tex_nor",
-	"tex_misc"
+		"vert_pos",
+		"vert_uv_1",
+		"vert_nor",
+		"vert_binor",
+		"vert_tan",
+		"mvp",
+		"m_IT",
+		"tex_diff",
+		"tex_nor",
+		"tex_misc"
 	};
 	window_int_shad = new Shader("shaders/bldgwin_int.vert","shaders/bldgwin_int.frag",ptypes2,pnames2,10);
 

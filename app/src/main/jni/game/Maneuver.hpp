@@ -9,6 +9,7 @@
 
 class Keyframe
 {
+public:
 	//Boundary for executing keyframe
 	Vec3 mins;
 	Vec3 maxs;
@@ -52,12 +53,30 @@ class Maneuver
 {
 public:
 	Keyframe keyframes[];
-	//what variable holds the input required for this maneuver?
+	int keyframe_count = 0;
+	int input_required = 0;
+
+	Maneuver( int frame_count)
+	{
+		keyframe_count = frame_count;
+		keyframes = new Keyframe[frame_count];
+	}
+
+	~Maneuver()
+	{
+		delete[] keyframes;
+	}
+
 };
 
 class Traversal : Maneuver
 {
 public:
+	//TODO: what misc data is required for traversal?
+	Traversal(int frame_count) : Maneuver(frame_count)
+	{
+
+	}
 };
 
 #endif //PARKOUR_MANEUVER_HPP

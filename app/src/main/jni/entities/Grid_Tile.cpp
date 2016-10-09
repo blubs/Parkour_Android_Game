@@ -23,14 +23,31 @@ char Collision_Map::get_vox_at(int x, int y)
 	return voxel[x][y];
 }
 
-Grid_Tile::Grid_Tile()
+Grid_Tile::Grid_Tile(int man_count, int trav_count)
 {
 	//model = new Static_Model("filename");
 	//have to instantiate at load
 	coll_map = new Collision_Map();
+
+	maneuver_count = man_count;
+	traversal_count = trav_count;
+	maneuvers = new Maneuver*[man_count];
+	traversals = new Traversal*[trav_count];
 }
 Grid_Tile::~Grid_Tile()
 {
 	//delete model on unload
 	delete coll_map;
+
+	for(int i = 0; i < maneuver_count; i++)
+	{
+		delete maneuvers[i];
+	}
+	for(int i = 0; i < traversal_count; i++)
+	{
+		delete traversals[i];
+	}
+
+	delete[] maneuvers;
+	delete[] traversals;
 }
