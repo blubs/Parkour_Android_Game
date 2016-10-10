@@ -119,7 +119,32 @@ Global_Tiles::Global_Tiles()
 
 	//Setting up test maneuver
 	test_tiles[2]->maneuvers[0] = new Maneuver(4);//4 keyframes
-	test_tiles[2]->maneuvers[0]->keyframes[0].set_info(Vec3(1,0,0),Vec3(2,2,0),6,0,0,1,0,0,Vec3::ZERO(),0,0);
+
+	//Test obstacle: has activate area from (1,0) to (2,2), then moves up way high, then moves back down, then releases at regular height.
+	//4 frames.
+	Keyframe** frames = test_tiles[2]->maneuvers[0]->keyframes;
+
+
+	//frames[0].set_info(Vec3(1,0,0),Vec3(2,2,0),6,0,0,Keyframe::LERP_LINEAR,0,Keyframe::ORIENT_NONE,Vec3::ZERO(),0,0);
+
+	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2,2,0));
+	frames[0]->set_speed(6,0,0);//replace 6 with a player speed var? FIXME I can't just pull random numbers out of nowhere
+	frames[0]->set_lerp(Keyframe::LERP_LINEAR,0);//redundant (this is default)
+	frames[0]->set_orient(Keyframe::ORIENT_NONE,Vec3::ZERO());//redundant (this is default)
+	frames[0]->set_anim(0);//redundant (this is default)
+	frames[0]->set_specflag(0);//redundant (this is default)
+
+	//Now for the next frames, omitting redundant calls
+	frames[1]->set_bounds(Vec3(1,2.1,5),Vec3(1,2.1,5));
+	frames[1]->set_speed(3,0,0);
+
+	frames[2]->set_bounds(Vec3(3,4,-4),Vec3(3,4,-4));
+	frames[2]->set_speed(2,0,0);
+
+	frames[3]->set_bounds(Vec3(1.5,5,0),Vec3(2.0,5,0));
+	frames[3]->set_speed(1,0,0);
+
+
 	//TODO: continue the rest of the frames
 	//(Vec3 _mins, Vec3 _maxs, float _y_vel, float _dy_vel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _spec_flag)
 

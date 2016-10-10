@@ -42,10 +42,10 @@ class Grid_Tile
 public:
 	//TODO: store maneuver data
 	//TODO: store traversal data
-	Maneuver* maneuvers[];
+	Maneuver** maneuvers;
 	int maneuver_count;
 
-	Traversal* traversals[];
+	Traversal** traversals;
 	int traversal_count;
 
 	Static_Model* model;

@@ -41,6 +41,7 @@ public:
 	//For convenience/speed, we're going to hold an array of pointers to models and collision maps
 	Collision_Map* tile_coll_map[MAX_WIDTH][MAX_LENGTH];
 	Static_Model* tile_model[MAX_WIDTH][MAX_LENGTH];
+	Grid_Tile* tile_object[MAX_WIDTH][MAX_LENGTH];
 
 	Floor()
 	{
@@ -93,8 +94,9 @@ public:
 				//TODO: get random variant number of this type
 				tile_variant[i][j] = 0;
 				//Setting references to models and collision maps
-				tile_coll_map[i][j] = Global_Tiles::instance->test_tiles[ttype]->coll_map;
-				tile_model[i][j] = Global_Tiles::instance->test_tiles[ttype]->model;
+				tile_object[i][j] = Global_Tiles::instance->test_tiles[ttype];
+				tile_coll_map[i][j] = tile_object[i][j]->coll_map;
+				tile_model[i][j] = tile_object[i][j]->model;
 			}
 		}
 	}
@@ -155,10 +157,8 @@ public:
 		//finding player pos relative to left near corner of floor
 		p = p - global_mins;
 
-		Vec3 vox_p = Vec3(efmodf(p.x,TILE_SIZE),efmodf(p.y,TILE_SIZE),0);
-
-		int tile_x = (int) floorf((p.x - vox_p.x)/TILE_SIZE);
-		int tile_y = (int) floorf((p.y - vox_p.y)/TILE_SIZE);
+		int tile_x = (int) floorf(p.x/TILE_SIZE);
+		int tile_y = (int) floorf(p.y/TILE_SIZE);
 
 		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
 		{
@@ -166,6 +166,7 @@ public:
 			return Collision_Map::VOX_EMPTY;
 		}
 
+		Vec3 vox_p = Vec3(efmodf(p.x,TILE_SIZE),efmodf(p.y,TILE_SIZE),0);
 		int vox_x = (int) (floorf(vox_p.x/GRID_SIZE));
 		int vox_y = (int) (floorf(vox_p.y/GRID_SIZE));
 
@@ -194,6 +195,106 @@ public:
 		if(p.x < global_mins.x || p.x > global_maxs.x)
 			return true;
 		return false;
+	}
+
+	//	Returns a maneuver if there exists a maneuver in the this floor's tileset such that:
+	//	(the input required to start the maneuver is input_type) AND (the player is within the bounding box required to start the maneuver)
+	//	returns NULL if no such tile exists
+
+	//==== Quick note on what tiles we have to check ====
+	//Previously, the 1st keyframe of a maneuver had to lie within that tile
+	//But that is no longer the case
+
+	//As a rule of thumb, the start of the maneuver must lie within the tile itself, or the tile before it
+	//so for a given player position, we must check the tile the player is on and the tile after it (+1 in y direction)
+	//=====================================
+
+	Maneuver* input_to_maneuver(Vec3 pos, int input_type)
+	{
+		//position given is in floor space, 0,0 being near left corner
+		//get tile indices for the position
+		if(is_x_out_of_bounds(pos) || is_y_out_of_bounds(pos))
+		{
+			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",pos.x,pos.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+			return NULL;
+		}
+
+		//finding player pos relative to left near corner of floor
+		Vec3 floor_pos = pos - global_mins;
+
+
+		int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
+		int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
+
+		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
+		{
+			LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
+			return Collision_Map::VOX_EMPTY;
+		}
+
+		//Checking the tile the player is on
+		Vec3 mins;
+		Vec3 maxs;
+		Maneuver* man = NULL;
+
+		//Getting player pos relative to the tile
+		Vec3 p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
+		Grid_Tile* tile = tile_object[tile_x][tile_y];
+
+		for(int i = 0; i < tile->maneuver_count; i++)
+		{
+			man = tile->maneuvers[i];
+			//If we have the correct input
+			if(input_type == man->input_required)
+			{
+				//If we are in the correct area
+				mins = man->keyframes[0]->mins;
+				maxs = man->keyframes[0]->maxs;
+				if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
+				{
+					return man;
+				}
+			}
+		}
+
+		//Checking the next tile
+		tile_y++;
+
+		if(tile_y >= length)
+		{
+			//There is no tile after
+			return NULL;
+		}
+
+		//Getting player pos relative to the tile
+		p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
+		tile = tile_object[tile_x][tile_y];
+
+		for(int i = 0; i < tile->maneuver_count; i++)
+		{
+			man = tile->maneuvers[i];
+			//If we have the correct input
+			if(input_type == man->input_required)
+			{
+				//If we are in the correct area
+				mins = man->keyframes[0]->mins;
+				maxs = man->keyframes[0]->maxs;
+				if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
+				{
+					return man;
+				}
+			}
+		}
+
+		return NULL;
+	}
+	//Returns the global tile position that p lies on
+	Vec3 get_tile_ofs_at_pos(Vec3 p)
+	{
+		p = p - global_mins;
+		p = Vec3(floorf(p.x/TILE_SIZE) * TILE_SIZE,floorf(p.y/TILE_SIZE) * TILE_SIZE,0);
+		p = p + global_mins;
+		return p;
 	}
 };
 

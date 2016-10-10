@@ -40,6 +40,20 @@ public:
 	Floor *active_floor = NULL;
 	int active_floor_number = 0;
 
+	//Dispatches to floor's input_to_maneuver
+	//	ultimately returns a maneuver if there exists a maneuver in the current floor's tileset such that:
+	//	(the input required to start the maneuver is input_type) AND (the player is within the bounding box required to start the maneuver)
+	//	returns NULL if no such Maneuver exists
+	Maneuver* input_to_maneuver(Vec3 pos, int input_type)
+	{
+		return active_floor->input_to_maneuver(pos,input_type);
+	}
+
+
+	Vec3 get_tile_ofs_at_pos(Vec3 p)
+	{
+		return active_floor->get_tile_ofs_at_pos(p);
+	}
 
 
 	Building()

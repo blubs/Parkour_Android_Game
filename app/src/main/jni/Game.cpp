@@ -4,7 +4,6 @@
 
 #include "Game.hpp"
 
-
 int Game::load_shaders ()
 {
 	//Initializing shaders
@@ -302,6 +301,8 @@ int Game::init_gl()
 
 	Global_Tiles::init_gl();
 
+	glLineWidth(4.0f);
+
 	return 1;
 }
 
@@ -566,6 +567,158 @@ void Game::finish()
 	delete cam_to_bone;
 }
 
+//==== Game logic methods =====
+
+//Draws player bounding box
+void Game::draw_player_bbox(Mat4 vp)
+{
+	//Drawing bounding box
+	const float bounding_box[] =
+	{
+		//Box portion
+		//Bottom of box
+		-PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,PLAYER_SIZE,0.0f,
+		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	PLAYER_SIZE,PLAYER_SIZE,0.0f,
+		PLAYER_SIZE,PLAYER_SIZE,0.0f,		PLAYER_SIZE,-PLAYER_SIZE,0.0f,
+		PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,-PLAYER_SIZE,0.0f,
+		//Top of box
+		-PLAYER_SIZE,-PLAYER_SIZE,2.0f,	-PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		-PLAYER_SIZE,PLAYER_SIZE,2.0f,	PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,PLAYER_SIZE,2.0f,		PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,-PLAYER_SIZE,2.0f,	-PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+		//Corners of box
+		-PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	-PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,PLAYER_SIZE,0.0f,		PLAYER_SIZE,PLAYER_SIZE,2.0f,
+		PLAYER_SIZE,-PLAYER_SIZE,0.0f,	PLAYER_SIZE,-PLAYER_SIZE,2.0f,
+
+		//Triangle portion
+		//Bottom of triangle
+		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,
+		PLAYER_SIZE,PLAYER_SIZE,0.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,
+		//Top of triangle
+		-PLAYER_SIZE,PLAYER_SIZE,2.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+		PLAYER_SIZE,PLAYER_SIZE,2.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+		//Edge of triangle
+		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+	};
+
+	solid_mat->bind_material();
+	Mat4 bbox_pos = vp * Mat4::TRANSLATE(player->pos);
+	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) bbox_pos.m);//TODO: get player pos
+
+	float color[] = {0.0f,1.0f,0.0f,1.0f};
+	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
+	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+	glDrawArrays(GL_LINES, 0, 34);
+}
+//Draws active floors collision voxels
+void Game::draw_floor_collision_voxels(Mat4 vp)
+{
+	Vec3 building_org = current_building->active_floor->global_mins + Vec3(0,0,0.5f)*GRID_SIZE;
+	Vec3 tile_pos;
+	Vec3 voxel_pos;
+	char voxel_rank;
+
+	const float voxel_box[] =
+	{
+	//Top of box
+	0,0,GRID_SIZE,		0,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,		GRID_SIZE,0,GRID_SIZE,
+
+	//Box x
+	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	};
+
+	solid_mat->bind_material();
+	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_box);
+	Mat4 vox_trans;
+
+	for(int i = 0; i < current_building->active_floor->width; i++)
+	{
+		for(int j = 0; j < current_building->active_floor->length; j++)
+		{
+			tile_pos = building_org + Vec3(i*TILE_SIZE,j*TILE_SIZE,0.0f);
+			for(int k = 0; k < TILE_VOXEL_DIMS; k++)
+			{
+				for(int l = 0; l < TILE_VOXEL_DIMS; l++)
+				{
+					voxel_rank = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
+
+					if(voxel_rank == 0)
+					{
+						continue;
+					}
+					if(voxel_rank == 1)
+					{
+						float color[] = {0.75f,0.25f,0.25f,1.0f};
+						solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+					}
+					voxel_pos = tile_pos + Vec3(k*GRID_SIZE,l*GRID_SIZE,0.0f);
+					vox_trans = vp * Mat4::TRANSLATE(voxel_pos);
+					solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) vox_trans.m);
+					glDrawArrays(GL_LINES, 0, 8);
+				}
+			}
+		}
+	}
+}
+//Draws active floors maneuver data
+void Game::draw_floor_maneuvers(Mat4 vp)
+{
+	//TODO
+}
+//Returns the pos if in mins & maxs, otherwise caps to lie within the mins & maxs
+Vec3 Game::cap_to_bounds(Vec3 pos, Vec3 mins, Vec3 maxs)
+{
+	Vec3 result = pos;
+	//Check x-axis
+	if(result.x <= mins.x)
+		result.x = mins.x;
+	else if(result.x >= maxs.x)
+		result.x = maxs.x;
+	//Check y-axis
+	if(result.y <= mins.y)
+		result.y = mins.y;
+	else if(result.y >= maxs.y)
+		result.y = maxs.y;
+	//Check z-axis
+	if(result.z <= mins.z)
+		result.z = mins.z;
+	else if(result.z >= maxs.z)
+		result.z = maxs.z;
+
+	return result;
+}
+
+void Game::mnvr_movement ()
+{
+	//TODO: maneuver logic
+}
+
+void Game::reached_mnvr_keyframe ()
+{
+	//TODO: handle traversing logic
+	//Setting up movement for keyframe:
+	//Checking if we are done with the animation
+	if(mnvr_frame_number >= mnvr_current->keyframe_count - 1)
+	{
+		player_state = PLAYER_STATE_RUNNING;
+		mnvr_current = NULL;
+		mnvr_frame = NULL;
+		mnvr_frame_number = 0;
+	}
+	else
+	{
+		mnvr_frame = mnvr_current->keyframes[++mnvr_frame_number];
+		mnvr_start_pos = cap_to_bounds(player->pos, mnvr_frame->mins, mnvr_frame->maxs);
+		//TODO: how do we get goal position of the next maneuver keyframe?
+		//mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_current->keyframes[mnvr_frame_number+1]->mins,mnvr_current->keyframes[mnvr_frame_number+1]->maxs);
+
+	}
+}
+
 //TODO: handle precedence of collisions
 //Returns type of collision player bbox encounters
 char Game::clip_player_bbox(Vec3 p)
@@ -689,7 +842,6 @@ void Game::update()
 	//if(state.x > 0.95f && player_skel->playing_anim)
 	//	player_skel->stop_anim();
 
-	//For test playing vault animation
 	static bool played_anim = false;
 	if(!played_anim)
 	{
@@ -698,50 +850,7 @@ void Game::update()
 		player_skel->play_anim(0,Skeleton::END_TYPE_LOOP);
 	}
 
-	//=================================================================
-	//test printing of input states
-/*
-	if(input_touching)
-	{
-		LOGE("Touching at: (%.2f,%.2f)",input_x,input_y);
-	}
-	if(input_turning)
-	{
-		LOGE("Turning at: (%.2f)",input_turn);
-	}
-	if(input_sent_command)
-	{
-		switch(input_swipe)
-		{
-			case INPUT_SWIPE_UP:
-			//	LOGE("Swipe up detected");
-				break;
-			case INPUT_SWIPE_DOWN:
-			//	LOGE("Swipe down detected");
-				break;
-			case INPUT_SWIPE_LEFT:
-			//	LOGE("Swipe left detected");
-				break;
-			case INPUT_SWIPE_RIGHT:
-			//	LOGE("Swipe right detected");
-				break;
-		}
-	}*/
-	//=================================================================
 
-
-	//if(state.x < 0.10f)
-	//{
-	//	if( player_skel->current_anim != 2 && !played_anim)
-	//	{
-	//		played_anim = true;
-	//		player_skel->play_anim(2,Skeleton::END_TYPE_DEFAULT_ANIM);
-	//	}
-	//}
-	//else
-	//{
-	//	played_anim = false;
-	//}
 
 	//====Test show/hide ad calls====
 	static bool ad_visible = false;
@@ -1015,8 +1124,24 @@ void Game::update()
 
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
+		//Get Maneuvers that require no input
+
+		//TODO: check for traversals as well
+		Maneuver* man = current_building->input_to_maneuver(player->pos,INPUT_SWIPE_NONE);
+
+		if(man)
+		{
+			player_state = PLAYER_STATE_MANEUVERING;
+			mnvr_current = man;
+			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_frame_number = 0;
+			mnvr_frame = man->keyframes[0];
+			reached_mnvr_keyframe();
+		}
+
 		if(input_swipe)
 		{
+			//Get maneuvers that require input up
 			if(input_swipe == INPUT_SWIPE_UP)
 			{
 				//TODO: if not in maneuver area, generic jump
@@ -1032,6 +1157,7 @@ void Game::update()
 				//TODO: play jump animation
 				return;
 			}
+			//Get maneuvers that require input down
 			if(input_swipe == INPUT_SWIPE_DOWN)
 			{
 				//player_state == PLAYER_STATE_SLIDING;
@@ -1242,98 +1368,6 @@ void Game::render()
 		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
-	//============== Rendering all voxel collision maps ==================
-	Vec3 building_org = current_building->active_floor->global_mins + Vec3(0,0,0.5f)*GRID_SIZE;
-	Vec3 tile_pos;
-	Vec3 voxel_pos;
-	char voxel_rank;
-
-	glLineWidth(4.0f);
-
-	const float voxel_box[] =
-	{
-		//Top of box
-		0,0,GRID_SIZE,		0,GRID_SIZE,GRID_SIZE,
-		0,0,GRID_SIZE,		GRID_SIZE,0,GRID_SIZE,
-
-		//Box x
-		0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
-		GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
-	};
-
-	solid_mat->bind_material();
-	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_box);
-	Mat4 vox_trans;
-
-	for(int i = 0; i < current_building->active_floor->width; i++)
-	{
-		for(int j = 0; j < current_building->active_floor->length; j++)
-		{
-			tile_pos = building_org + Vec3(i*TILE_SIZE,j*TILE_SIZE,0.0f);
-			for(int k = 0; k < TILE_VOXEL_DIMS; k++)
-			{
-				for(int l = 0; l < TILE_VOXEL_DIMS; l++)
-				{
-					voxel_rank = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
-
-					if(voxel_rank == 0)
-					{
-						continue;
-					}
-					if(voxel_rank == 1)
-					{
-						float color[] = {0.75f,0.25f,0.25f,1.0f};
-						solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
-					}
-					voxel_pos = tile_pos + Vec3(k*GRID_SIZE,l*GRID_SIZE,0.0f);
-					vox_trans = vp * Mat4::TRANSLATE(voxel_pos);
-					solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) vox_trans.m);
-					glDrawArrays(GL_LINES, 0, 8);
-				}
-			}
-		}
-	}
-	//====================================================================
-
-	//=============== Rendering Player bounding box ======================
-	//Drawing bounding box
-	const float bounding_box[] =
-	{
-		//Box portion
-		//Bottom of box
-		-PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,PLAYER_SIZE,0.0f,
-		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	PLAYER_SIZE,PLAYER_SIZE,0.0f,
-		PLAYER_SIZE,PLAYER_SIZE,0.0f,		PLAYER_SIZE,-PLAYER_SIZE,0.0f,
-		PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,-PLAYER_SIZE,0.0f,
-		//Top of box
-		-PLAYER_SIZE,-PLAYER_SIZE,2.0f,	-PLAYER_SIZE,PLAYER_SIZE,2.0f,
-		-PLAYER_SIZE,PLAYER_SIZE,2.0f,	PLAYER_SIZE,PLAYER_SIZE,2.0f,
-		PLAYER_SIZE,PLAYER_SIZE,2.0f,		PLAYER_SIZE,-PLAYER_SIZE,2.0f,
-		PLAYER_SIZE,-PLAYER_SIZE,2.0f,	-PLAYER_SIZE,-PLAYER_SIZE,2.0f,
-		//Corners of box
-		-PLAYER_SIZE,-PLAYER_SIZE,0.0f,	-PLAYER_SIZE,-PLAYER_SIZE,2.0f,
-		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	-PLAYER_SIZE,PLAYER_SIZE,2.0f,
-		PLAYER_SIZE,PLAYER_SIZE,0.0f,		PLAYER_SIZE,PLAYER_SIZE,2.0f,
-		PLAYER_SIZE,-PLAYER_SIZE,0.0f,	PLAYER_SIZE,-PLAYER_SIZE,2.0f,
-
-		//Triangle portion
-		//Bottom of triangle
-		-PLAYER_SIZE,PLAYER_SIZE,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,
-		PLAYER_SIZE,PLAYER_SIZE,0.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,
-		//Top of triangle
-		-PLAYER_SIZE,PLAYER_SIZE,2.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
-		PLAYER_SIZE,PLAYER_SIZE,2.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
-		//Edge of triangle
-		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
-	};
-
-	solid_mat->bind_material();
-	Mat4 bbox_pos = vp * Mat4::TRANSLATE(player->pos);
-	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) bbox_pos.m);//TODO: get player pos
-
-	float color[] = {0.0f,1.0f,0.0f,1.0f};
-	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
-	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
-	glDrawArrays(GL_LINES, 0, 34);
-	//====================================================================
+	draw_floor_collision_voxels(vp);
+	draw_player_bbox(vp);
 }

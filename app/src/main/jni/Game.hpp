@@ -145,6 +145,7 @@ public:
 	bool input_sent_command = false;
 
 	int input_swipe;
+	static const int INPUT_SWIPE_NONE = 0;
 	static const int INPUT_SWIPE_UP = 1;
 	static const int INPUT_SWIPE_DOWN = 2;
 	static const int INPUT_SWIPE_LEFT = 3;
@@ -199,11 +200,45 @@ public:
 	//Draws the scene
 	void render();
 
-	//Game logic specific methods
+	//==== Game logic specific methods =====
 	//Handles player collision detection and player movement
 	bool move_player(Vec3 v);
 	//Handles player bbox hull collision with building->floor->tile voxels
 	char clip_player_bbox(Vec3 p);
+
+	//Draws player bounding box
+	void draw_player_bbox(Mat4 vp);
+	//Draws active floors collision voxels
+	void draw_floor_collision_voxels(Mat4 vp);
+	//Draws active floors maneuver data
+	//TODO
+	void draw_floor_maneuvers(Mat4 vp);
+
+	//====== Maneuver variables ======
+	Maneuver* mnvr_current;
+	Traversal* trav_current;
+	Keyframe* mnvr_frame;
+	int mnvr_frame_number;
+	//Global position of the tile this maneuver is owned by
+	Vec3 mnvr_tile_ofs;
+	//Global goal position we're moving to
+	Vec3 mnvr_goal_pos;
+	//Global start position we're moving to
+	Vec3 mnvr_start_pos;
+	//current y-axis speed of keyframe
+	float mnvr_y_vel;
+	//Returns the pos if in mins & maxs, otherwise caps to lie within the mins & maxs
+	Vec3 cap_to_bounds(Vec3 pos, Vec3 mins, Vec3 maxs);
+	//Variables used for quadratic movement
+	float mnvr_var_a;
+	float mnvr_var_b;
+	float mnvr_var_c;
+
+	void mnvr_movement();
+	//Sets up the movement from the frame we're at, to the next frame in the sequence (or last frame)
+	void reached_mnvr_keyframe();
+
+
 
 };
 
