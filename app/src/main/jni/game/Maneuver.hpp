@@ -40,6 +40,18 @@ public:
 	//Animation to play starting at this keyframe
 	int anim = 0;
 
+	const static int ANIM_NO_ANIM = 0;
+	//TODO: player anims here (must match up with the indices of the animations that we load)
+
+	int anim_end_type = 0;
+
+	const static int ANIM_END_TYPE_ROOT_POSE = 0;
+	const static int ANIM_END_TYPE_FREEZE = 1;
+	const static int ANIM_END_TYPE_LOOP = 2;
+	const static int ANIM_END_TYPE_DEFAULT_ANIM = 3;
+
+
+
 	//Special keyframe data (for letting the player know to do special things)
 	int spec_flag = 0;
 
@@ -50,7 +62,7 @@ public:
 	const static int INPUT_UP = 1;
 	const static int INPUT_DOWN = 3;
 
-	void set_info(Vec3 _mins, Vec3 _maxs, float _y_vel, float _y_accel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _spec_flag)
+	void set_info(Vec3 _mins, Vec3 _maxs, float _y_vel, float _y_accel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _anim_end_type, int _spec_flag)
 	{
 		mins = _mins;
 		maxs = _maxs;
@@ -87,9 +99,10 @@ public:
 		orient_pos = _orient_pos;
 	}
 
-	void set_anim(int _anim)
+	void set_anim(int _anim, int _anim_end_type)
 	{
 		anim = _anim;
+		anim_end_type = _anim_end_type;
 	}
 
 	void set_specflag(int _spec_flag)

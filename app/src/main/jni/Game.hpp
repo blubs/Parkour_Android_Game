@@ -219,12 +219,16 @@ public:
 	Traversal* trav_current;
 	Keyframe* mnvr_frame;
 	int mnvr_frame_number;
+	Keyframe* mnvr_next_frame;
+	int mnvr_next_frame_number;
 	//Global position of the tile this maneuver is owned by
 	Vec3 mnvr_tile_ofs;
 	//Global goal position we're moving to
 	Vec3 mnvr_goal_pos;
 	//Global start position we're moving to
 	Vec3 mnvr_start_pos;
+	//Yaw Rotation Orientation of player
+	float mnvr_goal_yaw_rot;
 	//current y-axis speed of keyframe
 	float mnvr_y_vel;
 	//Returns the pos if in mins & maxs, otherwise caps to lie within the mins & maxs
@@ -237,8 +241,8 @@ public:
 	void mnvr_movement();
 	//Sets up the movement from the frame we're at, to the next frame in the sequence (or last frame)
 	void reached_mnvr_keyframe();
-
-
+	//Returns angle from player pos to the orientation position of the keyframe
+	float get_keyframe_goal_yaw(Keyframe* key)
 
 };
 

@@ -501,7 +501,6 @@ void Game::start()
 	test_text->pos.x = -screen_width * 0.4f;
 	test_text->pos.y = screen_height * 0.4f;
 
-
 	test_img = new UI_Image(text_mat,test_texture);
 	test_img->pos.x = screen_width*0.5f - 100.0f;
 	test_img->pos.y = screen_height*0.5f - 100.0f;
@@ -547,8 +546,6 @@ void Game::start()
 //This is where we destroy our game objects
 void Game::finish()
 {
-	int max = 5;
-
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->clear();
@@ -697,24 +694,90 @@ void Game::mnvr_movement ()
 	//TODO: maneuver logic
 }
 
+//Returns angle from player pos to the orientation position of the keyframe
+float Game::get_keyframe_goal_yaw(Keyframe* key)
+{
+	float yaw;
+
+	yaw = atanf((mnvr_tile_ofs.x + key->orient_pos.x - player->pos.x)/(mnvr_tile_ofs.y + key->orient_pos.y - player->pos.y));
+
+	//if the face position is behind us, turn the player around to face it
+	if(player->pos.y > mnvr_tile_ofs.y + key->orient_pos.y)
+		yaw += PI;
+
+	yaw = efmodf(yaw,360);
+
+	return yaw;
+}
+
 void Game::reached_mnvr_keyframe ()
 {
 	//TODO: handle traversing logic
 	//Setting up movement for keyframe:
-	//Checking if we are done with the animation
-	if(mnvr_frame_number >= mnvr_current->keyframe_count - 1)
+	mnvr_frame_number = mnvr_next_frame_number;
+	mnvr_next_frame_number++;
+	//Are we done with this maneuver?
+	if(mnvr_next_frame_number >= mnvr_current->keyframe_count)
 	{
 		player_state = PLAYER_STATE_RUNNING;
 		mnvr_current = NULL;
 		mnvr_frame = NULL;
+		mnvr_next_frame = NULL;
 		mnvr_frame_number = 0;
+		mnvr_next_frame_number = 0;
 	}
 	else
 	{
-		mnvr_frame = mnvr_current->keyframes[++mnvr_frame_number];
-		mnvr_start_pos = cap_to_bounds(player->pos, mnvr_frame->mins, mnvr_frame->maxs);
-		//TODO: how do we get goal position of the next maneuver keyframe?
-		//mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_current->keyframes[mnvr_frame_number+1]->mins,mnvr_current->keyframes[mnvr_frame_number+1]->maxs);
+		mnvr_frame = mnvr_current->keyframes[mnvr_frame_number];
+		mnvr_next_frame = mnvr_current->keyframes[mnvr_next_frame_number];
+		if(mnvr_frame->anim)
+		{
+			player_skel->play_anim(mnvr_frame->anim,mnvr_frame->anim_end_type);
+		}
+
+		//Setting up movement data for the keyframe
+		mnvr_start_pos = player->pos;
+		mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_next_frame->mins, mnvr_next_frame->maxs);
+
+		//Check if we are already past our goal position
+		if(mnvr_start_pos.y >= mnvr_goal_pos.y)
+		{
+			reached_mnvr_keyframe();
+			return;
+		}
+
+		if(mnvr_frame->orient)
+		{
+			mnvr_goal_yaw_rot = get_keyframe_goal_yaw(mnvr_frame);
+		}
+		else
+			mnvr_goal_yaw_rot = 0.0f;
+
+		mnvr_y_vel = mnvr_frame->y_vel;
+
+		//Calculating the different lerp parameters needed
+		switch(mnvr_frame->lerp_type)
+		{
+			default:
+			case Keyframe::LERP_LINEAR:
+				break;
+			case Keyframe::LERP_QUADRATIC:
+				mnvr_var_a = mnvr_frame->lerp_data / (2 * mnvr_y_vel * mnvr_y_vel);
+				mnvr_var_b = ((mnvr_var_a * mnvr_start_pos.y * mnvr_start_pos.y)
+								- (mnvr_var_a * mnvr_goal_pos.y * mnvr_goal_pos.y)
+								+ (mnvr_goal_pos.z - mnvr_start_pos.z))
+							/(mnvr_goal_pos.y - mnvr_start_pos.y);
+				mnvr_var_c = mnvr_start_pos.z - (mnvr_var_a * mnvr_start_pos.y * mnvr_start_pos.y) - (mnvr_var_b * mnvr_start_pos.y);
+				break;
+			case Keyframe::LERP_QUAD_TO_VERT:
+				mnvr_var_a = (mnvr_start_pos.z - mnvr_goal_pos.z)
+							/ ((mnvr_start_pos.y - mnvr_goal_pos.y) * (mnvr_start_pos.y - mnvr_goal_pos.y));
+				break;
+			case Keyframe::LERP_QUAD_FROM_VERT:
+				mnvr_var_a = (mnvr_goal_pos.z - mnvr_start_pos.z)
+							/ ((mnvr_goal_pos.y - mnvr_start_pos.y) * (mnvr_goal_pos.y - mnvr_start_pos.y));
+				break;
+		}
 
 	}
 }
@@ -1134,8 +1197,8 @@ void Game::update()
 			player_state = PLAYER_STATE_MANEUVERING;
 			mnvr_current = man;
 			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
-			mnvr_frame_number = 0;
-			mnvr_frame = man->keyframes[0];
+			mnvr_next_frame_number = 0;
+			mnvr_next_frame = man->keyframes[0];
 			reached_mnvr_keyframe();
 		}
 
@@ -1144,7 +1207,6 @@ void Game::update()
 			//Get maneuvers that require input up
 			if(input_swipe == INPUT_SWIPE_UP)
 			{
-				//TODO: if not in maneuver area, generic jump
 				player_state = PLAYER_STATE_FALLING;
 				float jump_height = 0.75f;
 

@@ -131,7 +131,7 @@ Global_Tiles::Global_Tiles()
 	frames[0]->set_speed(6,0,0);//replace 6 with a player speed var? FIXME I can't just pull random numbers out of nowhere
 	frames[0]->set_lerp(Keyframe::LERP_LINEAR,0);//redundant (this is default)
 	frames[0]->set_orient(Keyframe::ORIENT_NONE,Vec3::ZERO());//redundant (this is default)
-	frames[0]->set_anim(0);//redundant (this is default)
+	frames[0]->set_anim(Keyframe::ANIM_NO_ANIM,Keyframe::ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
 	frames[0]->set_specflag(0);//redundant (this is default)
 
 	//Now for the next frames, omitting redundant calls
