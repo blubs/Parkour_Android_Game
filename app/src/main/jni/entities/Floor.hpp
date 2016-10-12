@@ -222,7 +222,6 @@ public:
 		//finding player pos relative to left near corner of floor
 		Vec3 floor_pos = pos - global_mins;
 
-
 		int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
 		int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
 
@@ -231,7 +230,6 @@ public:
 			LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
 			return Collision_Map::VOX_EMPTY;
 		}
-
 		//Checking the tile the player is on
 		Vec3 mins;
 		Vec3 maxs;
@@ -270,6 +268,7 @@ public:
 		p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
 		tile = tile_object[tile_x][tile_y];
 
+
 		for(int i = 0; i < tile->maneuver_count; i++)
 		{
 			man = tile->maneuvers[i];
@@ -285,7 +284,6 @@ public:
 				}
 			}
 		}
-
 		return NULL;
 	}
 	//Returns the global tile position that p lies on

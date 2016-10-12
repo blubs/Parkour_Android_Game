@@ -10,6 +10,11 @@
 class Keyframe
 {
 public:
+	Keyframe()
+	{
+		mins = Vec3::ZERO();
+		maxs = Vec3::ZERO();
+	}
 	//Boundary for executing keyframe
 	Vec3 mins;
 	Vec3 maxs;
@@ -50,6 +55,11 @@ public:
 	const static int ANIM_END_TYPE_LOOP = 2;
 	const static int ANIM_END_TYPE_DEFAULT_ANIM = 3;
 
+	int viewbob_type = 0;
+
+	const static int VIEWBOB_NONE = 0;
+	const static int VIEWBOB_RUNNING = 1;
+	const static int VIEWBOB_SLIDING = 2;
 
 
 	//Special keyframe data (for letting the player know to do special things)
@@ -81,12 +91,19 @@ public:
 		mins = _mins;
 		maxs = _maxs;
 	}
+	//Set bounds as a single point where mins = maxs
+	void set_bounds(Vec3 point)
+	{
+		mins = point;
+		maxs = point;
+	}
 	void set_speed(float _y_vel, float _y_accel, float _min_y_vel)
 	{
 		y_vel = _y_vel;
 		y_accel = _y_accel;
 		min_y_vel = _min_y_vel;
 	}
+	//Sets lerp type for frame, lerp_data is z acceleration for LERP_QUADRATIC, is not used otherwise
 	void set_lerp(int _lerp_type, float _lerp_data)
 	{
 		lerp_type = _lerp_type;
@@ -99,10 +116,11 @@ public:
 		orient_pos = _orient_pos;
 	}
 
-	void set_anim(int _anim, int _anim_end_type)
+	void set_anim(int _anim, int _anim_end_type, int _viewbob_type)
 	{
 		anim = _anim;
 		anim_end_type = _anim_end_type;
+		viewbob_type = _viewbob_type;
 	}
 
 	void set_specflag(int _spec_flag)

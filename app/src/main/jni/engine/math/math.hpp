@@ -20,6 +20,19 @@ inline float efmodf(float a, float m)
 	return a < 0 ? (fmodf(a,m) + m) : fmodf(a,m);
 }
 
+//Returns smallest delta angle from a to b
+inline float min_delta_angle(float a, float b)
+{
+	return efmodf((b-a) + PI,TWO_PI) - PI;
+}
+
+//Returns angle a closest to b
+inline float closest_angle(float a, float b)
+{
+	return min_delta_angle(b,a) + b;
+}
+
+
 struct Vec3
 {
 	float x, y, z;

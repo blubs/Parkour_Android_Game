@@ -206,12 +206,15 @@ public:
 	//Handles player bbox hull collision with building->floor->tile voxels
 	char clip_player_bbox(Vec3 p);
 
+	//Executes code if player is at specific frames in specific animations
+	void player_anim_special_events();
+
 	//Draws player bounding box
 	void draw_player_bbox(Mat4 vp);
 	//Draws active floors collision voxels
 	void draw_floor_collision_voxels(Mat4 vp);
 	//Draws active floors maneuver data
-	//TODO
+	//TODO: implement this method
 	void draw_floor_maneuvers(Mat4 vp);
 
 	//====== Maneuver variables ======
@@ -238,11 +241,14 @@ public:
 	float mnvr_var_b;
 	float mnvr_var_c;
 
+	//Slope of the line that makes up the player path in the x-y axis
+	float mnvr_var_x_slope;
+
 	void mnvr_movement();
 	//Sets up the movement from the frame we're at, to the next frame in the sequence (or last frame)
 	void reached_mnvr_keyframe();
 	//Returns angle from player pos to the orientation position of the keyframe
-	float get_keyframe_goal_yaw(Keyframe* key)
+	float get_keyframe_goal_yaw(Keyframe* key);
 
 };
 

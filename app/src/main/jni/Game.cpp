@@ -691,7 +691,47 @@ Vec3 Game::cap_to_bounds(Vec3 pos, Vec3 mins, Vec3 maxs)
 
 void Game::mnvr_movement ()
 {
-	//TODO: maneuver logic
+	mnvr_y_vel += mnvr_frame->y_accel * Time::delta_time;
+
+	player->pos.y += mnvr_y_vel * Time::delta_time;
+
+	//Lerping x & z player coordinates
+
+	//Do not overshoot the goal
+	float temp_y = player->pos.y > mnvr_goal_pos.y ? mnvr_goal_pos.y : player->pos.y;
+
+	//Lerp the player x coordinate:
+	player->pos.x = mnvr_var_x_slope * (temp_y - mnvr_goal_pos.y) + mnvr_goal_pos.x;
+
+	//Lerping the player Z coordinate:
+	switch(mnvr_frame->lerp_type)
+	{
+		default:
+		case Keyframe::LERP_LINEAR:
+			player->pos.z = mnvr_var_a * (temp_y - mnvr_goal_pos.y) + mnvr_goal_pos.z;
+			break;
+		case Keyframe::LERP_QUADRATIC:
+			player->pos.z = (mnvr_var_a * temp_y * temp_y) + (mnvr_var_b * temp_y) + mnvr_var_c;
+			break;
+		case Keyframe::LERP_QUAD_TO_VERT:
+			player->pos.z = (mnvr_var_a * (temp_y - mnvr_goal_pos.y)*(temp_y - mnvr_goal_pos.y)) + mnvr_goal_pos.z;
+			break;
+		case Keyframe::LERP_QUAD_FROM_VERT:
+			player->pos.z = (mnvr_var_a * (temp_y - mnvr_start_pos.y)*(temp_y - mnvr_start_pos.y)) + mnvr_start_pos.z;
+			break;
+	}
+
+	//Turning the player to have the right orientation
+	if(mnvr_frame->orient == Keyframe::ORIENT_CONSTANT)
+		mnvr_goal_yaw_rot = get_keyframe_goal_yaw(mnvr_frame),player->angles.y;
+
+	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * 0.5f;
+	//TODO tile camera for turning
+
+	if(player->pos.y > mnvr_goal_pos.y)
+	{
+		reached_mnvr_keyframe();
+	}
 }
 
 //Returns angle from player pos to the orientation position of the keyframe
@@ -699,14 +739,13 @@ float Game::get_keyframe_goal_yaw(Keyframe* key)
 {
 	float yaw;
 
-	yaw = atanf((mnvr_tile_ofs.x + key->orient_pos.x - player->pos.x)/(mnvr_tile_ofs.y + key->orient_pos.y - player->pos.y));
-
-	//if the face position is behind us, turn the player around to face it
+	yaw = -atanf((mnvr_tile_ofs.x + key->orient_pos.x - player->pos.x)/(mnvr_tile_ofs.y + key->orient_pos.y - player->pos.y));
+	//if the face position is behind the player, adjust results of atan
 	if(player->pos.y > mnvr_tile_ofs.y + key->orient_pos.y)
 		yaw += PI;
 
-	yaw = efmodf(yaw,360);
-
+	//return angle closest to the player's yaw
+	yaw = closest_angle(yaw,player->angles.y);
 	return yaw;
 }
 
@@ -737,7 +776,8 @@ void Game::reached_mnvr_keyframe ()
 
 		//Setting up movement data for the keyframe
 		mnvr_start_pos = player->pos;
-		mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_next_frame->mins, mnvr_next_frame->maxs);
+		mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_tile_ofs + mnvr_next_frame->mins, mnvr_tile_ofs + mnvr_next_frame->maxs);
+		LOGE("frame: %d, start: ( %.2f, %.2f, %.2f), goal: ( %.2f, %.2f, %.2f)",mnvr_frame_number,mnvr_start_pos.x,mnvr_start_pos.y,mnvr_start_pos.z,mnvr_goal_pos.x,mnvr_goal_pos.y,mnvr_goal_pos.z);
 
 		//Check if we are already past our goal position
 		if(mnvr_start_pos.y >= mnvr_goal_pos.y)
@@ -755,11 +795,14 @@ void Game::reached_mnvr_keyframe ()
 
 		mnvr_y_vel = mnvr_frame->y_vel;
 
+		mnvr_var_x_slope = ((mnvr_goal_pos.x - mnvr_start_pos.x)/(mnvr_goal_pos.y - mnvr_start_pos.y));
+
 		//Calculating the different lerp parameters needed
 		switch(mnvr_frame->lerp_type)
 		{
 			default:
 			case Keyframe::LERP_LINEAR:
+				mnvr_var_a = ((mnvr_goal_pos.z - mnvr_start_pos.z)/(mnvr_goal_pos.y - mnvr_start_pos.y));
 				break;
 			case Keyframe::LERP_QUADRATIC:
 				mnvr_var_a = mnvr_frame->lerp_data / (2 * mnvr_y_vel * mnvr_y_vel);
@@ -778,7 +821,6 @@ void Game::reached_mnvr_keyframe ()
 							/ ((mnvr_goal_pos.y - mnvr_start_pos.y) * (mnvr_goal_pos.y - mnvr_start_pos.y));
 				break;
 		}
-
 	}
 }
 
@@ -900,18 +942,46 @@ bool Game::move_player(Vec3 v)
 	return true;
 }
 
+
+//Executes code if player is at specific frames in specific animations
+void Game::player_anim_special_events()
+{
+	if(player_skel->playing_anim)
+	{
+		if(player_skel->current_anim == 0)//Running animation
+		{
+			if(player_skel->current_frame == 9)//left foot hit ground
+			{
+				//TODO: play footstep sounds
+				//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,2.0f*DEG_TO_RAD,0.0f);
+				//test viewbob: no pitch bob, only yaw and roll
+				//camera->viewbob_run_footstep(0.0f,2.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD);
+				camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
+			}
+			if(player_skel->current_frame == 24)//right foot hit ground
+			{
+				//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-2.0f*DEG_TO_RAD,0.0f);
+				//test viewbob
+				//camera->viewbob_run_footstep(0.0f,-2.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD);
+				camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
+			}
+		}
+	}
+}
+
 void Game::update()
 {
 	//if(state.x > 0.95f && player_skel->playing_anim)
 	//	player_skel->stop_anim();
 
-	static bool played_anim = false;
+	//For playing showcase hands anim
+	/*static bool played_anim = false;
 	if(!played_anim)
 	{
 		played_anim = true;
 		//player_skel->play_anim(3,Skeleton::END_TYPE_DEFAULT_ANIM); 3 is showcase hands
 		player_skel->play_anim(0,Skeleton::END_TYPE_LOOP);
-	}
+	}*/
 
 
 
@@ -1185,12 +1255,22 @@ void Game::update()
 		}
 	}
 
+	if(player_state == PLAYER_STATE_MANEUVERING)
+	{
+		camera->set_viewbob(mnvr_frame->viewbob_type);
+		camera->update_viewbob();
+		player_anim_special_events();
+		mnvr_movement();
+		return;
+	}
+
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
 		//Get Maneuvers that require no input
 
 		//TODO: check for traversals as well
-		Maneuver* man = current_building->input_to_maneuver(player->pos,INPUT_SWIPE_NONE);
+		//Check for maneuvers that require no input or input up or input down
+		Maneuver* man = current_building->input_to_maneuver(player->pos,input_swipe);
 
 		if(man)
 		{
@@ -1200,11 +1280,11 @@ void Game::update()
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = man->keyframes[0];
 			reached_mnvr_keyframe();
+			return;
 		}
-
-		if(input_swipe)
+		else if(input_swipe)
 		{
-			//Get maneuvers that require input up
+			//There was a swipe, but we are not in a maneuver area:
 			if(input_swipe == INPUT_SWIPE_UP)
 			{
 				player_state = PLAYER_STATE_FALLING;
@@ -1214,8 +1294,6 @@ void Game::update()
 
 				player_phys_vel.z = jump_vel;
 				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0));
-
-
 				//TODO: play jump animation
 				return;
 			}
@@ -1227,31 +1305,13 @@ void Game::update()
 			}
 
 		}
-		//TODO: put this frame handling stuff in a different location
-		//==============================================================
-		if(player_skel->playing_anim)
-		{
-			if(player_skel->current_anim == 0)
-			{
-				if(player_skel->current_frame == 9)//left foot hit ground
-				{
-					//TODO: play footstep sounds
-					//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,2.0f*DEG_TO_RAD,0.0f);
-					//test viewbob: no pitch bob, only yaw and roll
-					//camera->viewbob_run_footstep(0.0f,2.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD);
-					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
-				}
-				if(player_skel->current_frame == 24)//right foot hit ground
-				{
-					//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-2.0f*DEG_TO_RAD,0.0f);
-					//test viewbob
-					//camera->viewbob_run_footstep(0.0f,-2.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD);
-					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
-				}
-			}
-		}
-		//==============================================================
 
+		if(!player_skel->playing_anim || player_skel->current_anim != 0)
+		{
+			player_skel->play_anim(0,Skeleton::END_TYPE_LOOP);
+		}
+
+		player_anim_special_events();
 		camera->set_viewbob(Camera::VIEWBOB_RUNNING);
 
 
@@ -1303,16 +1363,9 @@ void Game::update()
 		{
 			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
 		}
-
-		//TODO: run logic
 	}
 	if(player_state == PLAYER_STATE_FALLING)
 	{
-		//TODO: slide logic
-		Vec3 movement_vel;
-
-
-
 		player_phys_vel.z += -9.8 * Time::delta_time;
 		if(player_phys_vel.z < -40.0f)//terminal vel
 			player_phys_vel.z = -40.0f;
@@ -1327,6 +1380,10 @@ void Game::update()
 			return;
 		}
 		player->pos = player->pos + delta_pos;
+	}
+	if(player_state == PLAYER_STATE_SLIDING)
+	{
+		//TODO: player sliding logic
 	}
 	//TODO: other states
 
