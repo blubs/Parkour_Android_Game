@@ -8,18 +8,7 @@
 
 #include "../engine/graphics/Static_Model.hpp"
 #include "../game/Maneuver.hpp"
-
-//Size of tiles (6 units x 6 units x 6 units)
-#define TILE_SIZE 3.5f
-#define WINDOW_TILE_SIZE 7.0f
-#define GRID_SIZE 0.5f
-
-#define BUILDING_MAX_WIDTH 60
-#define BUILDING_MAX_LENGTH 120
-
-//2 voxels per meter, 3.5m x 3.5m tile = 7v x 7v voxel map
-#define TILE_VOXEL_DIMS 7
-#define TILE_VOXELS 49
+#include "../game/game_defs.hpp"
 
 class Collision_Map
 {

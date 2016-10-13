@@ -215,11 +215,13 @@ int Game::load_models()
 	test_model_int_empty = new Static_Model("models/tiles/style0/empt0.stmf");
 
 	player_skel = new Skeleton("animations/player_skeleton.sksf");
+
+	//The order of loading these animations must match the animation identifiers
 	player_skel->load_animation("animations/run.skaf");
 	player_skel->load_animation("animations/speed_vault.skaf");
 	player_skel->load_animation("animations/run_jump.skaf");
 	player_skel->load_animation("animations/showcase_hands.skaf");
-
+	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
 	skybox = new Skybox();
 	return 1;
 }
@@ -415,11 +417,11 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 	float delta_y_abs = fabsf(delta_y);
 
 	//Check if we are swiping horizontally or already turning
-	if(input_turning || ((delta_x_abs > delta_y_abs) && (delta_x_abs > input_sensitivity)))
+	if(input_turning || ((delta_x_abs > delta_y_abs) && (delta_x_abs > INPUT_SENSITIVITY)))
 	{
 		//if input_sensitivity is 1/16, the 16.0f and it annihilate each other
 		//Making us only have to swipe 1/3rd of the screen width to go through the full range of motion
-		input_turn = 3.0f * 16.0f * delta_x * input_sensitivity;
+		input_turn = 3.0f * 16.0f * delta_x * INPUT_SENSITIVITY;
 		input_turn = fmaxf(-1.0f,fminf(1.0f,input_turn));
 
 		input_turning = true;
@@ -429,12 +431,12 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 	//Check if we are swiping vertically
 	if(delta_y_abs > delta_x_abs)
 	{
-		if(delta_y > input_sensitivity*screen_ratio)
+		if(delta_y > INPUT_SENSITIVITY*screen_ratio)
 		{
 			input_swipe = INPUT_SWIPE_UP;
 			input_sent_command = true;
 		}
-		if(delta_y < -input_sensitivity*screen_ratio)
+		if(delta_y < - INPUT_SENSITIVITY*screen_ratio)
 		{
 			input_swipe = INPUT_SWIPE_DOWN;
 			input_sent_command = true;
@@ -457,7 +459,7 @@ void Game::start()
 	audio_listener = camera;
 
 	//Setting run anim as default anim
-	player_skel->set_default_anim(0,Skeleton::END_TYPE_LOOP);
+	player_skel->set_default_anim(0,ANIM_END_TYPE_LOOP);
 	player->mat = player_skin_mat;
 	test_arms->skel = player_skel;
 
@@ -707,22 +709,22 @@ void Game::mnvr_movement ()
 	switch(mnvr_frame->lerp_type)
 	{
 		default:
-		case Keyframe::LERP_LINEAR:
+		case FRAME_LERP_LINEAR:
 			player->pos.z = mnvr_var_a * (temp_y - mnvr_goal_pos.y) + mnvr_goal_pos.z;
 			break;
-		case Keyframe::LERP_QUADRATIC:
+		case FRAME_LERP_QUADRATIC:
 			player->pos.z = (mnvr_var_a * temp_y * temp_y) + (mnvr_var_b * temp_y) + mnvr_var_c;
 			break;
-		case Keyframe::LERP_QUAD_TO_VERT:
+		case FRAME_LERP_QUAD_TO_VERT:
 			player->pos.z = (mnvr_var_a * (temp_y - mnvr_goal_pos.y)*(temp_y - mnvr_goal_pos.y)) + mnvr_goal_pos.z;
 			break;
-		case Keyframe::LERP_QUAD_FROM_VERT:
+		case FRAME_LERP_QUAD_FROM_VERT:
 			player->pos.z = (mnvr_var_a * (temp_y - mnvr_start_pos.y)*(temp_y - mnvr_start_pos.y)) + mnvr_start_pos.z;
 			break;
 	}
 
 	//Turning the player to have the right orientation
-	if(mnvr_frame->orient == Keyframe::ORIENT_CONSTANT)
+	if(mnvr_frame->orient == FRAME_ORIENT_CONSTANT)
 		mnvr_goal_yaw_rot = get_keyframe_goal_yaw(mnvr_frame),player->angles.y;
 
 	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * 0.5f;
@@ -769,15 +771,32 @@ void Game::reached_mnvr_keyframe ()
 	{
 		mnvr_frame = mnvr_current->keyframes[mnvr_frame_number];
 		mnvr_next_frame = mnvr_current->keyframes[mnvr_next_frame_number];
-		if(mnvr_frame->anim)
+
+		//Handling animation
+		switch(mnvr_frame->anim_cmd)
 		{
-			player_skel->play_anim(mnvr_frame->anim,mnvr_frame->anim_end_type);
+			default:
+			case FRAME_ANIM_NOOP:
+				break;
+			case FRAME_ANIM_PLAY:
+				player_skel->play_anim(mnvr_frame->anim,mnvr_frame->anim_end_type);
+				break;
+			case FRAME_ANIM_PAUSE:
+				player_skel->pause_anim();
+				break;
+			case FRAME_ANIM_RESUME:
+				player_skel->resume_anim();
+			case FRAME_ANIM_STOP:
+				player_skel->stop_anim();
+				break;
+			case FRAME_ANIM_PLAY_DEFAULT:
+				player_skel->play_default_anim();
+				break;
 		}
 
 		//Setting up movement data for the keyframe
 		mnvr_start_pos = player->pos;
 		mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_tile_ofs + mnvr_next_frame->mins, mnvr_tile_ofs + mnvr_next_frame->maxs);
-		LOGE("frame: %d, start: ( %.2f, %.2f, %.2f), goal: ( %.2f, %.2f, %.2f)",mnvr_frame_number,mnvr_start_pos.x,mnvr_start_pos.y,mnvr_start_pos.z,mnvr_goal_pos.x,mnvr_goal_pos.y,mnvr_goal_pos.z);
 
 		//Check if we are already past our goal position
 		if(mnvr_start_pos.y >= mnvr_goal_pos.y)
@@ -801,10 +820,10 @@ void Game::reached_mnvr_keyframe ()
 		switch(mnvr_frame->lerp_type)
 		{
 			default:
-			case Keyframe::LERP_LINEAR:
+			case FRAME_LERP_LINEAR:
 				mnvr_var_a = ((mnvr_goal_pos.z - mnvr_start_pos.z)/(mnvr_goal_pos.y - mnvr_start_pos.y));
 				break;
-			case Keyframe::LERP_QUADRATIC:
+			case FRAME_LERP_QUADRATIC:
 				mnvr_var_a = mnvr_frame->lerp_data / (2 * mnvr_y_vel * mnvr_y_vel);
 				mnvr_var_b = ((mnvr_var_a * mnvr_start_pos.y * mnvr_start_pos.y)
 								- (mnvr_var_a * mnvr_goal_pos.y * mnvr_goal_pos.y)
@@ -812,11 +831,11 @@ void Game::reached_mnvr_keyframe ()
 							/(mnvr_goal_pos.y - mnvr_start_pos.y);
 				mnvr_var_c = mnvr_start_pos.z - (mnvr_var_a * mnvr_start_pos.y * mnvr_start_pos.y) - (mnvr_var_b * mnvr_start_pos.y);
 				break;
-			case Keyframe::LERP_QUAD_TO_VERT:
+			case FRAME_LERP_QUAD_TO_VERT:
 				mnvr_var_a = (mnvr_start_pos.z - mnvr_goal_pos.z)
 							/ ((mnvr_start_pos.y - mnvr_goal_pos.y) * (mnvr_start_pos.y - mnvr_goal_pos.y));
 				break;
-			case Keyframe::LERP_QUAD_FROM_VERT:
+			case FRAME_LERP_QUAD_FROM_VERT:
 				mnvr_var_a = (mnvr_goal_pos.z - mnvr_start_pos.z)
 							/ ((mnvr_goal_pos.y - mnvr_start_pos.y) * (mnvr_goal_pos.y - mnvr_start_pos.y));
 				break;
@@ -979,8 +998,8 @@ void Game::update()
 	if(!played_anim)
 	{
 		played_anim = true;
-		//player_skel->play_anim(3,Skeleton::END_TYPE_DEFAULT_ANIM); 3 is showcase hands
-		player_skel->play_anim(0,Skeleton::END_TYPE_LOOP);
+		//player_skel->play_anim(PLAYER_ANIM_SHOWCASE_HANDS,Skeleton::END_TYPE_DEFAULT_ANIM);
+		player_skel->play_anim(PLAYER_ANIM_RUN,Skeleton::END_TYPE_LOOP);
 	}*/
 
 
@@ -1288,13 +1307,9 @@ void Game::update()
 			if(input_swipe == INPUT_SWIPE_UP)
 			{
 				player_state = PLAYER_STATE_FALLING;
-				float jump_height = 0.75f;
-
-				float jump_vel = sqrtf(jump_height * 2.0f * 9.8f);//9.8f is gravity
-
-				player_phys_vel.z = jump_vel;
-				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0));
-				//TODO: play jump animation
+				player_phys_vel.z = PLAYER_JUMP_VEL;
+				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
+				player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
 				return;
 			}
 			//Get maneuvers that require input down
@@ -1303,16 +1318,15 @@ void Game::update()
 				//player_state == PLAYER_STATE_SLIDING;
 				//TODO: if not in maneuver area, generic slide
 			}
-
 		}
 
 		if(!player_skel->playing_anim || player_skel->current_anim != 0)
 		{
-			player_skel->play_anim(0,Skeleton::END_TYPE_LOOP);
+			player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
 		}
 
 		player_anim_special_events();
-		camera->set_viewbob(Camera::VIEWBOB_RUNNING);
+		camera->set_viewbob(CAM_VIEWBOB_RUNNING);
 
 
 		//Testing viewbob code
@@ -1348,12 +1362,12 @@ void Game::update()
 		{
 			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
-		player->angles.y += (turn_angle - player->angles.y) * 0.5f;
+		player->angles.y += (turn_angle - player->angles.y) * mnvr_frame->orient_speed;
 		//TODO: camera roll rotation from turning
 
 
 		//Make the player move forward, if runs outside of building bounds, reset at building start
-		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_runspeed,0);
+		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
 
 		if(!move_player(movement_vel))
 			return;

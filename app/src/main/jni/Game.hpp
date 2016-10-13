@@ -92,7 +92,6 @@ public:
 	Building **buildings;
 	Building *current_building = NULL;
 
-	#define MAX_BUILDINGS 5
 
 	//======================================================================
 
@@ -128,10 +127,6 @@ public:
 	//Ran on last frame
 	//This is where we destroy our game objects
 	void finish();
-	//Input static identifiers
-	const static int INPUT_EVENT_ON_TOUCH_DOWN = 1;
-	const static int INPUT_EVENT_ON_TOUCH_MOVE = 2;
-	const static int INPUT_EVENT_ON_TOUCH_RELEASE = 3;
 
 	//input variables
 	#define MAX_INPUT_TOUCHES 10
@@ -145,27 +140,13 @@ public:
 	bool input_sent_command = false;
 
 	int input_swipe;
-	static const int INPUT_SWIPE_NONE = 0;
-	static const int INPUT_SWIPE_UP = 1;
-	static const int INPUT_SWIPE_DOWN = 2;
-	static const int INPUT_SWIPE_LEFT = 3;
-	static const int INPUT_SWIPE_RIGHT = 4;
 
 	float input_turn;
-
-	//Defined as the percentage of the screen width the finger must be dragged before we register a swipe
-	float input_sensitivity = 0.0625f;
 
 
 	void handle_input(float x, float y, int event,int pointer_id);
 
-
-	float player_runspeed = 6.0f;
-
 	Vec3 player_phys_vel;
-
-	//From center to edge of the player bbox's square base
-	float player_bbox_half_size = 0.5f;
 
 	int player_state = 0;
 	float player_substate = 0.0f;
@@ -178,18 +159,6 @@ public:
 	float viewbob_roll;
 	//===================
 
-	static const int PLAYER_STATE_MENU = 0;
-	static const int PLAYER_STATE_RUNNING = 1;
-	static const int PLAYER_STATE_FALLING = 2;
-	static const int PLAYER_STATE_SLIDING = 3;
-	static const int PLAYER_STATE_MANEUVERING = 4;
-	static const int PLAYER_STATE_TRAVERSING = 5;
-
-	static const int PLAYER_STATE_NOCLIP = 6;
-	static const int PLAYER_STATE_CAM_FLY = 7;
-
-	#define PLAYER_SIZE 0.5f
-	#define PLAYER_MAX_TURN_ANGLE 60.0f
 	float player_bbox_tri_slope = 0.0f;
 	float player_bbox_tri_height = 0.0f;
 

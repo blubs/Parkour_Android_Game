@@ -36,15 +36,7 @@ extern "C"
 //#include <unistd.h>
 }
 
-//This is the internal data value for opengl to recognize ETC1 compressed textures
-#define ETC1_RGB8 0x8D64
-
-#define SND_AUDIO_CHANNELS 8
-#define SND_AUDIO_BUFFER_SIZE 512
-#define SND_AUDIO_SAMPLE_RATE 44100
-
-#define ASPECT_16_9_LANDSCAPE 1.7778f
-#define ASPECT_16_9_PORTRAIT 0.5625f
+#include "engine_defs.hpp"
 
 #include "math/math.hpp"
 

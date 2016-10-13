@@ -39,11 +39,6 @@
 //
 
 
-#define TILE_TYPES 2//total count of tile types
-#define TILE_TYPE_EMPT 0
-#define TILE_TYPE_SOLD 1
-//TODO: ...more tile type const identifiers
-
 class Interior_Style
 {
 public:

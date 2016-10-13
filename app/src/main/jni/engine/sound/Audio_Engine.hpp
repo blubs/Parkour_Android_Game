@@ -46,13 +46,6 @@ public:
 	//List of sound sources
 	Sound_Source* sources;
 
-	const int MAX_SOUND_SOURCES = 32;
-
-	const int SOUND_PRIORITY_AMBIENCE = 0;
-	const int SOUND_PRIORITY_PLAYER = 1;
-	const int SOUND_PRIORITY_PHYSICS = 2;
-	const int SOUND_PRIORITY_MISC = 3;
-
 	//TODO: other parameter constants to figure out
 	//sound following is going to be done by whether parent pointer is NULL or set
 	//Attenuation type would be good (constant, inverse, inverse squared)

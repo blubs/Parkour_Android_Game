@@ -8,6 +8,7 @@
 #include "../engine/common.hpp"
 #include "../engine/misc.hpp"
 #include "../engine/Game_Object.hpp"
+#include "../game/game_defs.hpp"
 
 class Camera : public Entity
 {
@@ -36,10 +37,6 @@ public:
 	//Converts angles to forward,right,and up vectors, and sets the view matrix
 	void update_view_matrix();
 
-
-	static const int VIEWBOB_NONE = 0;
-	static const int VIEWBOB_RUNNING = 1;
-	static const int VIEWBOB_SLIDING = 2;
 	int viewbob;
 	Vec3 viewbob_vel;
 

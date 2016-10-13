@@ -56,7 +56,7 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 #endif
 
 	//Populate the current audio buffer with the whatever sounds that are playing.
-	for(int i = 0; i < e->MAX_SOUND_SOURCES; i++)
+	for(int i = 0; i < MAX_SOUND_SOURCES; i++)
 	{
 #ifdef DEBUG_AUDIO_CALLBACK
 		LOGE("Audio Callback: 5");

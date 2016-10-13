@@ -128,34 +128,35 @@ Global_Tiles::Global_Tiles()
 	//frames[0].set_info(Vec3(1,0,0),Vec3(2,2,0),6,0,0,Keyframe::LERP_LINEAR,0,Keyframe::ORIENT_NONE,Vec3::ZERO(),0,0);
 
 	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2,2,0));
-	frames[0]->set_speed(6,0,0);//replace 6 with a player speed var? FIXME I can't just pull random numbers out of nowhere
-	frames[0]->set_lerp(Keyframe::LERP_LINEAR,0);//redundant (this is default)
-	frames[0]->set_orient(Keyframe::ORIENT_NONE,Vec3::ZERO());//redundant (this is default)
-	frames[0]->set_anim(Keyframe::ANIM_NO_ANIM,Keyframe::ANIM_END_TYPE_ROOT_POSE,Keyframe::VIEWBOB_NONE);//redundant (this is default)
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
+	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.2);//redundant (this is default)
+	frames[0]->set_anim(FRAME_ANIM_NOOP,0,ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
+	frames[0]->set_anim(CAM_VIEWBOB_NONE);//redundant (this is default)
 	frames[0]->set_specflag(0);//redundant (this is default)
 
 	//Now for the next frames, omitting redundant calls
 	frames[1]->set_bounds(Vec3(1,2.1,5));
-	frames[1]->set_lerp(Keyframe::LERP_QUADRATIC,-9.8f);
-	frames[1]->set_orient(Keyframe::ORIENT_CONSTANT,Vec3(2,3,0));//face right
+	frames[1]->set_lerp(FRAME_LERP_QUADRATIC,-9.8f);
+	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(2,3,0),0.2);//face right
 	frames[1]->set_speed(1,0,0);
 
 	frames[2]->set_bounds(Vec3(1,6,5));
-	frames[2]->set_lerp(Keyframe::LERP_LINEAR,0);
-	frames[2]->set_orient(Keyframe::ORIENT_ONCE,Vec3(0,6,0));//face left
+	frames[2]->set_lerp(FRAME_LERP_LINEAR,0);
+	frames[2]->set_orient(FRAME_ORIENT_ONCE,Vec3(0,6,0),0.2);//face left
 	frames[2]->set_speed(1,0,0);
 
 	frames[3]->set_bounds(Vec3(1,9,5));
-	frames[3]->set_lerp(Keyframe::LERP_QUAD_TO_VERT,0);
-	frames[3]->set_orient(Keyframe::ORIENT_ONCE,Vec3(1,8,0));//face back
+	frames[3]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
+	frames[3]->set_orient(FRAME_ORIENT_ONCE,Vec3(1,8,0),0.2);//face back
 	frames[3]->set_speed(1,0,0);
 
 	frames[4]->set_bounds(Vec3(1,14,10));
-	frames[4]->set_lerp(Keyframe::LERP_LINEAR,0);
+	frames[4]->set_lerp(FRAME_LERP_LINEAR,0);
 	frames[4]->set_speed(1,0,0);
 
 	frames[5]->set_bounds(Vec3(5,19,5));
-	frames[5]->set_lerp(Keyframe::LERP_QUAD_FROM_VERT,0);
+	frames[5]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
 	frames[5]->set_speed(1,0,0);
 
 	frames[6]->set_bounds(Vec3(5,24,0));

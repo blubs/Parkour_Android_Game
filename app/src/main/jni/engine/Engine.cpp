@@ -134,7 +134,7 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 				float x = 0;
 				float y = 0;
 				int id = -1;
-				event_type = Game::INPUT_EVENT_ON_TOUCH_MOVE;
+				event_type = INPUT_EVENT_ON_TOUCH_MOVE;
 				for(size_t i = 0; i < touch_count; i++)
 				{
 					x = AMotionEvent_getX(event, i) / eng->width;
@@ -170,14 +170,14 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 		{
 			case AMOTION_EVENT_ACTION_DOWN:
 			case AMOTION_EVENT_ACTION_POINTER_DOWN:
-				event_type = Game::INPUT_EVENT_ON_TOUCH_DOWN;
+				event_type = INPUT_EVENT_ON_TOUCH_DOWN;
 				break;
 			case AMOTION_EVENT_ACTION_UP:
 			case AMOTION_EVENT_ACTION_POINTER_UP:
-				event_type = Game::INPUT_EVENT_ON_TOUCH_RELEASE;
+				event_type = INPUT_EVENT_ON_TOUCH_RELEASE;
 				break;
 			case AMOTION_EVENT_ACTION_MOVE:
-				event_type = Game::INPUT_EVENT_ON_TOUCH_MOVE;
+				event_type = INPUT_EVENT_ON_TOUCH_MOVE;
 				break;
 			default:
 				break;

@@ -6,6 +6,7 @@
 #define PARKOUR_MANEUVER_HPP
 
 #include "../engine/common.hpp"
+#include "game_defs.hpp"
 
 class Keyframe
 {
@@ -25,67 +26,31 @@ public:
 	float min_y_vel = 0;//minimum y axis speed
 
 	//z-axis interpolation types
-	int lerp_type = 0;//interpolation used for z-axis (spherical, linear, quadratic, inverse quadratic)
+	int lerp_type = FRAME_LERP_LINEAR;//interpolation used for z-axis (spherical, linear, quadratic, inverse quadratic)
 	float lerp_data = 0;
-
-	const static int LERP_LINEAR = 0;
-	const static int LERP_QUADRATIC = 1;
-	const static int LERP_QUAD_FROM_VERT = 2;
-	const static int LERP_QUAD_TO_VERT = 3;
 
 
 	//Turn the player towards a direction
-	int orient = 0;
+	int orient = FRAME_ORIENT_NONE;
 	Vec3 orient_pos;//x & y coordinates of point that player faces as we head towards keyframe
-
-	const static int ORIENT_NONE = 0;
-	const static int ORIENT_ONCE = 1;
-	const static int ORIENT_CONSTANT = 2;
+	//How interpolation factor ( 0 < factor <= 1 )
+	float orient_speed = 0.5f;
 
 	//Animation to play starting at this keyframe
+	//What cmd to execute
+	int anim_cmd = FRAME_ANIM_NOOP;
+	//Which animation (only used if anim_cmd is FRAME_ANIM_PLAY)
 	int anim = 0;
-
-	const static int ANIM_NO_ANIM = 0;
-	//TODO: player anims here (must match up with the indices of the animations that we load)
-
-	int anim_end_type = 0;
-
-	const static int ANIM_END_TYPE_ROOT_POSE = 0;
-	const static int ANIM_END_TYPE_FREEZE = 1;
-	const static int ANIM_END_TYPE_LOOP = 2;
-	const static int ANIM_END_TYPE_DEFAULT_ANIM = 3;
-
-	int viewbob_type = 0;
-
-	const static int VIEWBOB_NONE = 0;
-	const static int VIEWBOB_RUNNING = 1;
-	const static int VIEWBOB_SLIDING = 2;
-
+	//How to end the animation played (only used if anim_cmd is FRAME_ANIM_PLAY)
+	int anim_end_type = ANIM_END_TYPE_ROOT_POSE;
+	int viewbob_type = CAM_VIEWBOB_NONE;
 
 	//Special keyframe data (for letting the player know to do special things)
-	int spec_flag = 0;
+	int spec_flag = FRAME_SPECFLAG_NONE;
 
 
-	int input_required = 0;
+	int input_required = INPUT_SWIPE_NONE;
 
-	const static int INPUT_NONE = 0;
-	const static int INPUT_UP = 1;
-	const static int INPUT_DOWN = 3;
-
-	void set_info(Vec3 _mins, Vec3 _maxs, float _y_vel, float _y_accel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _anim_end_type, int _spec_flag)
-	{
-		mins = _mins;
-		maxs = _maxs;
-		y_vel = _y_vel;
-		y_accel = _y_accel;
-		min_y_vel = _min_y_vel;
-		lerp_type = _lerp_type;
-		lerp_data = _lerp_data;
-		orient = _orient;
-		orient_pos = _orient_pos;
-		anim = _anim;
-		spec_flag = _spec_flag;
-	}
 	void set_bounds(Vec3 _mins, Vec3 _maxs)
 	{
 		mins = _mins;
@@ -110,16 +75,27 @@ public:
 		lerp_data = _lerp_data;
 	}
 
-	void set_orient(int _orient, Vec3 _orient_pos)
+	void set_orient(int _orient, Vec3 _orient_pos, float _orient_speed)
 	{
 		orient = _orient;
 		orient_pos = _orient_pos;
+		orient_speed = _orient_speed;
 	}
 
-	void set_anim(int _anim, int _anim_end_type, int _viewbob_type)
+	void set_anim(int _anim_cmd, int _anim, int _anim_end_type)
 	{
+		anim_cmd = _anim_cmd;
 		anim = _anim;
 		anim_end_type = _anim_end_type;
+	}
+	//Alternate set_anim, for setting anim_cmd (there are many commands that don't require the extra params)
+	void set_anim(int _anim_cmd)
+	{
+		anim_cmd = _anim_cmd;
+	}
+
+	void set_vbob(int _viewbob_type)
+	{
 		viewbob_type = _viewbob_type;
 	}
 

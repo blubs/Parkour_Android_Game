@@ -70,7 +70,7 @@ void Camera::update_viewbob ()
 {
 	switch(viewbob)
 	{
-		case VIEWBOB_RUNNING:
+		case CAM_VIEWBOB_RUNNING:
 		{
 			//Going to simulate a spring, make the camera accelerate towards neutral
 			Vec3 force(-viewbob_angles.x,-viewbob_angles.y,-viewbob_angles.z);
@@ -106,10 +106,10 @@ void Camera::update_viewbob ()
 
 			break;
 		}
-		case VIEWBOB_SLIDING:
+		case CAM_VIEWBOB_SLIDING:
 			break;
 		default:
-		case VIEWBOB_NONE:
+		case CAM_VIEWBOB_NONE:
 			break;
 	}
 }

@@ -40,6 +40,7 @@ int Skeleton::play_anim(int anim, int end_type)
 	current_frame = 0;
 	dest_frame = 1;
 	playing_anim = true;
+	animating = true;
 	return 1;
 }
 
@@ -50,7 +51,9 @@ int Skeleton::play_default_anim()
 		LOGE("Error: tried playing invalid default animation %d.",default_anim);
 		return 0;
 	}
+	playing_anim = true;
 	playing_default_anim = true;
+	animating = true;
 	current_anim = default_anim;
 	current_frame = 0;
 	dest_frame = 1;
@@ -61,10 +64,23 @@ int Skeleton::play_default_anim()
 int Skeleton::stop_anim()
 {
 	playing_anim = false;
+	animating = false;
 	current_anim = -1;
-	current_anim_end_type = END_TYPE_ROOT_POSE;
+	current_anim_end_type = ANIM_END_TYPE_ROOT_POSE;
 	current_frame = 0;
 	dest_frame = 0;
+	return 1;
+}
+
+int Skeleton::pause_anim()
+{
+	animating = false;
+	return 1;
+}
+
+int Skeleton::resume_anim()
+{
+	animating = true;
 	return 1;
 }
 
@@ -147,7 +163,7 @@ void Skeleton::calc_pose_mats()
 //Ran every frame to update animation frame logic (calculate interpolation data, increment frame, etc)
 int Skeleton::update_frame()
 {
-	if(!playing_anim)
+	if(!playing_anim || !animating)
 		return 1;
 
 	float ctime = Time::time();
@@ -160,19 +176,19 @@ int Skeleton::update_frame()
 		{
 			switch(current_anim_end_type)
 			{
-				case END_TYPE_ROOT_POSE:
+				case ANIM_END_TYPE_ROOT_POSE:
 				default:
 					stop_anim();
 					return 1;
-				case END_TYPE_FREEZE:
+				case ANIM_END_TYPE_FREEZE:
 					current_frame--;
 					dest_frame = current_frame;
 					break;
-				case END_TYPE_LOOP:
+				case ANIM_END_TYPE_LOOP:
 					current_frame = 0;
 					dest_frame = 1;
 					break;
-				case END_TYPE_DEFAULT_ANIM:
+				case ANIM_END_TYPE_DEFAULT_ANIM:
 					if(anim_is_valid(default_anim))
 					{
 						play_default_anim();
@@ -193,15 +209,15 @@ int Skeleton::update_frame()
 		{
 			switch(current_anim_end_type)
 			{
-				case END_TYPE_ROOT_POSE:
+				case ANIM_END_TYPE_ROOT_POSE:
 				default:
-				case END_TYPE_FREEZE:
+				case ANIM_END_TYPE_FREEZE:
 					dest_frame--;
 					break;
-				case END_TYPE_LOOP:
+				case ANIM_END_TYPE_LOOP:
 					dest_frame = 0;
 					break;
-				case END_TYPE_DEFAULT_ANIM:
+				case ANIM_END_TYPE_DEFAULT_ANIM:
 					//Technically next frame is going to be frame 0 of default anim... I sense complications here
 					//TODO / FIXME: this isn't lerped correctly
 					//We have to handle fading different anims before figuring this out
