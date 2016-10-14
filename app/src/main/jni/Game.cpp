@@ -727,7 +727,7 @@ void Game::mnvr_movement ()
 	if(mnvr_frame->orient == FRAME_ORIENT_CONSTANT)
 		mnvr_goal_yaw_rot = get_keyframe_goal_yaw(mnvr_frame),player->angles.y;
 
-	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * 0.5f;
+	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * mnvr_frame->orient_speed;
 	//TODO tile camera for turning
 
 	if(player->pos.y > mnvr_goal_pos.y)
@@ -1288,8 +1288,8 @@ void Game::update()
 		//Get Maneuvers that require no input
 
 		//TODO: check for traversals as well
-		//Check for maneuvers that require no input or input up or input down
-		Maneuver* man = current_building->input_to_maneuver(player->pos,input_swipe);
+		//Check for maneuvers that require no input or whatever input we have sent (input_swipe)
+		Maneuver* man = current_building->input_to_maneuver(player->pos, INPUT_SWIPE_NONE | input_swipe);
 
 		if(man)
 		{
@@ -1328,7 +1328,6 @@ void Game::update()
 		player_anim_special_events();
 		camera->set_viewbob(CAM_VIEWBOB_RUNNING);
 
-
 		//Testing viewbob code
 		static bool stepped = true;
 
@@ -1347,7 +1346,6 @@ void Game::update()
 		else if(input_y[1] > 0.1f)
 				stepped = false;
 		//========================= end test viewbob code
-
 		camera->update_viewbob();
 
 		if(player->pos.z > current_building->active_floor->altitude)
@@ -1355,16 +1353,14 @@ void Game::update()
 			player_state = PLAYER_STATE_FALLING;
 			return;
 		}
-
 		//Player turning code:
 		float turn_angle = 0.0f;
 		if(input_turning)
 		{
 			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
-		player->angles.y += (turn_angle - player->angles.y) * mnvr_frame->orient_speed;
+		player->angles.y += (turn_angle - player->angles.y) * 0.5f;
 		//TODO: camera roll rotation from turning
-
 
 		//Make the player move forward, if runs outside of building bounds, reset at building start
 		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
@@ -1377,6 +1373,7 @@ void Game::update()
 		{
 			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
 		}
+
 	}
 	if(player_state == PLAYER_STATE_FALLING)
 	{

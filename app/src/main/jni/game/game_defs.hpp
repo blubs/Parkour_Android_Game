@@ -70,11 +70,11 @@
 #define INPUT_EVENT_ON_TOUCH_MOVE 2
 #define INPUT_EVENT_ON_TOUCH_RELEASE 3
 
-#define INPUT_SWIPE_NONE 0
-#define INPUT_SWIPE_UP 1
-#define INPUT_SWIPE_DOWN 2
-#define INPUT_SWIPE_LEFT 3
-#define INPUT_SWIPE_RIGHT 4
+#define INPUT_SWIPE_NONE 1
+#define INPUT_SWIPE_UP 2
+#define INPUT_SWIPE_DOWN 4
+#define INPUT_SWIPE_LEFT 8
+#define INPUT_SWIPE_RIGHT 16
 
 //=========================== Game Logic Defs ==========================
 #define MAX_BUILDINGS 5

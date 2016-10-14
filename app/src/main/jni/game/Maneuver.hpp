@@ -104,6 +104,11 @@ public:
 		spec_flag = _spec_flag;
 	}
 
+	void set_input(int _input_required)
+	{
+		input_required = _input_required;
+	}
+
 };
 
 class Maneuver

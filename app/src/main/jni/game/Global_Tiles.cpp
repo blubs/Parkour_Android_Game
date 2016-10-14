@@ -124,15 +124,13 @@ Global_Tiles::Global_Tiles()
 	//4 frames.
 	Keyframe** frames = test_tiles[2]->maneuvers[0]->keyframes;
 
-
-	//frames[0].set_info(Vec3(1,0,0),Vec3(2,2,0),6,0,0,Keyframe::LERP_LINEAR,0,Keyframe::ORIENT_NONE,Vec3::ZERO(),0,0);
-
 	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2,2,0));
+	frames[0]->set_input(INPUT_SWIPE_NONE);
 	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
 	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
 	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.2);//redundant (this is default)
 	frames[0]->set_anim(FRAME_ANIM_NOOP,0,ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
-	frames[0]->set_anim(CAM_VIEWBOB_NONE);//redundant (this is default)
+	frames[0]->set_vbob(CAM_VIEWBOB_NONE);//redundant (this is default)
 	frames[0]->set_specflag(0);//redundant (this is default)
 
 	//Now for the next frames, omitting redundant calls
@@ -163,7 +161,6 @@ Global_Tiles::Global_Tiles()
 
 
 	//TODO: continue the rest of the frames
-	//(Vec3 _mins, Vec3 _maxs, float _y_vel, float _dy_vel, float _min_y_vel, int _lerp_type, float _lerp_data, int _orient, Vec3 _orient_pos, int _anim, int _spec_flag)
 
 	window_model = new Static_Model("models/windows/style0.stmf");
 	window_int_model = new Static_Model("models/windows/style0_int.stmf");
