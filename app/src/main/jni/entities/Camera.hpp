@@ -42,9 +42,9 @@ public:
 
 	Vec3 viewbob_angles;
 
-	float viewbob_spring_constant = 1000.0f;
-	float viewbob_resistance = 0.9f;
-	float viewbob_max_stray = 30.0f;
+	float viewbob_spring_constant = 198.0f;//1000 was previous value
+	float viewbob_resistance = 2.4f;//0.9f was previous value
+	float viewbob_max_stray = 50.0f;//30 was previous value
 
 
 	void set_viewbob(int type);

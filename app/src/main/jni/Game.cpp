@@ -600,6 +600,14 @@ void Game::draw_player_bbox(Mat4 vp)
 		PLAYER_SIZE,PLAYER_SIZE,2.0f,		0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
 		//Edge of triangle
 		0.0f,PLAYER_SIZE+player_bbox_tri_height,0.0f,	0.0f,PLAYER_SIZE+player_bbox_tri_height,2.0f,
+
+		//Axes at player position
+		//X-axis
+		0.0f,0.0f,0.0f,	0.25f,0.0f,0.0f,
+		//Y-axis
+		0.0f,0.0f,0.0f,	0.0f,0.25f,0.0f,
+		//Z-axis
+		0.0f,0.0f,0.0f,	0.0f,0.0f,0.25f,
 	};
 
 	solid_mat->bind_material();
@@ -609,7 +617,75 @@ void Game::draw_player_bbox(Mat4 vp)
 	float color[] = {0.0f,1.0f,0.0f,1.0f};
 	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
 	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
-	glDrawArrays(GL_LINES, 0, 34);
+	glDrawArrays(GL_LINES, 0, 40);
+}
+//Draws active floor maneuver keyframes
+void Game::draw_keyframe(Mat4 vp, Keyframe* key, Vec3 ofs)
+{
+	Vec3 mins = key->mins;
+	Vec3 maxs = key->maxs;
+	const float bounds[] =
+	{
+		mins.x,mins.y,mins.z,		mins.x,maxs.y,maxs.z,
+		mins.x,maxs.y,mins.z,		maxs.x,maxs.y,maxs.z,
+		maxs.x,maxs.y,mins.z,		maxs.x,mins.y,maxs.z,
+		maxs.x,mins.y,mins.z,		mins.x,mins.y,maxs.z,
+	};
+	const float point_bounds[] =
+	{
+		mins.x-0.25f,mins.y,mins.z,		mins.x+0.25f,mins.y,mins.z,
+		mins.x,mins.y-0.25f,mins.z,		mins.x,mins.y+0.25f,mins.z,
+		mins.x,mins.y,mins.z-0.25f,		mins.x,mins.y,mins.z+0.25f,
+	};
+	int vert_count = 0;
+
+	solid_mat->bind_material();
+
+	if(mins.x == maxs.x && mins.y == maxs.y)
+	{
+		//bind axes
+		solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) point_bounds);
+		vert_count = 6;
+	}
+	else
+	{
+		//bind square area
+		solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounds);
+		vert_count = 8;
+	}
+
+	float color[] = {1.0f,1.0f,0.0f,1.0f};
+	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+
+	Mat4 trans = vp * Mat4::TRANSLATE(ofs);
+	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) trans.m);
+	glDrawArrays(GL_LINES, 0, vert_count);
+}
+//Draws active floors maneuver data
+void Game::draw_floor_maneuvers(Mat4 vp)
+{
+	Vec3 building_org = current_building->active_floor->global_mins + Vec3(0,0,0.5f)*GRID_SIZE;
+	Vec3 tile_pos;
+
+	for(int i = 0; i < current_building->active_floor->width; i++)
+	{
+		for(int j = 0; j < current_building->active_floor->length; j++)
+		{
+			tile_pos = building_org + Vec3(i*TILE_SIZE,j*TILE_SIZE,0.0f);
+			if(current_building->active_floor->tile_object[i][j]->maneuver_count)
+			{
+				for(int k = 0; k < current_building->active_floor->tile_object[i][j]->maneuver_count; k++)
+				{
+					Maneuver* man = current_building->active_floor->tile_object[i][j]->maneuvers[k];
+					Vec3 ofs = tile_pos + Vec3(0,0,0.1f);
+					for(int l = 0; l < man->keyframe_count; l++)
+					{
+						draw_keyframe(vp,man->keyframes[l],ofs);
+					}
+				}
+			}
+		}
+	}
 }
 //Draws active floors collision voxels
 void Game::draw_floor_collision_voxels(Mat4 vp)
@@ -663,11 +739,7 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 		}
 	}
 }
-//Draws active floors maneuver data
-void Game::draw_floor_maneuvers(Mat4 vp)
-{
-	//TODO
-}
+
 //Returns the pos if in mins & maxs, otherwise caps to lie within the mins & maxs
 Vec3 Game::cap_to_bounds(Vec3 pos, Vec3 mins, Vec3 maxs)
 {
@@ -694,6 +766,10 @@ Vec3 Game::cap_to_bounds(Vec3 pos, Vec3 mins, Vec3 maxs)
 void Game::mnvr_movement ()
 {
 	mnvr_y_vel += mnvr_frame->y_accel * Time::delta_time;
+	if(mnvr_y_vel <= mnvr_frame->min_y_vel)
+	{
+		mnvr_y_vel = mnvr_frame->min_y_vel;
+	}
 
 	player->pos.y += mnvr_y_vel * Time::delta_time;
 
@@ -1368,6 +1444,11 @@ void Game::update()
 		if(!move_player(movement_vel))
 			return;
 
+		//if player is past building edge
+		if(player->pos.y + PLAYER_SIZE >= current_building->global_maxs.y)
+			player->pos.y = current_building->global_mins.y + PLAYER_SIZE + 0.5f;
+
+		//Then check for more general out-of-boundsness in both x and y axes
 		//player->pos = player->pos + Time::delta_time * movement_vel;
 		if(current_building->is_box_out_of_bounds(player->pos,PLAYER_SIZE))//TODO: make 0.5f be the player size
 		{
@@ -1499,5 +1580,6 @@ void Game::render()
 	}
 
 	draw_floor_collision_voxels(vp);
+	draw_floor_maneuvers(vp);
 	draw_player_bbox(vp);
 }

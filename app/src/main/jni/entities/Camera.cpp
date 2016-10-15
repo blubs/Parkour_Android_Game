@@ -55,6 +55,13 @@ void Camera::update_view_matrix()
 
 void Camera::set_viewbob (int type)
 {
+	if(viewbob != type)
+	{
+		//Clear viewbob velocities
+		viewbob_vel = Vec3::ZERO();
+		viewbob_angles = Vec3::ZERO();
+		//TODO: fade between viewbob types
+	}
 	viewbob = type;
 }
 

@@ -243,7 +243,7 @@ public:
 		{
 			man = tile->maneuvers[i];
 			//If we have the correct input
-			if(input_type | man->input_required)
+			if(input_type & man->input_required)
 			{
 				//If we are in the correct area
 				mins = man->keyframes[0]->mins;

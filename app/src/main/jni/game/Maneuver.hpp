@@ -48,9 +48,6 @@ public:
 	//Special keyframe data (for letting the player know to do special things)
 	int spec_flag = FRAME_SPECFLAG_NONE;
 
-
-	int input_required = INPUT_SWIPE_NONE;
-
 	void set_bounds(Vec3 _mins, Vec3 _maxs)
 	{
 		mins = _mins;
@@ -104,10 +101,6 @@ public:
 		spec_flag = _spec_flag;
 	}
 
-	void set_input(int _input_required)
-	{
-		input_required = _input_required;
-	}
 
 };
 
@@ -116,7 +109,7 @@ class Maneuver
 public:
 	Keyframe** keyframes;
 	int keyframe_count = 0;
-	int input_required = 0;
+	int input_required = INPUT_SWIPE_NONE;
 
 	Maneuver( int frame_count)
 	{
@@ -137,6 +130,10 @@ public:
 		delete[] keyframes;
 	}
 
+	void set_input(int _input_required)
+	{
+		input_required = _input_required;
+	}
 };
 
 class Traversal : Maneuver

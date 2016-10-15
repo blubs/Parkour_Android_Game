@@ -153,10 +153,10 @@ public:
 
 	//FIXME: remove this
 	//===================
-	int viewbob_menu_state = 0;
-	float viewbob_pitch;
-	float viewbob_yaw;
-	float viewbob_roll;
+	int viewbob_menu_state = 0.0f;
+	float viewbob_pitch = 16.0f;
+	float viewbob_yaw = 15.0f;
+	float viewbob_roll = 8.0f;
 	//===================
 
 	float player_bbox_tri_slope = 0.0f;
@@ -183,8 +183,9 @@ public:
 	//Draws active floors collision voxels
 	void draw_floor_collision_voxels(Mat4 vp);
 	//Draws active floors maneuver data
-	//TODO: implement this method
 	void draw_floor_maneuvers(Mat4 vp);
+	//Draws active floor maneuver keyframes
+	void draw_keyframe(Mat4 vp, Keyframe* key, Vec3 ofs);
 
 	//====== Maneuver variables ======
 	Maneuver* mnvr_current;

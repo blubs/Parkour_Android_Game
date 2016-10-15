@@ -118,46 +118,23 @@ Global_Tiles::Global_Tiles()
 	}
 
 	//Setting up test maneuver
-	test_tiles[2]->maneuvers[0] = new Maneuver(7);//7 keyframes
+	test_tiles[2]->maneuvers[0] = new Maneuver(2);//7 keyframes
+	test_tiles[2]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 
 	//Test obstacle: has activate area from (1,0) to (2,2), then moves up way high, then moves back down, then releases at regular height.
 	//4 frames.
 	Keyframe** frames = test_tiles[2]->maneuvers[0]->keyframes;
 
-	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2,2,0));
-	frames[0]->set_input(INPUT_SWIPE_NONE);
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,2,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,-1.0f,0.1f);
 	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
-	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.2);//redundant (this is default)
+	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.1);//redundant (this is default)
 	frames[0]->set_anim(FRAME_ANIM_NOOP,0,ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
-	frames[0]->set_vbob(CAM_VIEWBOB_NONE);//redundant (this is default)
+	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);//redundant (this is default)
 	frames[0]->set_specflag(0);//redundant (this is default)
 
 	//Now for the next frames, omitting redundant calls
-	frames[1]->set_bounds(Vec3(1,2.1,5));
-	frames[1]->set_lerp(FRAME_LERP_QUADRATIC,-9.8f);
-	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(2,3,0),0.2);//face right
-	frames[1]->set_speed(1,0,0);
-
-	frames[2]->set_bounds(Vec3(1,6,5));
-	frames[2]->set_lerp(FRAME_LERP_LINEAR,0);
-	frames[2]->set_orient(FRAME_ORIENT_ONCE,Vec3(0,6,0),0.2);//face left
-	frames[2]->set_speed(1,0,0);
-
-	frames[3]->set_bounds(Vec3(1,9,5));
-	frames[3]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
-	frames[3]->set_orient(FRAME_ORIENT_ONCE,Vec3(1,8,0),0.2);//face back
-	frames[3]->set_speed(1,0,0);
-
-	frames[4]->set_bounds(Vec3(1,14,10));
-	frames[4]->set_lerp(FRAME_LERP_LINEAR,0);
-	frames[4]->set_speed(1,0,0);
-
-	frames[5]->set_bounds(Vec3(5,19,5));
-	frames[5]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
-	frames[5]->set_speed(1,0,0);
-
-	frames[6]->set_bounds(Vec3(5,24,0));
+	frames[1]->set_bounds(Vec3(1.5,12.1,0));
 
 
 	//TODO: continue the rest of the frames
