@@ -150,6 +150,12 @@ public:
 
 	int player_state = 0;
 	float player_substate = 0.0f;
+	//Misc variable used for timing something the state needs to time
+	float player_substate_time = 0.0f;
+
+	//Sliding variables
+	float player_slide_speed = 0.0f;
+
 
 	//FIXME: remove this
 	//===================

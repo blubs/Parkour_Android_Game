@@ -51,8 +51,6 @@ public:
 	bool playing_default_anim = false;
 	int default_anim = -1;
 	int default_anim_end_type = ANIM_END_TYPE_ROOT_POSE;
-	//TODO animation blending
-
 
 	int set_default_anim(int anim, int end_type);
 

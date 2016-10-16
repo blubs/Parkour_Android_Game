@@ -150,7 +150,7 @@ void Skeleton::calc_pose_mats()
 
 		//Calculate inverse-transpose Mat3
 		trans_IT = (anims_IT[current_anim]) + (bone_count * 9 * current_frame) + (i*9);
-		bone_IT_trans = Mat3::ROTATE(trans_IT);
+		bone_IT_trans = Mat3(trans_IT);
 
 		//Copying inverse-transpose Mat3 into the float array
 		for(int j = 0; j < 9; j++)
@@ -181,9 +181,8 @@ int Skeleton::update_frame()
 					stop_anim();
 					return 1;
 				case ANIM_END_TYPE_FREEZE:
-					current_frame--;
-					dest_frame = current_frame;
-					break;
+					pause_anim();
+					return 1;
 				case ANIM_END_TYPE_LOOP:
 					current_frame = 0;
 					dest_frame = 1;
@@ -219,14 +218,19 @@ int Skeleton::update_frame()
 					break;
 				case ANIM_END_TYPE_DEFAULT_ANIM:
 					//Technically next frame is going to be frame 0 of default anim... I sense complications here
-					//TODO / FIXME: this isn't lerped correctly
-					//We have to handle fading different anims before figuring this out
-					//Don't lerp for now. FIXME
-					dest_frame = current_frame;//FIXME should be first frame of next anim? or just current frame? (no lerp)
+					//Note: this doesn't lerp, I refuse to implement animation blending
+					//(based on my implementation of a mesh's skeleton,
+					// 		....each bone would lerp independently of every other bone,
+					// 		this would be a nightmare)
+					dest_frame = current_frame;//no lerp
 					break;
 			}
 		}
 
+		if(current_anim_end_type == ANIM_END_TYPE_FREEZE)
+		{
+			LOGE("Current frame: %d, Dest frame: %d",current_frame, dest_frame);
+		}
 	}
 
 	if(current_frame != dest_frame)
@@ -236,6 +240,7 @@ int Skeleton::update_frame()
 
 	return 1;
 }
+
 
 //Returns a pointer to the current frame matrix generation data
 float* Skeleton::get_current_pose()

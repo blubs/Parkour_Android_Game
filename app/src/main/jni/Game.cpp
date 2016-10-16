@@ -220,6 +220,8 @@ int Game::load_models()
 	player_skel->load_animation("animations/run.skaf");
 	player_skel->load_animation("animations/speed_vault.skaf");
 	player_skel->load_animation("animations/run_jump.skaf");
+	player_skel->load_animation("animations/slide.skaf");
+	player_skel->load_animation("animations/slide_end.skaf");
 	player_skel->load_animation("animations/showcase_hands.skaf");
 	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
 	skybox = new Skybox();
@@ -626,10 +628,21 @@ void Game::draw_keyframe(Mat4 vp, Keyframe* key, Vec3 ofs)
 	Vec3 maxs = key->maxs;
 	const float bounds[] =
 	{
-		mins.x,mins.y,mins.z,		mins.x,maxs.y,maxs.z,
-		mins.x,maxs.y,mins.z,		maxs.x,maxs.y,maxs.z,
-		maxs.x,maxs.y,mins.z,		maxs.x,mins.y,maxs.z,
-		maxs.x,mins.y,mins.z,		mins.x,mins.y,maxs.z,
+		//Bottom box
+		mins.x,mins.y,mins.z,		mins.x,maxs.y,mins.z,
+		mins.x,maxs.y,mins.z,		maxs.x,maxs.y,mins.z,
+		maxs.x,maxs.y,mins.z,		maxs.x,mins.y,mins.z,
+		maxs.x,mins.y,mins.z,		mins.x,mins.y,mins.z,
+		//Top box
+		mins.x,mins.y,maxs.z,		mins.x,maxs.y,maxs.z,
+		mins.x,maxs.y,maxs.z,		maxs.x,maxs.y,maxs.z,
+		maxs.x,maxs.y,maxs.z,		maxs.x,mins.y,maxs.z,
+		maxs.x,mins.y,maxs.z,		mins.x,mins.y,maxs.z,
+		//bottom to top corners
+		mins.x,mins.y,mins.z,		mins.x,mins.y,maxs.z,
+		mins.x,maxs.y,mins.z,		mins.x,maxs.y,maxs.z,
+		maxs.x,maxs.y,mins.z,		maxs.x,maxs.y,maxs.z,
+		maxs.x,mins.y,mins.z,		maxs.x,mins.y,maxs.z,
 	};
 	const float point_bounds[] =
 	{
@@ -649,9 +662,9 @@ void Game::draw_keyframe(Mat4 vp, Keyframe* key, Vec3 ofs)
 	}
 	else
 	{
-		//bind square area
+		//bind cube area
 		solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounds);
-		vert_count = 8;
+		vert_count = 24;
 	}
 
 	float color[] = {1.0f,1.0f,0.0f,1.0f};
@@ -862,6 +875,7 @@ void Game::reached_mnvr_keyframe ()
 				break;
 			case FRAME_ANIM_RESUME:
 				player_skel->resume_anim();
+				break;
 			case FRAME_ANIM_STOP:
 				player_skel->stop_anim();
 				break;
@@ -1041,9 +1055,9 @@ bool Game::move_player(Vec3 v)
 //Executes code if player is at specific frames in specific animations
 void Game::player_anim_special_events()
 {
-	if(player_skel->playing_anim)
+	if(player_skel->playing_anim && player_skel->animating)
 	{
-		if(player_skel->current_anim == 0)//Running animation
+		if(player_skel->current_anim == PLAYER_ANIM_RUN)//Running animation
 		{
 			if(player_skel->current_frame == 9)//left foot hit ground
 			{
@@ -1391,8 +1405,13 @@ void Game::update()
 			//Get maneuvers that require input down
 			if(input_swipe == INPUT_SWIPE_DOWN)
 			{
-				//player_state == PLAYER_STATE_SLIDING;
-				//TODO: if not in maneuver area, generic slide
+				player_state = PLAYER_STATE_SLIDING;
+				player_slide_speed = PLAYER_SLIDE_SPEED;
+				player_substate = 0.0f;
+				//In this context, subtate_time is the time that the player will slide for
+				player_substate_time = t + PLAYER_SLIDE_TIME;
+				player_skel->play_anim(PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
+				return;
 			}
 		}
 
@@ -1435,7 +1454,7 @@ void Game::update()
 		{
 			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
-		player->angles.y += (turn_angle - player->angles.y) * 0.5f;
+		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
 		//TODO: camera roll rotation from turning
 
 		//Make the player move forward, if runs outside of building bounds, reset at building start
@@ -1475,7 +1494,46 @@ void Game::update()
 	}
 	if(player_state == PLAYER_STATE_SLIDING)
 	{
-		//TODO: player sliding logic
+		//TODO: play sliding animation at start, then freeze the anim, then when we end the slide, play get back up animation
+		if(player_substate_time < t)
+		{
+			if(player_substate == 0.0f)
+			{
+				player_substate = 1.0f;
+				player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
+				player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
+			}
+			else if(player_substate == 1.0f)
+			{
+				player_state = PLAYER_STATE_RUNNING;
+				player_slide_speed = 0.0f;
+				player_substate = 0.0f;
+				player_substate_time = 0.0f;
+				player_skel->play_default_anim();
+			}
+		}
+		//In this context, subtate_time is the time that the player will slide for
+
+		player_slide_speed += PLAYER_SLIDE_ACCEL * Time::delta_time;
+		if(player_slide_speed < PLAYER_SLIDE_MIN_SPEED)
+			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
+
+		//Player turning code:
+		float turn_angle = 0.0f;
+		if(input_turning)
+		{
+			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
+		}
+		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
+		//TODO: camera roll rotation from turning
+		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
+
+		player_anim_special_events();
+		camera->set_viewbob(CAM_VIEWBOB_SLIDING);
+		camera->update_viewbob();
+
+		if(!move_player(player_phys_vel))
+			return;
 	}
 	//TODO: other states
 

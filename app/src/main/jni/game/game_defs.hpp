@@ -95,6 +95,15 @@
 #define PLAYER_MAX_TURN_ANGLE 60.0f
 #define PLAYER_RUN_SPEED 6.0f
 
+#define PLAYER_TURN_LERP_FACTOR 0.5f
+
+#define PLAYER_SLIDE_SPEED 6.0f
+#define PLAYER_SLIDE_ACCEL -3.0f
+#define PLAYER_SLIDE_MIN_SPEED 0.5f
+//Slide time in seconds
+#define PLAYER_SLIDE_TIME 1.1f
+
+
 #define PLAYER_JUMP_HEIGHT 0.75f
 //jump vel = sqrt(PLAYER_JUMP_HEIGHT * 2.0f * 9.8f) (9.8f being acceleration of gravity)
 #define PLAYER_JUMP_VEL 3.83406f
@@ -104,7 +113,9 @@
 #define PLAYER_ANIM_RUN 0
 #define PLAYER_ANIM_SPEED_VAULT 1
 #define PLAYER_ANIM_RUN_JUMP 2
-#define PLAYER_ANIM_SHOWCASE_HANDS 3
+#define PLAYER_ANIM_SLIDE 3
+#define PLAYER_ANIM_SLIDE_END 4
+#define PLAYER_ANIM_SHOWCASE_HANDS 5
 
 
 

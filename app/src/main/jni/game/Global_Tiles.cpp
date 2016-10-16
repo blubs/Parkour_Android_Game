@@ -118,7 +118,7 @@ Global_Tiles::Global_Tiles()
 	}
 
 	//Setting up test maneuver
-	test_tiles[2]->maneuvers[0] = new Maneuver(2);//7 keyframes
+	test_tiles[2]->maneuvers[0] = new Maneuver(6);//6 keyframes
 	test_tiles[2]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 
 	//Test obstacle: has activate area from (1,0) to (2,2), then moves up way high, then moves back down, then releases at regular height.
@@ -126,15 +126,38 @@ Global_Tiles::Global_Tiles()
 	Keyframe** frames = test_tiles[2]->maneuvers[0]->keyframes;
 
 	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,-1.0f,0.1f);
+	frames[0]->set_speed(0.5f,0,0);
 	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
 	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.1);//redundant (this is default)
 	frames[0]->set_anim(FRAME_ANIM_NOOP,0,ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);//redundant (this is default)
 	frames[0]->set_specflag(0);//redundant (this is default)
 
+	//Things to check:
+	//Animation no cmd
+	//pause anim
+	//resume anim
+	//stop anim
+	//play some other anim (with end mode loop)
+
 	//Now for the next frames, omitting redundant calls
-	frames[1]->set_bounds(Vec3(1.5,12.1,0));
+	frames[1]->set_bounds(Vec3(1.75f,4,0));
+	frames[1]->set_speed(0.5f,0,0);
+	frames[1]->set_anim(FRAME_ANIM_PAUSE);
+
+	frames[2]->set_bounds(Vec3(1.75f,6,0));
+	frames[2]->set_speed(0.5f,0,0);
+	frames[2]->set_anim(FRAME_ANIM_RESUME);
+
+	frames[3]->set_bounds(Vec3(1.75f,8,0));
+	frames[3]->set_speed(0.5f,0,0);
+	frames[3]->set_anim(FRAME_ANIM_STOP);
+
+	frames[4]->set_bounds(Vec3(1.75f,10,0));
+	frames[4]->set_speed(0.5f,0,0);
+	frames[4]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
+
+	frames[5]->set_bounds(Vec3(1.75f,12,0));
 
 
 	//TODO: continue the rest of the frames
