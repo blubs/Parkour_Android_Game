@@ -18,7 +18,13 @@ public:
 
 	Skeleton* skel;
 	//Have to store an array of all models that make up the player
-	Skel_Model* player_model;
+	Skel_Model* player_model1;
+	Skel_Model* player_model2;
+	Skel_Model* player_model3;
+
+	Material* mat1;
+	Material* mat2;
+	Material* mat3;
 
 	int render(Mat4 vp);
 

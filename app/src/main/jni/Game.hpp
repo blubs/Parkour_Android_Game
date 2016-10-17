@@ -56,6 +56,8 @@ public:
 	Material *static_color_mat = NULL;
 	Material *text_mat = NULL;
 	Material *player_skin_mat = NULL;
+	Material *player_torso_mat = NULL;
+	Material *player_leg_mat = NULL;
 	Material *solid_mat = NULL;
 
 	//------------ Textures -------------------
@@ -63,10 +65,18 @@ public:
 	Texture *char_set = NULL;
 	Texture *tex_arm_nor = NULL;
 	Texture *tex_arm_diff = NULL;
+	Texture *tex_torso_nor = NULL;
+	Texture *tex_torso_diff = NULL;
+	Texture *tex_leg_nor = NULL;
+	Texture *tex_leg_diff = NULL;
+
 	Cube_Map *test_cube_map = NULL;
 
 	//------------- Models --------------------
 	Skel_Model *test_arms = NULL;
+	Skel_Model *test_torso = NULL;
+	Skel_Model *test_legs = NULL;
+
 	Static_Model *model_prim_cube = NULL;
 	Static_Model *model_prim_quad = NULL;
 
@@ -96,7 +106,7 @@ public:
 	//======================================================================
 
 
-	//========================================= Loading assets ======================================
+	//========================================= Loading assets ========================player==============
 
 	int load_shaders();
 	void unload_shaders();

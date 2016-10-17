@@ -173,6 +173,8 @@ int Game::load_materials()
 	static_color_mat = new Material();
 	text_mat = new Material();
 	player_skin_mat = new Material();
+	player_torso_mat = new Material();
+	player_leg_mat = new Material();
 	solid_mat = new Material();
 
 	return 1;
@@ -184,6 +186,8 @@ void Game::unload_materials()
 	delete skel_color_mat;
 	delete text_mat;
 	delete player_skin_mat;
+	delete player_torso_mat;
+	delete player_leg_mat;
 	delete solid_mat;
 }
 
@@ -193,6 +197,10 @@ int Game::load_textures()
 	char_set = new Texture("char_set.pkm",2048,2048);
 	tex_arm_nor = new Texture("textures/arm_nor.pkm",1024,1024);
 	tex_arm_diff = new Texture("textures/arm_diff.pkm",1024,1024);
+	tex_torso_nor = new Texture("textures/torso_nor.pkm",512,512);
+	tex_torso_diff = new Texture("textures/torso_diff.pkm",512,512);
+	tex_leg_nor = new Texture("textures/leg_nor.pkm",512,512);
+	tex_leg_diff = new Texture("textures/leg_diff.pkm",512,512);
 	test_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
 	return 1;
 }
@@ -202,12 +210,18 @@ void Game::unload_textures()
 	delete char_set;
 	delete tex_arm_nor;
 	delete tex_arm_diff;
+	delete tex_torso_nor;
+	delete tex_torso_diff;
+	delete tex_leg_nor;
+	delete tex_leg_diff;
 	delete test_cube_map;
 }
 
 int Game::load_models()
 {
 	test_arms = new Skel_Model("models/test_arms.skmf");
+	test_torso = new Skel_Model("models/test_torso.skmf");
+	test_legs = new Skel_Model("models/test_legs.skmf");
 
 	model_prim_cube = new Static_Model("models/primitive_cube.stmf");
 	model_prim_quad = new Static_Model("models/primitive_quad.stmf");
@@ -230,6 +244,8 @@ int Game::load_models()
 void Game::unload_models()
 {
 	delete test_arms;
+	delete test_torso;
+	delete test_legs;
 
 	delete model_prim_cube;
 	delete model_prim_quad;
@@ -293,9 +309,15 @@ int Game::init_gl()
 	char_set->init_gl();
 	tex_arm_nor->init_gl();
 	tex_arm_diff->init_gl();
+	tex_torso_nor->init_gl();
+	tex_torso_diff->init_gl();
+	tex_leg_nor->init_gl();
+	tex_leg_diff->init_gl();
 	test_cube_map->init_gl();
 	//==================================== Setting up Mesh VBOs ====================================
 	test_arms->init_gl();
+	test_torso->init_gl();
+	test_legs->init_gl();
 	model_prim_cube->init_gl();
 	model_prim_quad->init_gl();
 
@@ -322,6 +344,8 @@ void Game::term_gl()
 
 	//Terminating all loaded models
 	test_arms->term_gl();
+	test_torso->term_gl();
+	test_legs->term_gl();
 	model_prim_cube->term_gl();
 	model_prim_quad->term_gl();
 
@@ -335,6 +359,8 @@ void Game::term_gl()
 	test_cube_map->term_gl();
 	tex_arm_nor->term_gl();
 	tex_arm_diff->term_gl();
+	tex_torso_diff->term_gl();
+	tex_leg_diff->term_gl();
 	char_set->term_gl();
 	test_texture->term_gl();
 }
@@ -462,8 +488,13 @@ void Game::start()
 
 	//Setting run anim as default anim
 	player_skel->set_default_anim(0,ANIM_END_TYPE_LOOP);
-	player->mat = player_skin_mat;
+	player->mat1 = player_skin_mat;
+	player->mat2 = player_torso_mat;
+	player->mat3 = player_leg_mat;
+
 	test_arms->skel = player_skel;
+	test_torso->skel = player_skel;
+	test_legs->skel = player_skel;
 
 	//============================= Setting up materials ================================
 	mat_red->set_shader(test_shader);
@@ -472,10 +503,18 @@ void Game::start()
 	skel_color_mat->set_shader(skel_color_shader);
 	static_color_mat->set_shader(static_color_shader);
 	player_skin_mat->set_shader(player_skin_shader);
+	player_torso_mat->set_shader(player_skin_shader);
+	player_leg_mat->set_shader(player_skin_shader);
 	solid_mat->set_shader(solid_shader);
 
 	player_skin_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_NORMAL,(void*) tex_arm_nor);
 	player_skin_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_DIFFUSE,(void*) tex_arm_diff);
+
+	player_torso_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_NORMAL,(void*) tex_torso_nor);
+	player_torso_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_DIFFUSE,(void*) tex_torso_diff);
+
+	player_leg_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_NORMAL,(void*) tex_leg_nor);
+	player_leg_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_DIFFUSE,(void*) tex_leg_diff);
 
 	//Setting up fixed shader parameters
 	float temp_color[] = {1.0f, 1.0f, 0.0f, 1.0f};
@@ -513,7 +552,9 @@ void Game::start()
 	test_img->uv_mins.y = 0.5f;
 	test_img->maintain_aspect_ratio = true;
 
-	player->player_model = test_arms;
+	player->player_model1 = test_arms;
+	player->player_model2 = test_torso;
+	player->player_model3 = test_legs;
 	player->skel = player_skel;
 
 	camera->parent = cam_to_bone;

@@ -6,13 +6,18 @@
 
 int Player::render(Mat4 vp)
 {
-	if(!mat)
-		return 1;
+	//if(!mat)
+	//	return 1;
 
-	//TODO: render all playermodels
-	mat->bind_material();
+	//TODO: implement more general player model rendering, not so hard-coded
+	//mat->bind_material();
 	skel->update_frame();
-	player_model->render(Mat4::IDENTITY(),vp,mat);
+	mat1->bind_material();
+	player_model1->render(Mat4::IDENTITY(),vp,mat1);
+	mat2->bind_material();
+	player_model2->render(Mat4::IDENTITY(),vp,mat2);
+	mat3->bind_material();
+	player_model3->render(Mat4::IDENTITY(),vp,mat3);
 	return 1;
 }
 

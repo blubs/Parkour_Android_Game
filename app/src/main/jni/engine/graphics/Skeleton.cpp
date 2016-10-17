@@ -226,11 +226,6 @@ int Skeleton::update_frame()
 					break;
 			}
 		}
-
-		if(current_anim_end_type == ANIM_END_TYPE_FREEZE)
-		{
-			LOGE("Current frame: %d, Dest frame: %d",current_frame, dest_frame);
-		}
 	}
 
 	if(current_frame != dest_frame)
