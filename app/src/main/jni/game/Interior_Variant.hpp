@@ -16,18 +16,18 @@ public:
 	static Shader* shader;
 	static bool shader_gl_inited;
 
-	Material* mat;
+	Material* mat = NULL;
 
-	Texture* diffuse_map;
-	Texture* normal_map;
-	Texture* light_map;
+	Texture* diffuse_map = NULL;
+	Texture* normal_map = NULL;
+	Texture* light_map = NULL;
 
 
 	//Three components to misc map:
 	//R: cubemap reflectiveness
 	//G: specularity (try using lightmap value as specularity instead to free this for palette colors)
 	//B: transparency
-	Texture* misc_map;
+	Texture* misc_map = NULL;
 
 
 	static int init_static_data(const char *vsrc, const char *fsrc,const GLuint *ptypes, const char **pnames, uint pcount)

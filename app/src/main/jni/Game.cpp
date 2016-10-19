@@ -1134,7 +1134,6 @@ void Game::update()
 	}*/
 
 
-
 	//====Test show/hide ad calls====
 	static bool ad_visible = false;
 	if(input_x[4] < 0.10f && input_touching[4] && ad_visible)

@@ -30,6 +30,8 @@ public:
 
 	//Type index of tile
 	int tile_type[MAX_WIDTH][MAX_LENGTH];
+	//Subtype index of tile (used for walls)
+	int tile_subtype[MAX_WIDTH][MAX_LENGTH];
 	//Variant index of tile
 	int tile_variant[MAX_WIDTH][MAX_LENGTH];
 
@@ -52,6 +54,103 @@ public:
 	{
 	}
 
+	void clear_floor_tiles()
+	{
+		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				tile_type[i][j] = TILE_TYPE_EMPT;
+				tile_subtype[i][j] = 0;
+				tile_variant[i][j] = 0;
+			}
+		}
+	}
+
+	//Populates the floor matrices reading generated type, subtypes, and variants
+	void populate_floor()
+	{
+		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				int ttype = tile_type[i][j];
+				int t_subtype = tile_subtype[i][j];
+
+				//Setting references to models and collision maps
+				Grid_Tile* obj = NULL;
+
+				//tile_object[i][j] = Global_Tiles::instance->test_tiles[ttype];
+				//TODO: do this with arrays
+				switch(ttype)
+				{
+					default:
+					case TILE_TYPE_EMPT:
+						obj = Global_Tiles::instance->style[0]->empty_tile;
+						break;
+					case TILE_TYPE_SOLD:
+						obj = Global_Tiles::instance->style[0]->solid_tile;
+						break;
+					case TILE_TYPE_WALL:
+						//TODO: do this with arrays, too
+						switch(t_subtype)
+						{
+							default:
+							case WALL_TYPE_xXyY:
+								obj = Global_Tiles::instance->style[0]->wall_xXyY;
+								break;
+							case WALL_TYPE_oXoY:
+								obj = Global_Tiles::instance->style[0]->wall_oXoY;
+								break;
+							case WALL_TYPE_xooY:
+								obj = Global_Tiles::instance->style[0]->wall_xooY;
+								break;
+							case WALL_TYPE_xoyo:
+								obj = Global_Tiles::instance->style[0]->wall_xoyo;
+								break;
+							case WALL_TYPE_oXyo:
+								obj = Global_Tiles::instance->style[0]->wall_oXyo;
+								break;
+							case WALL_TYPE_xXoo:
+								obj = Global_Tiles::instance->style[0]->wall_xXoo;
+								break;
+							case WALL_TYPE_ooyY:
+								obj = Global_Tiles::instance->style[0]->wall_ooyY;
+								break;
+							case WALL_TYPE_xoyY:
+								obj = Global_Tiles::instance->style[0]->wall_xoyY;
+								break;
+							case WALL_TYPE_oXyY:
+								obj = Global_Tiles::instance->style[0]->wall_oXyY;
+								break;
+							case WALL_TYPE_xXyo:
+								obj = Global_Tiles::instance->style[0]->wall_xXyo;
+								break;
+							case WALL_TYPE_xXoY:
+								obj = Global_Tiles::instance->style[0]->wall_xXoY;
+								break;
+						}
+						break;
+					case TILE_TYPE_OBST:
+						switch(t_subtype)
+						{
+							default:
+							case 0:
+								obj = Global_Tiles::instance->style[0]->floor_vent;
+								break;
+							case 1:
+								obj = Global_Tiles::instance->style[0]->wall_vent;
+								break;
+						}
+						break;
+				}
+				tile_object[i][j] = obj;
+				tile_coll_map[i][j] = obj->coll_map;
+				tile_model[i][j] = obj->model;
+			}
+		}
+	}
+
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
 		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
@@ -59,46 +158,23 @@ public:
 		global_mins = mins;
 		global_maxs = maxs;
 		global_mins.z = global_maxs.z = altitude;
-		width = (int)(global_maxs.x - global_mins.x)/TILE_SIZE;
-		length = (int)(global_maxs.y - global_mins.y)/TILE_SIZE;
+		width = (int)((global_maxs.x - global_mins.x)/TILE_SIZE);
+		length = (int)((global_maxs.y - global_mins.y)/TILE_SIZE);
 
-		//For now, populate floor with empty tiles.
-		for(int i = 0; i < width; i++)
-		{
-			for(int j = 0; j < length; j++)
-			{
-				int ttype = TILE_TYPE_EMPT;
+		//FIXME: this probably shouldn't be here (sets all tile types to 0)
+		clear_floor_tiles();
 
-				//Setting a few of the tiles as something else
-				//FIXME: the following logic hand picks a few tiles to place them at specific floor indices
-				if(j == 3)
-				{
-					if(i == 2)
-					{
-						ttype = TILE_TYPE_SOLD;
-					}
-					if(i == 4)
-					{
-						//FIXME: generic 2 is not a type, replace ths
-						//test vent
-						ttype = 2;
-					}
-					if(i == 6)
-					{
-						//test vent 2
-						ttype = 3;
-					}
-				}
-				//FIXME: end temp section
-				tile_type[i][j] = ttype;
-				//TODO: get random variant number of this type
-				tile_variant[i][j] = 0;
-				//Setting references to models and collision maps
-				tile_object[i][j] = Global_Tiles::instance->test_tiles[ttype];
-				tile_coll_map[i][j] = tile_object[i][j]->coll_map;
-				tile_model[i][j] = tile_object[i][j]->model;
-			}
-		}
+		//temp: explicitly setting some tiles as stuff
+		tile_type[2][3] = TILE_TYPE_SOLD;
+		tile_type[4][3] = TILE_TYPE_OBST;
+		tile_subtype[4][3] = 0;
+		tile_type[6][3] = TILE_TYPE_OBST;
+		tile_subtype[6][3] = 1;
+
+		tile_type[7][3] = TILE_TYPE_WALL;
+		tile_subtype[7][3] = WALL_TYPE_xXyY;
+
+		populate_floor();
 	}
 
 

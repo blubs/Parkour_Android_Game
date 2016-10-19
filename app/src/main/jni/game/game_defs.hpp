@@ -13,7 +13,32 @@
 
 #define TILE_TYPE_EMPT 0
 #define TILE_TYPE_SOLD 1
+#define TILE_TYPE_WALL 2
+//FIXME: this next one is temp
+#define TILE_TYPE_OBST 3
 //TODO: ...more tile type const identifiers
+
+//Wall types: to be read as such:
+//the wall always touches the center of the 3x3 tile
+	//x is -x axis
+	//X is +x axis
+	//y is -y axis
+	//Y is +y axis
+	//o means the wall does not touch that axis
+		//Example: xXoo		means the wall extends from -x to +x, through the center
+		//Example: ooyY		means the wall extends from -y to +y, through the center
+		//Example: xXyY		means the wall forms a '+' through the center
+#define WALL_TYPE_oXoY 0
+#define WALL_TYPE_xooY 1
+#define WALL_TYPE_xoyo 2
+#define WALL_TYPE_oXyo 3
+#define WALL_TYPE_xXoo 4
+#define WALL_TYPE_ooyY 5
+#define WALL_TYPE_xXyY 6
+#define WALL_TYPE_xoyY 7
+#define WALL_TYPE_oXyY 8
+#define WALL_TYPE_xXyo 9
+#define WALL_TYPE_xXoY 10
 
 
 //Size of tiles (6 units x 6 units x 6 units)

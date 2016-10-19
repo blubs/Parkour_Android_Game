@@ -46,9 +46,35 @@ public:
 
 	//TODO: This will hold arrays of length however many variants each type has
 
+	//Holds materials,diffuse, normal, and lightmap textures for this Interior Style
 	Interior_Variant* variants[1];
 
+	//TODO: use tiles
 	Grid_Tile** tiles[TILE_TYPES];
+
+	//For now, holding explicit references to the tiles
+	Grid_Tile* solid_tile;
+	Grid_Tile* empty_tile;
+	//Wall tiles:
+	//Corners
+	Grid_Tile* wall_oXoY;
+	Grid_Tile* wall_xooY;
+	Grid_Tile* wall_xoyo;
+	Grid_Tile* wall_oXyo;
+	//Straight walls
+	Grid_Tile* wall_xXoo;
+	Grid_Tile* wall_ooyY;
+	//Cross
+	Grid_Tile* wall_xXyY;
+	//T-walls
+	Grid_Tile* wall_xoyY;
+	Grid_Tile* wall_oXyY;
+	Grid_Tile* wall_xXyo;
+	Grid_Tile* wall_xXoY;
+
+	//Test collision tiles
+	Grid_Tile* floor_vent;
+	Grid_Tile* wall_vent;
 
 	//Holds the number of variants per type (also the length of each array pointed to by tiles pointer array)
 	int type_variant_counts[TILE_TYPES];
@@ -69,8 +95,6 @@ public:
 	Interior_Style* style[1];
 
 	//temp remove this
-	Grid_Tile* test_tiles[4];
-
 	Static_Model* window_int_model;
 	Material* window_int_mat;
 	Shader* window_int_shad;
