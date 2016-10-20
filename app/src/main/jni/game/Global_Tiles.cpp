@@ -98,7 +98,7 @@ Global_Tiles::Global_Tiles()
 	{
 		for(int j = 0; j < TILE_VOXEL_DIMS; j++)
 		{
-			style[0]->solid_tile->coll_map->voxel[i][j] = Collision_Map::VOX_SOLID;
+			style[0]->solid_tile->coll_map->voxel[i][j] = CLIP_SOLID;
 		}
 	}
 	style[0]->solid_tile->model = new Static_Model("models/tiles/style0/sold0.stmf");
@@ -112,8 +112,8 @@ Global_Tiles::Global_Tiles()
 
 	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
 	{
-		style[0]->floor_vent->coll_map->voxel[i][3] = Collision_Map::VOX_SOLID;
-		style[0]->wall_vent->coll_map->voxel[i][3] = Collision_Map::VOX_SOLID;
+		style[0]->floor_vent->coll_map->voxel[i][3] = CLIP_SOLID;
+		style[0]->wall_vent->coll_map->voxel[i][3] = CLIP_SOLID;
 	}
 
 	//==================== Loading wall tiles =====================
@@ -141,6 +141,56 @@ Global_Tiles::Global_Tiles()
 	style[0]->wall_oXyY->model = new Static_Model("models/tiles/style0/wall_oXyY.stmf");
 	style[0]->wall_xXyo->model = new Static_Model("models/tiles/style0/wall_xXyo.stmf");
 	style[0]->wall_xXoY->model = new Static_Model("models/tiles/style0/wall_xXoY.stmf");
+
+
+	//Setting collision maps for wall tiles
+	const int center = 3;
+	//Setting -Y axis wall as solid for all walls
+	for(int i = 0; i <= center; i++)
+	{
+		style[0]->wall_xoyo->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_oXyo->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_ooyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xXyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xoyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_oXyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xXyo->coll_map->voxel[center][i] = CLIP_SOLID;
+	}
+	//Setting +Y axis wall as solid for all walls
+	for(int i = center; i < TILE_VOXEL_DIMS; i++)
+	{
+		style[0]->wall_oXoY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xooY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_ooyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xXyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xoyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_oXyY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_xXoY->coll_map->voxel[center][i] = CLIP_SOLID;
+	}
+	//Setting -X axis wall as solid for all walls
+	for(int i = 0; i <= center; i++)
+	{
+		style[0]->wall_xooY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xoyo->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXoo->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXyY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xoyY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXyo->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXoY->coll_map->voxel[i][center] = CLIP_SOLID;
+	}
+	//Setting +X axis wall as solid for all walls
+	for(int i = center; i < TILE_VOXEL_DIMS; i++)
+	{
+		style[0]->wall_oXoY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_oXyo->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXoo->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXyY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_oXyY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXyo->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xXoY->coll_map->voxel[i][center] = CLIP_SOLID;
+	}
+	//Don't have to worry about center voxel, because the above wall segments overlap
+
 
 	//=============================================================
 

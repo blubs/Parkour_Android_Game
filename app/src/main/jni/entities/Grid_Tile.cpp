@@ -12,7 +12,7 @@ Collision_Map::Collision_Map()
 	voxel[3][0] = voxel[3][1] = voxel[3][2] = voxel[3][3] = voxel[3][4] = voxel[3][5] = voxel[3][6] =
 	voxel[4][0] = voxel[4][1] = voxel[4][2] = voxel[4][3] = voxel[4][4] = voxel[4][5] = voxel[4][6] =
 	voxel[5][0] = voxel[5][1] = voxel[5][2] = voxel[5][3] = voxel[5][4] = voxel[5][5] = voxel[5][6] =
-	voxel[6][0] = voxel[6][1] = voxel[6][2] = voxel[6][3] = voxel[6][4] = voxel[6][5] = voxel[6][6] =  VOX_EMPTY;
+	voxel[6][0] = voxel[6][1] = voxel[6][2] = voxel[6][3] = voxel[6][4] = voxel[6][5] = voxel[6][6] =  CLIP_EMPTY;
 }
 Collision_Map::~Collision_Map()
 {

@@ -18,6 +18,12 @@
 #define TILE_TYPE_OBST 3
 //TODO: ...more tile type const identifiers
 
+//Collision map Voxel Clip Types
+#define CLIP_EMPTY 0
+#define CLIP_SOLID 1
+//#define CLIP_DOORWAY 2
+//...etc
+
 //Wall types: to be read as such:
 //the wall always touches the center of the 3x3 tile
 	//x is -x axis

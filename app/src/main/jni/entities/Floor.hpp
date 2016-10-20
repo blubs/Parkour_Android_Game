@@ -227,7 +227,7 @@ public:
 		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
 		{
 			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
-			return Collision_Map::VOX_SOLID;
+			return CLIP_SOLID;
 		}
 
 		//finding player pos relative to left near corner of floor
@@ -239,7 +239,7 @@ public:
 		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
 		{
 			LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
-			return Collision_Map::VOX_EMPTY;
+			return CLIP_SOLID;
 		}
 
 		Vec3 vox_p = Vec3(efmodf(p.x,TILE_SIZE),efmodf(p.y,TILE_SIZE),0);
@@ -249,7 +249,7 @@ public:
 		if(vox_x < 0 || vox_y < 0 || vox_x >= TILE_VOXEL_DIMS || vox_y >= TILE_VOXEL_DIMS)
 		{
 			LOGW("Warning: tried reaching out of bounds voxel: (index: (%d x %d))",vox_x,vox_y);
-			return Collision_Map::VOX_EMPTY;
+			return CLIP_SOLID;
 		}
 
 		char rank = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
@@ -304,7 +304,7 @@ public:
 		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
 		{
 			LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
-			return Collision_Map::VOX_EMPTY;
+			return NULL;
 		}
 		//Checking the tile the player is on
 		Vec3 mins;
