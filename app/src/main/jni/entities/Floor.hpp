@@ -151,6 +151,127 @@ public:
 		}
 	}
 
+	struct Room
+	{
+		char min_x = 0;
+		char min_y = 0;
+		char max_x = 0;
+		char max_y = 0;
+	//	bool set = false;
+	};
+
+	void recursive_bsp(Room** stack_ptr, bool horizontal_divide)
+	{
+		//For now, divide along the center of the room
+		Room rm;
+		rm.min_x = (*stack_ptr)->min_x;
+		rm.min_y = (*stack_ptr)->min_y;
+		rm.max_x = (*stack_ptr)->max_x;
+		rm.max_y = (*stack_ptr)->max_y;
+
+		LOGE("recursive_bsp: x(%d,%d), y(%d,%d), horizontal_divide: %d",rm.min_x,rm.max_x,rm.min_y,rm.max_y,horizontal_divide);
+		char size_x = rm.max_x - rm.min_x;
+		char size_y = rm.max_y - rm.min_y;
+
+		if(size_x <= 2 || size_y <= 2)
+			return;
+
+		//Get the division point
+		float div = 0.5f;// 0 <= div < 1.0, should be random number
+
+
+		Room divide_point; //maxs are maxs of room 1, mins are mins of room 2
+
+
+		if(horizontal_divide)
+		{
+			//Division is horizontal
+			char delta = (char)(floorf(div * (size_y - 1)) + 1);
+			divide_point.max_x = rm.max_x;
+			divide_point.max_y = rm.min_y + delta;
+			divide_point.min_x = rm.min_x;
+			divide_point.min_y = rm.min_y + delta;
+		}
+		else
+		{
+			//Division is vertical
+			char delta = (char)(floorf(div * (size_x - 1)) + 1);
+			divide_point.max_x = rm.min_x + delta;
+			divide_point.max_y = rm.max_y;
+			divide_point.min_x = rm.min_x + delta;
+			divide_point.min_y = rm.min_y;
+		}
+		LOGE("Dividing room: ( x(%d,%d), y(%d,%d) ) , ( x(%d,%d), y(%d,%d) )",rm.min_x,divide_point.max_x,rm.min_y,divide_point.max_y,  divide_point.min_x,rm.max_x,divide_point.min_y,rm.max_y);
+
+
+		//We take our stack_ptr,
+
+		//Create two additional stacks for the subdivided rooms
+		Room room_stack1[(length-1) * (width-1)];
+		Room* room_stack_ptr1 = room_stack1;
+		room_stack_ptr1->min_x = rm.min_x;
+		room_stack_ptr1->min_y = rm.min_y;
+		room_stack_ptr1->max_x = divide_point.max_x;
+		room_stack_ptr1->max_y = divide_point.max_y;
+
+		LOGE("\t---1assigned ptr1:(%p) as x(%d,%d) y(%d,%d)",
+			room_stack_ptr1,room_stack_ptr1->min_x,room_stack_ptr1->max_x,
+			room_stack_ptr1->min_y,room_stack_ptr1->max_y);
+
+		//room_stack_ptr1 is now a pointer to the first room
+		recursive_bsp(&room_stack_ptr1, !horizontal_divide);
+		//room_stack_ptr1 is now a pointer to one past the last room
+
+		//Moving back stack_ptr one element, so that the code below can move it up once every iteration
+		(*stack_ptr)--;
+
+		//Copying all of the recursively subdivided rooms to our stack
+		for(Room* ptr = room_stack1; ptr <= room_stack_ptr1; ptr++)
+		{
+			(*stack_ptr)++;
+			(*stack_ptr)->min_x = ptr->min_x;
+			(*stack_ptr)->min_y = ptr->min_y;
+			(*stack_ptr)->max_x = ptr->max_x;
+			(*stack_ptr)->max_y = ptr->max_y;
+			LOGE("\t1assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)",
+				(*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x,
+				(*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
+			LOGE("\tincremented ptr to: (%p)",(*stack_ptr));
+		}
+
+		Room room_stack2[(length-1) * (width-1)];
+		Room* room_stack_ptr2 = room_stack2;
+		room_stack_ptr2->min_x = divide_point.min_x;
+		room_stack_ptr2->min_y = divide_point.min_y;
+		room_stack_ptr2->max_x = rm.max_x;
+		room_stack_ptr2->max_y = rm.max_y;
+
+		LOGE("\t---2assigned ptr2:(%p) as x(%d,%d) y(%d,%d)",
+			room_stack_ptr2,room_stack_ptr2->min_x,room_stack_ptr2->max_x,
+			room_stack_ptr2->min_y,room_stack_ptr2->max_y);
+
+		recursive_bsp(&room_stack_ptr2, !horizontal_divide);
+
+		//Copying all of the recursively subdivided rooms to our stack
+		for(Room* ptr = room_stack2; ptr <= room_stack_ptr2; ptr++)
+		{
+			(*stack_ptr)++;
+			(*stack_ptr)->min_x = ptr->min_x;
+			(*stack_ptr)->min_y = ptr->min_y;
+			(*stack_ptr)->max_x = ptr->max_x;
+			(*stack_ptr)->max_y = ptr->max_y;
+			LOGE("\t2assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)",
+				(*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x,
+				(*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
+			LOGE("\tincremented ptr to: (%p)",(*stack_ptr));
+		}
+	}
+
+	void print_room(Room* ptr)
+	{
+		LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
+	}
+
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
 		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
@@ -173,6 +294,25 @@ public:
 
 		tile_type[7][3] = TILE_TYPE_WALL;
 		tile_subtype[7][3] = WALL_TYPE_xXyY;
+
+		//max rooms is (length - 1) * (width - 1)
+		Room room_stack[(length-1) * (width-1)];
+		Room* room_stack_ptr = room_stack;
+		room_stack_ptr->min_x = 0;
+		room_stack_ptr->min_y = 0;
+		room_stack_ptr->max_x = (char)(width-1);
+		room_stack_ptr->max_y = (char)(length-1);//width/length will never exceed 255... we're okay here
+		//room_stack_ptr->set = true;
+
+		print_room(room_stack_ptr);
+		LOGE("Starting BSP");
+		LOGE("\tfirst ptr:(%p)",room_stack_ptr);
+		recursive_bsp(&room_stack_ptr,true);
+		LOGE("Printing rooms");
+		for(Room* ptr = room_stack; ptr <= room_stack_ptr; ptr++)
+		{
+			print_room(ptr);
+		}
 
 		populate_floor();
 	}
