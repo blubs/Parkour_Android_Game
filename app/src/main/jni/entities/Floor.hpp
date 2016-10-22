@@ -272,6 +272,15 @@ public:
 		LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
 	}
 
+	struct Wall
+	{
+		char x1 = 0;
+		char y1 = 0;
+		char x2 = 0;
+		char y2 = 0;
+	};
+
+
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
 		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
@@ -304,15 +313,27 @@ public:
 		room_stack_ptr->max_y = (char)(length-1);//width/length will never exceed 255... we're okay here
 		//room_stack_ptr->set = true;
 
-		print_room(room_stack_ptr);
-		LOGE("Starting BSP");
-		LOGE("\tfirst ptr:(%p)",room_stack_ptr);
+		//print_room(room_stack_ptr);
+		//LOGE("Starting BSP");
+		//LOGE("\tfirst ptr:(%p)",room_stack_ptr);
 		recursive_bsp(&room_stack_ptr,true);
-		LOGE("Printing rooms");
+		//LOGE("Printing rooms");
 		for(Room* ptr = room_stack; ptr <= room_stack_ptr; ptr++)
 		{
 			print_room(ptr);
 		}
+
+		Wall unique_walls[length * width * 4];
+		//TODO: make method that iterates through the floor and returns a set of unique walls that do not overlap
+		//brainstorming:
+		// we don't need the very outside walls that make up the building exterior, those are understood to exist
+		// we can easily construct the four walls of each room
+		// then we could just go through the list of walls and get rid of overlapping walls... hmm
+		// is there any order to the room stack that would assist us here? I'm not so sure.
+
+		// in my bsp test, I was fortunate enough to have a binary tree of the rooms
+		// so coming up with unique walls was as easy as having each room only return it's subroom's walls
+		// but wait, this might still lead to issues with other walls...
 
 		populate_floor();
 	}
