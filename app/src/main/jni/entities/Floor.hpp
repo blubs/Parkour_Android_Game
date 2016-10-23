@@ -280,6 +280,15 @@ public:
 		char y2 = 0;
 	};
 
+	//Returns unique walls given a list of rooms
+	//Where rooms is a pointer to Rooms, last_room is a pointer to the last room
+	//Walls is a pointer to an array of enough walls
+	void get_unique_walls(Wall* wall_ptr, Room* rooms, Room* last_room)
+	{
+		//TODO: iterate through the rooms, adding walls to the list of walls IF the wall isn't already there.
+		//if it is, we replace that wall with the smaller wall, and add the second half of the wall
+
+	}
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
 	{
