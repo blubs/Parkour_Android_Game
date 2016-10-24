@@ -129,6 +129,18 @@ public:
 							case WALL_TYPE_xXoY:
 								obj = Global_Tiles::instance->style[0]->wall_xXoY;
 								break;
+							case WALL_TYPE_xooo:
+								obj = Global_Tiles::instance->style[0]->wall_xooo;
+								break;
+							case WALL_TYPE_oXoo:
+								obj = Global_Tiles::instance->style[0]->wall_oXoo;
+								break;
+							case WALL_TYPE_ooyo:
+								obj = Global_Tiles::instance->style[0]->wall_ooyo;
+								break;
+							case WALL_TYPE_oooY:
+								obj = Global_Tiles::instance->style[0]->wall_oooY;
+								break;
 						}
 						break;
 					case TILE_TYPE_OBST:
@@ -151,23 +163,72 @@ public:
 		}
 	}
 
+	struct Wall
+	{
+		char x1 = 0;
+		char y1 = 0;
+		char x2 = 0;
+		char y2 = 0;
+
+		Wall()
+		{
+			x1 = y1 = x2 = y2 = 0;
+		}
+		Wall(const char a,const char b,const char c,const char d)
+		{
+			x1 = a;
+			y1 = b;
+			x2 = c;
+			y2 = d;
+		}
+	};
+
 	struct Room
 	{
 		char min_x = 0;
 		char min_y = 0;
 		char max_x = 0;
 		char max_y = 0;
-	//	bool set = false;
+
+		Room()
+		{
+			min_x = min_y = max_x = max_y = 0;
+		}
+
+		Room(const char a,const char b,const char c,const char d)
+		{
+			min_x = a;
+			min_y = b;
+			max_x = c;
+			max_y = d;
+		}
+
+		Wall get_north_wall()
+		{
+			return Wall(min_x,max_y,max_x,max_y);
+		}
+
+		Wall get_east_wall()
+		{
+			return Wall(max_x,min_y,max_x,max_y);
+		}
+
+		Wall get_south_wall()
+		{
+			return Wall(min_x,min_y,max_x,min_y);
+		}
+
+		Wall get_west_wall()
+		{
+			return Wall(min_x,min_y,min_x,max_y);
+		}
 	};
 
-	void recursive_bsp(Room** stack_ptr, bool horizontal_divide)
+	void recursive_bsp(Room** stack_ptr,const bool horizontal_divide)
 	{
 		//For now, divide along the center of the room
-		Room rm;
-		rm.min_x = (*stack_ptr)->min_x;
-		rm.min_y = (*stack_ptr)->min_y;
-		rm.max_x = (*stack_ptr)->max_x;
-		rm.max_y = (*stack_ptr)->max_y;
+		//Copy the room (we write to stack_ptr, so we need a backup)
+		Room rm = (**stack_ptr);
 
 		LOGE("recursive_bsp: x(%d,%d), y(%d,%d), horizontal_divide: %d",rm.min_x,rm.max_x,rm.min_y,rm.max_y,horizontal_divide);
 		char size_x = rm.max_x - rm.min_x;
@@ -177,7 +238,7 @@ public:
 			return;
 
 		//Get the division point
-		float div = 0.5f;// 0 <= div < 1.0, should be random number
+		float div = Random::rand();
 
 
 		Room divide_point; //maxs are maxs of room 1, mins are mins of room 2
@@ -187,19 +248,13 @@ public:
 		{
 			//Division is horizontal
 			char delta = (char)(floorf(div * (size_y - 1)) + 1);
-			divide_point.max_x = rm.max_x;
-			divide_point.max_y = rm.min_y + delta;
-			divide_point.min_x = rm.min_x;
-			divide_point.min_y = rm.min_y + delta;
+			divide_point = Room(rm.min_x,rm.min_y + delta, rm.max_x, rm.min_y + delta);
 		}
 		else
 		{
 			//Division is vertical
 			char delta = (char)(floorf(div * (size_x - 1)) + 1);
-			divide_point.max_x = rm.min_x + delta;
-			divide_point.max_y = rm.max_y;
-			divide_point.min_x = rm.min_x + delta;
-			divide_point.min_y = rm.min_y;
+			divide_point = Room( rm.min_x + delta, rm.min_y, rm.min_x + delta,rm.max_y);
 		}
 		LOGE("Dividing room: ( x(%d,%d), y(%d,%d) ) , ( x(%d,%d), y(%d,%d) )",rm.min_x,divide_point.max_x,rm.min_y,divide_point.max_y,  divide_point.min_x,rm.max_x,divide_point.min_y,rm.max_y);
 
@@ -209,14 +264,10 @@ public:
 		//Create two additional stacks for the subdivided rooms
 		Room room_stack1[(length-1) * (width-1)];
 		Room* room_stack_ptr1 = room_stack1;
-		room_stack_ptr1->min_x = rm.min_x;
-		room_stack_ptr1->min_y = rm.min_y;
-		room_stack_ptr1->max_x = divide_point.max_x;
-		room_stack_ptr1->max_y = divide_point.max_y;
 
-		LOGE("\t---1assigned ptr1:(%p) as x(%d,%d) y(%d,%d)",
-			room_stack_ptr1,room_stack_ptr1->min_x,room_stack_ptr1->max_x,
-			room_stack_ptr1->min_y,room_stack_ptr1->max_y);
+		*room_stack_ptr1 = Room(rm.min_x, rm.min_y, divide_point.max_x, divide_point.max_y);
+
+		LOGE("\t---1assigned ptr1:(%p) as x(%d,%d) y(%d,%d)",room_stack_ptr1,room_stack_ptr1->min_x,room_stack_ptr1->max_x, room_stack_ptr1->min_y,room_stack_ptr1->max_y);
 
 		//room_stack_ptr1 is now a pointer to the first room
 		recursive_bsp(&room_stack_ptr1, !horizontal_divide);
@@ -229,26 +280,18 @@ public:
 		for(Room* ptr = room_stack1; ptr <= room_stack_ptr1; ptr++)
 		{
 			(*stack_ptr)++;
-			(*stack_ptr)->min_x = ptr->min_x;
-			(*stack_ptr)->min_y = ptr->min_y;
-			(*stack_ptr)->max_x = ptr->max_x;
-			(*stack_ptr)->max_y = ptr->max_y;
-			LOGE("\t1assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)",
-				(*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x,
-				(*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
+			//Copying the room ptr to the stack
+			(**stack_ptr) = *ptr;
+			LOGE("\t1assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)", (*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x, (*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
 			LOGE("\tincremented ptr to: (%p)",(*stack_ptr));
 		}
 
 		Room room_stack2[(length-1) * (width-1)];
 		Room* room_stack_ptr2 = room_stack2;
-		room_stack_ptr2->min_x = divide_point.min_x;
-		room_stack_ptr2->min_y = divide_point.min_y;
-		room_stack_ptr2->max_x = rm.max_x;
-		room_stack_ptr2->max_y = rm.max_y;
 
-		LOGE("\t---2assigned ptr2:(%p) as x(%d,%d) y(%d,%d)",
-			room_stack_ptr2,room_stack_ptr2->min_x,room_stack_ptr2->max_x,
-			room_stack_ptr2->min_y,room_stack_ptr2->max_y);
+		*room_stack_ptr2 = Room(divide_point.min_x, divide_point.min_y, rm.max_x, rm.max_y);
+
+		LOGE("\t---2assigned ptr2:(%p) as x(%d,%d) y(%d,%d)", room_stack_ptr2,room_stack_ptr2->min_x,room_stack_ptr2->max_x, room_stack_ptr2->min_y,room_stack_ptr2->max_y);
 
 		recursive_bsp(&room_stack_ptr2, !horizontal_divide);
 
@@ -256,13 +299,9 @@ public:
 		for(Room* ptr = room_stack2; ptr <= room_stack_ptr2; ptr++)
 		{
 			(*stack_ptr)++;
-			(*stack_ptr)->min_x = ptr->min_x;
-			(*stack_ptr)->min_y = ptr->min_y;
-			(*stack_ptr)->max_x = ptr->max_x;
-			(*stack_ptr)->max_y = ptr->max_y;
-			LOGE("\t2assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)",
-				(*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x,
-				(*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
+			//Copying the room ptr to the stack
+			(**stack_ptr) = *ptr;
+			LOGE("\t2assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)", (*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x, (*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
 			LOGE("\tincremented ptr to: (%p)",(*stack_ptr));
 		}
 	}
@@ -272,22 +311,183 @@ public:
 		LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
 	}
 
-	struct Wall
+	inline bool in_bounds(const char x,const char min,const char max)
 	{
-		char x1 = 0;
-		char y1 = 0;
-		char x2 = 0;
-		char y2 = 0;
-	};
+		return (x >= min) && (x <= max);
+	}
+
+	inline bool all_equal(const char a,const char b,const char c,const char d)
+	{
+		return (a == b) && (b == c) && (a == d);
+	}
+	//Checks if w1 is completely inside of w2
+	//0 means walls are not inside each other
+	//1 means w1 is inside of w2
+	//2 means w2 is inisde of w1
+	char is_wall_in_wall(const Wall* w1,const Wall* w2)
+	{
+		//Check if walls are both horizontal and on the same y-coordinate
+		if(all_equal(w1->y1,w1->y2,w2->y1,w2->y2))
+		{
+			//Check if w1 is inside of w2
+			//If w1's left vertex is inside of w2's bounds
+			if(in_bounds(w1->x1,w2->x1,w2->x2))
+			{
+				//If w1's right vertex is inside of w2's bounds
+				if(in_bounds(w1->x2,w2->x1,w2->x2))
+				{
+					//w1 is inside of w2
+					return 1;
+				}
+			}
+			//Check if w2 is inside of w1
+			//If w2's left vertex is inside of w1's bounds
+			if(in_bounds(w2->x1,w1->x1,w1->x2))
+			{
+				//If w2's right vertex is inside of w1's bounds
+				if(in_bounds(w2->x2,w1->x1,w1->x2))
+				{
+					//w2 is inside of w1
+					return 2;
+				}
+			}
+		}
+		//Check if walls are both vertical and on the same x-coordinate
+		else if(all_equal(w1->x1,w1->x2,w2->x1,w2->x2))
+		{
+			//Check if w1 is inside of w2
+			//If w1's left vertex is inside of w2's bounds
+			if(in_bounds(w1->y1,w2->y1,w2->y2))
+			{
+				//If w1's right vertex is inside of w2's bounds
+				if(in_bounds(w1->y2,w2->y1,w2->y2))
+				{
+					//w1 is inside of w2
+					return 1;
+				}
+			}
+			//Check if w2 is inside of w1
+			//If w2's left vertex is inside of w1's bounds
+			if(in_bounds(w2->y1,w1->y1,w1->y2))
+			{
+				//If w2's right vertex is inside of w1's bounds
+				if(in_bounds(w2->y2,w1->y1,w1->y2))
+				{
+					//w2 is inside of w1
+					return 2;
+				}
+			}
+		}
+		//Walls are not inside of each other
+		return 0;
+	}
+
+	//Adds wall to list if w is not in any wall on the list
+	//Replaces a wall in the list if w is completely inside of the wall and smaller
+	//Does not add w to the list if there is a wall in the list completely inside w and smaller than w
+	//Does not add w to the list if the wall makes up the building exterior
+	//Returns 0 if wall was not added, returns 1 otherwise
+	int add_wall_to_list(const Wall* w, Wall* list_start, Wall** list_end)
+	{
+		//Checking if wall lies on the building exterior boundary
+		if(w->x1 == w->x2 && (w->x1 == 0 || w->x1 == width-1))
+		{
+			return 0;
+		}
+		if(w->y1 == w->y2 && (w->y1 == 0 || w->y1 == length-1))
+		{
+			return 0;
+		}
+
+
+		char res;
+		for(Wall* ptr = list_start; ptr < *list_end; ptr++)
+		{
+			res = is_wall_in_wall(w,ptr);
+			if(!res)
+				continue;
+			if(res == 2)//ptr is in w
+			{
+				return 1;
+			}
+			if(res == 1)//w is in ptr
+			{
+				//Assign ptr as wall w
+				*ptr = *w;
+				return 1;
+			}
+		}
+		//w is not in the list.
+		**list_end = *w;
+		(*list_end)++;
+		return 1;
+	}
 
 	//Returns unique walls given a list of rooms
 	//Where rooms is a pointer to Rooms, last_room is a pointer to the last room
 	//Walls is a pointer to an array of enough walls
-	void get_unique_walls(Wall* wall_ptr, Room* rooms, Room* last_room)
+	void get_unique_walls(Wall** wall_ptr, Room* rooms,const Room* last_room)
 	{
-		//TODO: iterate through the rooms, adding walls to the list of walls IF the wall isn't already there.
-		//if it is, we replace that wall with the smaller wall, and add the second half of the wall
+		Wall* first_wall = *wall_ptr;
+		Wall* last_wall = *wall_ptr;
 
+		Wall w;
+		for(Room* ptr = rooms; ptr <= last_room; ptr++)
+		{
+			w = ptr->get_north_wall();
+			add_wall_to_list(&w, first_wall, &last_wall);
+			w = ptr->get_east_wall();
+			add_wall_to_list(&w, first_wall, &last_wall);
+			w = ptr->get_south_wall();
+			add_wall_to_list(&w, first_wall, &last_wall);
+			w = ptr->get_west_wall();
+			add_wall_to_list(&w, first_wall, &last_wall);
+		}
+		*wall_ptr = last_wall;
+	}
+
+	void set_vert_wall_tiles(Wall* w)
+	{
+		//Bottom-most tile
+		tile_type[w->x1][w->y1] = TILE_TYPE_WALL;
+		tile_subtype[w->x1][w->y1] |= WALL_TYPE_oooY;
+		if(w->y1 == 0)
+			tile_subtype[w->x1][w->y1] |= WALL_TYPE_ooyo;
+
+		//Top-most tile
+		tile_type[w->x1][w->y2] = TILE_TYPE_WALL;
+		tile_subtype[w->x1][w->y2] |= WALL_TYPE_ooyo;
+		if(w->y2 == length - 1)
+			tile_subtype[w->x1][w->y2] |= WALL_TYPE_oooY;
+
+		//Every tile in between first and last
+		for(int i = w->y1+1; i < w->y2; i++)
+		{
+			tile_type[w->x1][i] = TILE_TYPE_WALL;
+			tile_subtype[w->x1][i] |= WALL_TYPE_ooyY;
+		}
+	}
+
+	void set_hor_wall_tiles(Wall* w)
+	{
+		//Left-most tile
+		tile_type[w->x1][w->y1] = TILE_TYPE_WALL;
+		tile_subtype[w->x1][w->y1] |= WALL_TYPE_oXoo;
+		if(w->x1 == 0)
+			tile_subtype[w->x1][w->y1] |= WALL_TYPE_xooo;
+
+		//Right-most tile
+		tile_type[w->x2][w->y1] = TILE_TYPE_WALL;
+		tile_subtype[w->x2][w->y1] |= WALL_TYPE_xooo;
+		if(w->x2 == width - 1)
+			tile_subtype[w->x2][w->y1] |= WALL_TYPE_oXoo;
+
+		//Every tile in between first and last
+		for(int i = w->x1+1; i < w->x2; i++)
+		{
+			tile_type[i][w->y1] = TILE_TYPE_WALL;
+			tile_subtype[i][w->y1] |= WALL_TYPE_xXoo;
+		}
 	}
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
@@ -304,45 +504,109 @@ public:
 		clear_floor_tiles();
 
 		//temp: explicitly setting some tiles as stuff
-		tile_type[2][3] = TILE_TYPE_SOLD;
-		tile_type[4][3] = TILE_TYPE_OBST;
-		tile_subtype[4][3] = 0;
-		tile_type[6][3] = TILE_TYPE_OBST;
-		tile_subtype[6][3] = 1;
+		//tile_type[2][3] = TILE_TYPE_SOLD;
+		//tile_type[4][3] = TILE_TYPE_OBST;
+		//tile_subtype[4][3] = 0;
+		//tile_type[6][3] = TILE_TYPE_OBST;
+		//tile_subtype[6][3] = 1;
 
-		tile_type[7][3] = TILE_TYPE_WALL;
-		tile_subtype[7][3] = WALL_TYPE_xXyY;
+		//tile_type[7][3] = TILE_TYPE_WALL;
+		//tile_subtype[7][3] = WALL_TYPE_xXyY;
 
 		//max rooms is (length - 1) * (width - 1)
 		Room room_stack[(length-1) * (width-1)];
 		Room* room_stack_ptr = room_stack;
-		room_stack_ptr->min_x = 0;
-		room_stack_ptr->min_y = 0;
-		room_stack_ptr->max_x = (char)(width-1);
-		room_stack_ptr->max_y = (char)(length-1);//width/length will never exceed 255... we're okay here
-		//room_stack_ptr->set = true;
 
-		//print_room(room_stack_ptr);
-		//LOGE("Starting BSP");
-		//LOGE("\tfirst ptr:(%p)",room_stack_ptr);
+		*room_stack_ptr = Room(0,0,(char)(width-1),(char)(length-1));//width/length will never exceed 255... we're okay here
+
 		recursive_bsp(&room_stack_ptr,true);
-		//LOGE("Printing rooms");
+		//room_stack_ptr now points to the last room on the stack
+
 		for(Room* ptr = room_stack; ptr <= room_stack_ptr; ptr++)
 		{
 			print_room(ptr);
 		}
 
 		Wall unique_walls[length * width * 4];
-		//TODO: make method that iterates through the floor and returns a set of unique walls that do not overlap
-		//brainstorming:
-		// we don't need the very outside walls that make up the building exterior, those are understood to exist
-		// we can easily construct the four walls of each room
-		// then we could just go through the list of walls and get rid of overlapping walls... hmm
-		// is there any order to the room stack that would assist us here? I'm not so sure.
+		Wall* wall_stack_ptr = unique_walls;
 
-		// in my bsp test, I was fortunate enough to have a binary tree of the rooms
-		// so coming up with unique walls was as easy as having each room only return it's subroom's walls
-		// but wait, this might still lead to issues with other walls...
+		get_unique_walls(&wall_stack_ptr, room_stack, room_stack_ptr);
+
+		//wall_stack_ptr now points to one pointer past the last wall
+		int wall_num = 0;
+		LOGE("====== Printing Walls: =======");
+		for(Wall* ptr = unique_walls; ptr < wall_stack_ptr; ptr++)
+		{
+			LOGE("Wall[%d]: x(%d,%d) y(%d,%d)",wall_num++,ptr->x1,ptr->x2,ptr->y1,ptr->y2);
+		}
+
+		//Iterating through walls, adding the appropriate collision tile
+		for(Wall* ptr = unique_walls; ptr < wall_stack_ptr; ptr++)
+		{
+			//Skip walls randomly
+			if(Random::rand() < 0.3f)
+			{
+				LOGE("skipped a wall!");
+				continue;
+			}
+
+			//Is this a vertical wall?
+			bool vertical = (ptr->x1 == ptr->x2);
+
+			if(vertical)
+			{
+				set_vert_wall_tiles(ptr);
+			}
+			else
+			{
+				set_hor_wall_tiles(ptr);
+			}
+
+			//Iterating through every tile this wall encompasses
+			/*for(int i = ptr->x1; i <= ptr->x2; i++)
+			{
+				for(int j = ptr->y1; j <= ptr->y2; j++)
+				{
+					tile_type[i][j] = TILE_TYPE_WALL;
+				}
+			}*/
+		}
+
+		//Parsing wall tiles, setting tile subtypes so the walls connect to each other
+		/*for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				if(tile_type[i][j] == TILE_TYPE_WALL)
+				{
+					int type = 0;
+					//Check if tile to north is wall
+					if(j == (length-1) || (tile_type[i][j+1] == TILE_TYPE_WALL))
+					{
+						type = type | WALL_TYPE_oooY;
+					}
+					//Check if tile to east is wall
+					if(i == (width-1) || (tile_type[i+1][j] == TILE_TYPE_WALL))
+					{
+						type = type | WALL_TYPE_oXoo;
+					}
+					//Check if tile to south is wall
+					if(j == 0 || (tile_type[i][j-1] == TILE_TYPE_WALL))
+					{
+						type = type | WALL_TYPE_ooyo;
+					}
+					//Check if tile to west is wall
+					if(i == 0 || (tile_type[i-1][j] == TILE_TYPE_WALL))
+					{
+						type = type | WALL_TYPE_xooo;
+					}
+					tile_subtype[i][j] = type;
+				}
+			}
+		}*/
+
+
+
 
 		populate_floor();
 	}

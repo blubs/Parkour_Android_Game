@@ -1306,6 +1306,20 @@ void Game::update()
 					continue;
 				}
 			}
+
+			//For floor generation
+			if(player_state == PLAYER_STATE_CAM_FLY)
+			{
+				if(sx < 0.5f)
+				{
+					if(sy >= 0.66f && sy < 0.85f)
+					{
+						input_touching[i] = false;
+						current_building->regenerate_floor();
+						continue;
+					}
+				}
+			}
 		}
 
 		return;

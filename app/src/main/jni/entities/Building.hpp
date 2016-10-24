@@ -85,6 +85,13 @@ public:
 
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs);
 	}
+
+	void regenerate_floor()
+	{
+		active_floor->clear();
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs);
+	}
+
 	//Clears the created building, zeroes everything out
 	void clear()
 	{

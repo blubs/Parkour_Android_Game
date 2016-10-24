@@ -44,6 +44,56 @@ public:
 
 };
 
+class Random
+{
+public:
+	static float seed;
+	static int modulus;
+	static int factor;
+	static int sum;
+
+	//Base rand function
+	//Returns random float [0,1)
+	static float rand()
+	{
+		seed = (((int)(seed * factor) + sum) % modulus);
+		return (seed/modulus);
+	}
+
+	//Returns random float [0,1]
+	static float frand() //short for full random
+	{
+		seed = (((int)(seed * factor) + sum) % (modulus+1));
+		return (seed/modulus);
+	}
+
+	//Returns random float (0,1)
+	static float prand() //short for partial random
+	{
+		seed = (((int)(seed * factor) + sum) % (modulus-1)) + 1;
+		return (seed/modulus);
+	}
+
+	//Returns random float (-1,1)
+	static float srand()
+	{
+		return prand()*2.0f - 1.0f;
+	}
+
+	//Returns random float [-1,1]
+	static float fsrand()
+	{
+		return frand()*2.0f - 1.0f;
+	}
+
+	//Returns a random integer (i,j]
+	static float rand(int i, int j)
+	{
+
+	}
+
+};
+
 //Prints the elements of a 4x4 matrix
 void print_mat4(float* mat);
 

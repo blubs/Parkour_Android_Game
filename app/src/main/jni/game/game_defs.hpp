@@ -34,18 +34,28 @@
 		//Example: xXoo		means the wall extends from -x to +x, through the center
 		//Example: ooyY		means the wall extends from -y to +y, through the center
 		//Example: xXyY		means the wall forms a '+' through the center
-#define WALL_TYPE_oXoY 0
-#define WALL_TYPE_xooY 1
-#define WALL_TYPE_xoyo 2
-#define WALL_TYPE_oXyo 3
-#define WALL_TYPE_xXoo 4
-#define WALL_TYPE_ooyY 5
-#define WALL_TYPE_xXyY 6
-#define WALL_TYPE_xoyY 7
-#define WALL_TYPE_oXyY 8
-#define WALL_TYPE_xXyo 9
-#define WALL_TYPE_xXoY 10
+//Integral wall types that make up the rest
 
+#define WALL_TYPE_oooo 0
+#define WALL_TYPE_xooo 1
+#define WALL_TYPE_oXoo 2
+#define WALL_TYPE_xXoo ( WALL_TYPE_xooo | 	WALL_TYPE_oXoo 								)//3
+#define WALL_TYPE_ooyo 4
+#define WALL_TYPE_xoyo ( WALL_TYPE_xooo | 					WALL_TYPE_ooyo 				)//5
+#define WALL_TYPE_oXyo ( 				WALL_TYPE_oXoo | 	WALL_TYPE_ooyo 				)//6
+#define WALL_TYPE_xXyo ( WALL_TYPE_xooo | 	WALL_TYPE_oXoo | 	WALL_TYPE_ooyo 				)//7
+#define WALL_TYPE_oooY 8
+#define WALL_TYPE_xooY ( WALL_TYPE_xooo | 									WALL_TYPE_oooY )//9
+#define WALL_TYPE_oXoY ( 				WALL_TYPE_oXoo | 					WALL_TYPE_oooY )//10
+#define WALL_TYPE_xXoY ( WALL_TYPE_xooo | 	WALL_TYPE_oXoo | 					WALL_TYPE_oooY )//11
+#define WALL_TYPE_ooyY ( 							 	WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//12
+#define WALL_TYPE_xoyY ( WALL_TYPE_xooo | 					WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//13
+#define WALL_TYPE_oXyY ( 				WALL_TYPE_oXoo | 	WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//14
+#define WALL_TYPE_xXyY ( WALL_TYPE_xooo | 	WALL_TYPE_oXoo | 	WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//15
+
+//We define the above such that we can construct types out of other types. while maintaining the wall's spatial logic
+// i.e. adding a left wall segment (xooo) and a right wall segment (oXoo) , yields a full horizontal wall (xXoo)
+	// xooo | oXoo = xXoo
 
 //Size of tiles (6 units x 6 units x 6 units)
 #define TILE_SIZE 3.5f

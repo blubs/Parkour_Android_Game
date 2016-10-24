@@ -129,6 +129,10 @@ Global_Tiles::Global_Tiles()
 	style[0]->wall_oXyY = new Grid_Tile(0,0);
 	style[0]->wall_xXyo = new Grid_Tile(0,0);
 	style[0]->wall_xXoY = new Grid_Tile(0,0);
+	style[0]->wall_xooo = new Grid_Tile(0,0);
+	style[0]->wall_oXoo = new Grid_Tile(0,0);
+	style[0]->wall_ooyo = new Grid_Tile(0,0);
+	style[0]->wall_oooY = new Grid_Tile(0,0);
 
 	style[0]->wall_oXoY->model = new Static_Model("models/tiles/style0/wall_oXoY.stmf");
 	style[0]->wall_xooY->model = new Static_Model("models/tiles/style0/wall_xooY.stmf");
@@ -141,6 +145,11 @@ Global_Tiles::Global_Tiles()
 	style[0]->wall_oXyY->model = new Static_Model("models/tiles/style0/wall_oXyY.stmf");
 	style[0]->wall_xXyo->model = new Static_Model("models/tiles/style0/wall_xXyo.stmf");
 	style[0]->wall_xXoY->model = new Static_Model("models/tiles/style0/wall_xXoY.stmf");
+	style[0]->wall_xooo->model = new Static_Model("models/tiles/style0/wall_xooo.stmf");
+	style[0]->wall_oXoo->model = new Static_Model("models/tiles/style0/wall_oXoo.stmf");
+	style[0]->wall_ooyo->model = new Static_Model("models/tiles/style0/wall_ooyo.stmf");
+	style[0]->wall_oooY->model = new Static_Model("models/tiles/style0/wall_oooY.stmf");
+
 
 
 	//Setting collision maps for wall tiles
@@ -155,6 +164,7 @@ Global_Tiles::Global_Tiles()
 		style[0]->wall_xoyY->coll_map->voxel[center][i] = CLIP_SOLID;
 		style[0]->wall_oXyY->coll_map->voxel[center][i] = CLIP_SOLID;
 		style[0]->wall_xXyo->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_ooyo->coll_map->voxel[center][i] = CLIP_SOLID;
 	}
 	//Setting +Y axis wall as solid for all walls
 	for(int i = center; i < TILE_VOXEL_DIMS; i++)
@@ -166,6 +176,7 @@ Global_Tiles::Global_Tiles()
 		style[0]->wall_xoyY->coll_map->voxel[center][i] = CLIP_SOLID;
 		style[0]->wall_oXyY->coll_map->voxel[center][i] = CLIP_SOLID;
 		style[0]->wall_xXoY->coll_map->voxel[center][i] = CLIP_SOLID;
+		style[0]->wall_oooY->coll_map->voxel[center][i] = CLIP_SOLID;
 	}
 	//Setting -X axis wall as solid for all walls
 	for(int i = 0; i <= center; i++)
@@ -177,6 +188,7 @@ Global_Tiles::Global_Tiles()
 		style[0]->wall_xoyY->coll_map->voxel[i][center] = CLIP_SOLID;
 		style[0]->wall_xXyo->coll_map->voxel[i][center] = CLIP_SOLID;
 		style[0]->wall_xXoY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_xooo->coll_map->voxel[i][center] = CLIP_SOLID;
 	}
 	//Setting +X axis wall as solid for all walls
 	for(int i = center; i < TILE_VOXEL_DIMS; i++)
@@ -188,6 +200,7 @@ Global_Tiles::Global_Tiles()
 		style[0]->wall_oXyY->coll_map->voxel[i][center] = CLIP_SOLID;
 		style[0]->wall_xXyo->coll_map->voxel[i][center] = CLIP_SOLID;
 		style[0]->wall_xXoY->coll_map->voxel[i][center] = CLIP_SOLID;
+		style[0]->wall_oXoo->coll_map->voxel[i][center] = CLIP_SOLID;
 	}
 	//Don't have to worry about center voxel, because the above wall segments overlap
 
@@ -335,6 +348,14 @@ Global_Tiles::~Global_Tiles()
 	delete style[0]->wall_xXyo;
 	delete style[0]->wall_xXoY->model;
 	delete style[0]->wall_xXoY;
+	delete style[0]->wall_xooo->model;
+	delete style[0]->wall_xooo;
+	delete style[0]->wall_oXoo->model;
+	delete style[0]->wall_oXoo;
+	delete style[0]->wall_ooyo->model;
+	delete style[0]->wall_ooyo;
+	delete style[0]->wall_oooY->model;
+	delete style[0]->wall_oooY;
 	delete style[0]->floor_vent->model;
 	delete style[0]->floor_vent;
 	delete style[0]->wall_vent->model;
@@ -375,6 +396,10 @@ void Global_Tiles::init_gl()
 	instance->style[0]->wall_oXyY->model->init_gl();
 	instance->style[0]->wall_xXyo->model->init_gl();
 	instance->style[0]->wall_xXoY->model->init_gl();
+	instance->style[0]->wall_xooo->model->init_gl();
+	instance->style[0]->wall_oXoo->model->init_gl();
+	instance->style[0]->wall_ooyo->model->init_gl();
+	instance->style[0]->wall_oooY->model->init_gl();
 	instance->style[0]->floor_vent->model->init_gl();
 	instance->style[0]->wall_vent->model->init_gl();
 	//===============================================================
@@ -408,6 +433,10 @@ void Global_Tiles::term_gl()
 	instance->style[0]->wall_oXyY->model->term_gl();
 	instance->style[0]->wall_xXyo->model->term_gl();
 	instance->style[0]->wall_xXoY->model->term_gl();
+	instance->style[0]->wall_xooo->model->term_gl();
+	instance->style[0]->wall_oXoo->model->term_gl();
+	instance->style[0]->wall_ooyo->model->term_gl();
+	instance->style[0]->wall_oooY->model->term_gl();
 	instance->style[0]->floor_vent->model->term_gl();
 	instance->style[0]->wall_vent->model->term_gl();
 	//===============================================================

@@ -71,6 +71,12 @@ public:
 	Grid_Tile* wall_oXyY;
 	Grid_Tile* wall_xXyo;
 	Grid_Tile* wall_xXoY;
+	//Wall segments
+	Grid_Tile* wall_xooo;
+	Grid_Tile* wall_oXoo;
+	Grid_Tile* wall_ooyo;
+	Grid_Tile* wall_oooY;
+
 
 	//Test collision tiles
 	Grid_Tile* floor_vent;

@@ -9,6 +9,7 @@
 #include "../engine/graphics/Static_Model.hpp"
 #include "../game/Maneuver.hpp"
 #include "../game/game_defs.hpp"
+#include "../engine/misc.hpp"
 
 class Collision_Map
 {

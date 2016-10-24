@@ -40,7 +40,11 @@ void print_mat3(float* mat)
 		mat[2],mat[5],mat[8]);
 }
 
-
+//Default Random values
+float Random::seed = 0;
+int Random::modulus = 5470;
+int Random::factor = 5360;
+int Random::sum = 68784;
 
 //Fast inverse square root function (as seen in Q3 src code)
 //profiling revealed math.h's 1/sqrt() function to be faster, however...
