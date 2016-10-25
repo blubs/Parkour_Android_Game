@@ -224,25 +224,31 @@ public:
 		}
 	};
 
+//#define DEBUG_RBSP
+
+	//Recursively divides the room **stack_ptr, returns the divided rooms on the array *stack_ptr
 	void recursive_bsp(Room** stack_ptr,const bool horizontal_divide)
 	{
-		//For now, divide along the center of the room
 		//Copy the room (we write to stack_ptr, so we need a backup)
 		Room rm = (**stack_ptr);
 
+#ifdef DEBUG_RBSP
 		LOGE("recursive_bsp: x(%d,%d), y(%d,%d), horizontal_divide: %d",rm.min_x,rm.max_x,rm.min_y,rm.max_y,horizontal_divide);
+#endif
+		//Getting the size of the room
 		char size_x = rm.max_x - rm.min_x;
 		char size_y = rm.max_y - rm.min_y;
 
+		//Stop dividing if the room is small enough
+		//TODO: random chance to stop dividing before we reach min size
+		//TODO: 2 is too small, I think 3 is the threshold to stop dividing
 		if(size_x <= 2 || size_y <= 2)
 			return;
 
-		//Get the division point
+		//Get the division point (0,1)
 		float div = Random::rand();
 
-
 		Room divide_point; //maxs are maxs of room 1, mins are mins of room 2
-
 
 		if(horizontal_divide)
 		{
@@ -256,66 +262,72 @@ public:
 			char delta = (char)(floorf(div * (size_x - 1)) + 1);
 			divide_point = Room( rm.min_x + delta, rm.min_y, rm.min_x + delta,rm.max_y);
 		}
+#ifdef DEBUG_RBSP
 		LOGE("Dividing room: ( x(%d,%d), y(%d,%d) ) , ( x(%d,%d), y(%d,%d) )",rm.min_x,divide_point.max_x,rm.min_y,divide_point.max_y,  divide_point.min_x,rm.max_x,divide_point.min_y,rm.max_y);
+#endif
 
-
-		//We take our stack_ptr,
-
-		//Create two additional stacks for the subdivided rooms
+		//create two additional stacks for the two rooms we divide into, and their subdivided rooms
 		Room room_stack1[(length-1) * (width-1)];
 		Room* room_stack_ptr1 = room_stack1;
 
+		//Set the first room from this new stack as the first subdivided room
 		*room_stack_ptr1 = Room(rm.min_x, rm.min_y, divide_point.max_x, divide_point.max_y);
 
+#ifdef DEBUG_RBSP
 		LOGE("\t---1assigned ptr1:(%p) as x(%d,%d) y(%d,%d)",room_stack_ptr1,room_stack_ptr1->min_x,room_stack_ptr1->max_x, room_stack_ptr1->min_y,room_stack_ptr1->max_y);
+#endif
 
 		//room_stack_ptr1 is now a pointer to the first room
 		recursive_bsp(&room_stack_ptr1, !horizontal_divide);
 		//room_stack_ptr1 is now a pointer to one past the last room
 
 		//Moving back stack_ptr one element, so that the code below can move it up once every iteration
+		//(this only needs to be done once)
 		(*stack_ptr)--;
 
-		//Copying all of the recursively subdivided rooms to our stack
+		//Copying all of the recursively subdivided rooms to our main stack
 		for(Room* ptr = room_stack1; ptr <= room_stack_ptr1; ptr++)
 		{
 			(*stack_ptr)++;
 			//Copying the room ptr to the stack
 			(**stack_ptr) = *ptr;
+#ifdef DEBUG_RBSP
 			LOGE("\t1assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)", (*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x, (*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
 			LOGE("\tincremented ptr to: (%p)",(*stack_ptr));
+#endif
 		}
 
 		Room room_stack2[(length-1) * (width-1)];
 		Room* room_stack_ptr2 = room_stack2;
 
+		//Set the first room from this second new stack as the second subdivided room
 		*room_stack_ptr2 = Room(divide_point.min_x, divide_point.min_y, rm.max_x, rm.max_y);
 
+#ifdef DEBUG_RBSP
 		LOGE("\t---2assigned ptr2:(%p) as x(%d,%d) y(%d,%d)", room_stack_ptr2,room_stack_ptr2->min_x,room_stack_ptr2->max_x, room_stack_ptr2->min_y,room_stack_ptr2->max_y);
-
+#endif
 		recursive_bsp(&room_stack_ptr2, !horizontal_divide);
 
-		//Copying all of the recursively subdivided rooms to our stack
+		//Copying all of the recursively subdivided rooms to our main stack
 		for(Room* ptr = room_stack2; ptr <= room_stack_ptr2; ptr++)
 		{
 			(*stack_ptr)++;
 			//Copying the room ptr to the stack
 			(**stack_ptr) = *ptr;
+#ifdef DEBUG_RBSP
 			LOGE("\t2assigned ptr:(%p) as x(%d,%d) y(%d,%d) (from %p)", (*stack_ptr),(*stack_ptr)->min_x,(*stack_ptr)->max_x, (*stack_ptr)->min_y,(*stack_ptr)->max_y,ptr);
 			LOGE("\tincremented ptr to: (%p)",(*stack_ptr));
+#endif
 		}
 	}
 
-	void print_room(Room* ptr)
-	{
-		LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
-	}
-
+	//Returns true if min <= x <= max
 	inline bool in_bounds(const char x,const char min,const char max)
 	{
 		return (x >= min) && (x <= max);
 	}
 
+	//Returns true if a == b == c == d
 	inline bool all_equal(const char a,const char b,const char c,const char d)
 	{
 		return (a == b) && (b == c) && (a == d);
@@ -509,39 +521,42 @@ public:
 		//tile_subtype[4][3] = 0;
 		//tile_type[6][3] = TILE_TYPE_OBST;
 		//tile_subtype[6][3] = 1;
-
 		//tile_type[7][3] = TILE_TYPE_WALL;
 		//tile_subtype[7][3] = WALL_TYPE_xXyY;
 
-		//max rooms is (length - 1) * (width - 1)
+		//=========== BSP Floor Generation ============
+
+		//Allocating the max possible number of rooms that can be created
 		Room room_stack[(length-1) * (width-1)];
-		Room* room_stack_ptr = room_stack;
+		Room* last_room_ptr = room_stack;
 
-		*room_stack_ptr = Room(0,0,(char)(width-1),(char)(length-1));//width/length will never exceed 255... we're okay here
+		*last_room_ptr = Room(0,0,(char)(width-1),(char)(length-1));//width/length will never exceed 255... we're okay here
+		//TODO: make first room stretch from y=1 to y=(length-2), (we leave the first row and last low empty)
 
-		recursive_bsp(&room_stack_ptr,true);
-		//room_stack_ptr now points to the last room on the stack
+		recursive_bsp(&last_room_ptr,true);
+		//last_room_ptr now points to the last room on the stack
 
-		for(Room* ptr = room_stack; ptr <= room_stack_ptr; ptr++)
+		//Printing rooms
+		for(Room* ptr = room_stack; ptr <= last_room_ptr; ptr++)
 		{
-			print_room(ptr);
+			LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
 		}
 
 		Wall unique_walls[length * width * 4];
-		Wall* wall_stack_ptr = unique_walls;
+		Wall* next_free_wall = unique_walls;
 
-		get_unique_walls(&wall_stack_ptr, room_stack, room_stack_ptr);
+		get_unique_walls(&next_free_wall, room_stack, last_room_ptr);
+		//next_free_wall now points to one pointer past the last wall assigned
 
-		//wall_stack_ptr now points to one pointer past the last wall
-		int wall_num = 0;
+		/*int wall_num = 0;
 		LOGE("====== Printing Walls: =======");
 		for(Wall* ptr = unique_walls; ptr < wall_stack_ptr; ptr++)
 		{
 			LOGE("Wall[%d]: x(%d,%d) y(%d,%d)",wall_num++,ptr->x1,ptr->x2,ptr->y1,ptr->y2);
-		}
+		}*/
 
 		//Iterating through walls, adding the appropriate collision tile
-		for(Wall* ptr = unique_walls; ptr < wall_stack_ptr; ptr++)
+		for(Wall* ptr = unique_walls; ptr < next_free_wall; ptr++)
 		{
 			//Skip walls randomly
 			if(Random::rand() < 0.3f)
@@ -550,64 +565,18 @@ public:
 				continue;
 			}
 
-			//Is this a vertical wall?
-			bool vertical = (ptr->x1 == ptr->x2);
-
-			if(vertical)
+			//If this wall is vertical
+			if(ptr->x1 == ptr->x2)
 			{
 				set_vert_wall_tiles(ptr);
 			}
-			else
+			else //this wall is horizontal
 			{
 				set_hor_wall_tiles(ptr);
 			}
-
-			//Iterating through every tile this wall encompasses
-			/*for(int i = ptr->x1; i <= ptr->x2; i++)
-			{
-				for(int j = ptr->y1; j <= ptr->y2; j++)
-				{
-					tile_type[i][j] = TILE_TYPE_WALL;
-				}
-			}*/
 		}
 
-		//Parsing wall tiles, setting tile subtypes so the walls connect to each other
-		/*for(int i = 0; i < width; i++)
-		{
-			for(int j = 0; j < length; j++)
-			{
-				if(tile_type[i][j] == TILE_TYPE_WALL)
-				{
-					int type = 0;
-					//Check if tile to north is wall
-					if(j == (length-1) || (tile_type[i][j+1] == TILE_TYPE_WALL))
-					{
-						type = type | WALL_TYPE_oooY;
-					}
-					//Check if tile to east is wall
-					if(i == (width-1) || (tile_type[i+1][j] == TILE_TYPE_WALL))
-					{
-						type = type | WALL_TYPE_oXoo;
-					}
-					//Check if tile to south is wall
-					if(j == 0 || (tile_type[i][j-1] == TILE_TYPE_WALL))
-					{
-						type = type | WALL_TYPE_ooyo;
-					}
-					//Check if tile to west is wall
-					if(i == 0 || (tile_type[i-1][j] == TILE_TYPE_WALL))
-					{
-						type = type | WALL_TYPE_xooo;
-					}
-					tile_subtype[i][j] = type;
-				}
-			}
-		}*/
-
-
-
-
+		// ============ end BSP Floor Generation ============
 		populate_floor();
 	}
 
