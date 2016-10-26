@@ -88,60 +88,15 @@ public:
 					case TILE_TYPE_EMPT:
 						obj = Global_Tiles::instance->style[0]->empty_tile;
 						break;
+					case TILE_TYPE_WALL:
+						obj = Global_Tiles::instance->style[0]->empty_tile;
+						if(t_subtype)
+							obj = Global_Tiles::instance->style[0]->wall_subtypes[t_subtype];
+						else //Default to empty wall
+							obj = Global_Tiles::instance->style[0]->empty_tile;
+						break;
 					case TILE_TYPE_SOLD:
 						obj = Global_Tiles::instance->style[0]->solid_tile;
-						break;
-					case TILE_TYPE_WALL:
-						//TODO: do this with arrays, too
-						switch(t_subtype)
-						{
-							default:
-							case WALL_TYPE_xXyY:
-								obj = Global_Tiles::instance->style[0]->wall_xXyY;
-								break;
-							case WALL_TYPE_oXoY:
-								obj = Global_Tiles::instance->style[0]->wall_oXoY;
-								break;
-							case WALL_TYPE_xooY:
-								obj = Global_Tiles::instance->style[0]->wall_xooY;
-								break;
-							case WALL_TYPE_xoyo:
-								obj = Global_Tiles::instance->style[0]->wall_xoyo;
-								break;
-							case WALL_TYPE_oXyo:
-								obj = Global_Tiles::instance->style[0]->wall_oXyo;
-								break;
-							case WALL_TYPE_xXoo:
-								obj = Global_Tiles::instance->style[0]->wall_xXoo;
-								break;
-							case WALL_TYPE_ooyY:
-								obj = Global_Tiles::instance->style[0]->wall_ooyY;
-								break;
-							case WALL_TYPE_xoyY:
-								obj = Global_Tiles::instance->style[0]->wall_xoyY;
-								break;
-							case WALL_TYPE_oXyY:
-								obj = Global_Tiles::instance->style[0]->wall_oXyY;
-								break;
-							case WALL_TYPE_xXyo:
-								obj = Global_Tiles::instance->style[0]->wall_xXyo;
-								break;
-							case WALL_TYPE_xXoY:
-								obj = Global_Tiles::instance->style[0]->wall_xXoY;
-								break;
-							case WALL_TYPE_xooo:
-								obj = Global_Tiles::instance->style[0]->wall_xooo;
-								break;
-							case WALL_TYPE_oXoo:
-								obj = Global_Tiles::instance->style[0]->wall_oXoo;
-								break;
-							case WALL_TYPE_ooyo:
-								obj = Global_Tiles::instance->style[0]->wall_ooyo;
-								break;
-							case WALL_TYPE_oooY:
-								obj = Global_Tiles::instance->style[0]->wall_oooY;
-								break;
-						}
 						break;
 					case TILE_TYPE_OBST:
 						switch(t_subtype)
@@ -241,25 +196,30 @@ public:
 
 		//Stop dividing if the room is small enough
 		//TODO: random chance to stop dividing before we reach min size
-		//TODO: 2 is too small, I think 3 is the threshold to stop dividing
+
+		//We do not want rooms that are 2 tiles wide, so stop early
+		if(size_x <= 3)
+			return;
+
+		//Impossible to divide further, so stop
 		if(size_x <= 2 || size_y <= 2)
 			return;
 
-		//Get the division point (0,1)
-		float div = Random::rand();
+		//Get the division fraction [0,1)
+		float frac = Random::rand();
 
 		Room divide_point; //maxs are maxs of room 1, mins are mins of room 2
 
 		if(horizontal_divide)
 		{
 			//Division is horizontal
-			char delta = (char)(floorf(div * (size_y - 1)) + 1);
+			char delta = (char)(floorf(frac * (size_y - 1)) + 1);
 			divide_point = Room(rm.min_x,rm.min_y + delta, rm.max_x, rm.min_y + delta);
 		}
 		else
 		{
 			//Division is vertical
-			char delta = (char)(floorf(div * (size_x - 1)) + 1);
+			char delta = (char)(floorf(frac * (size_x - 1)) + 1);
 			divide_point = Room( rm.min_x + delta, rm.min_y, rm.min_x + delta,rm.max_y);
 		}
 #ifdef DEBUG_RBSP

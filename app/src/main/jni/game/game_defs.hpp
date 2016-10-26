@@ -36,7 +36,7 @@
 		//Example: xXyY		means the wall forms a '+' through the center
 //Integral wall types that make up the rest
 
-#define WALL_TYPE_oooo 0
+#define WALL_TYPE_oooo 0//this wall type should be neither referenced nor accessed (it's an empty floor with no walls), it is here to maintain the binary assignment of walls
 #define WALL_TYPE_xooo 1
 #define WALL_TYPE_oXoo 2
 #define WALL_TYPE_xXoo ( WALL_TYPE_xooo | 	WALL_TYPE_oXoo 								)//3
@@ -52,6 +52,8 @@
 #define WALL_TYPE_xoyY ( WALL_TYPE_xooo | 					WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//13
 #define WALL_TYPE_oXyY ( 				WALL_TYPE_oXoo | 	WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//14
 #define WALL_TYPE_xXyY ( WALL_TYPE_xooo | 	WALL_TYPE_oXoo | 	WALL_TYPE_ooyo | 	WALL_TYPE_oooY )//15
+
+#define WALL_TYPE_COUNT 16
 
 //We define the above such that we can construct types out of other types. while maintaining the wall's spatial logic
 // i.e. adding a left wall segment (xooo) and a right wall segment (oXoo) , yields a full horizontal wall (xXoo)

@@ -56,7 +56,10 @@ public:
 	Grid_Tile* solid_tile;
 	Grid_Tile* empty_tile;
 	//Wall tiles:
-	//Corners
+
+	Grid_Tile* wall_subtypes[WALL_TYPE_COUNT] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+
+	/*//Corners
 	Grid_Tile* wall_oXoY;
 	Grid_Tile* wall_xooY;
 	Grid_Tile* wall_xoyo;
@@ -75,7 +78,7 @@ public:
 	Grid_Tile* wall_xooo;
 	Grid_Tile* wall_oXoo;
 	Grid_Tile* wall_ooyo;
-	Grid_Tile* wall_oooY;
+	Grid_Tile* wall_oooY;*/
 
 
 	//Test collision tiles
