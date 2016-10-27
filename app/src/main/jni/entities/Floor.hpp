@@ -198,7 +198,7 @@ public:
 		//TODO: random chance to stop dividing before we reach min size
 
 		//We do not want rooms that are 2 tiles wide, so stop early
-		if(size_x <= 3)
+		if(size_x < 4 && !horizontal_divide)
 			return;
 
 		//Impossible to divide further, so stop
@@ -219,7 +219,7 @@ public:
 		else
 		{
 			//Division is vertical
-			char delta = (char)(floorf(frac * (size_x - 1)) + 1);
+			char delta = (char)(floorf(frac * (size_x - 3)) + 2);
 			divide_point = Room( rm.min_x + delta, rm.min_y, rm.min_x + delta,rm.max_y);
 		}
 #ifdef DEBUG_RBSP
@@ -462,7 +462,7 @@ public:
 		}
 	}
 
-	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs)
+	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos)
 	{
 		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
 		global_pos = p + Vec3(0,0,floor_num*WINDOW_TILE_SIZE);
@@ -490,8 +490,7 @@ public:
 		Room room_stack[(length-1) * (width-1)];
 		Room* last_room_ptr = room_stack;
 
-		*last_room_ptr = Room(0,0,(char)(width-1),(char)(length-1));//width/length will never exceed 255... we're okay here
-		//TODO: make first room stretch from y=1 to y=(length-2), (we leave the first row and last low empty)
+		*last_room_ptr = Room(0,1,(char)(width-1),(char)(length-2));//width/length will never exceed 255... we're okay here
 
 		recursive_bsp(&last_room_ptr,true);
 		//last_room_ptr now points to the last room on the stack
@@ -537,6 +536,13 @@ public:
 		}
 
 		// ============ end BSP Floor Generation ============
+
+
+		// ============ Player Route Generation =============
+		//			TODO: branching generation
+		// ==================================================
+
+
 		populate_floor();
 	}
 

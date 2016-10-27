@@ -579,7 +579,7 @@ void Game::start()
 		buildings[i] = new Building();
 	}
 
-	buildings[0]->generate();
+	buildings[0]->generate(player_pos);
 
 	current_building = buildings[0];
 
@@ -1315,7 +1315,7 @@ void Game::update()
 					if(sy >= 0.66f && sy < 0.85f)
 					{
 						input_touching[i] = false;
-						current_building->regenerate_floor();
+						current_building->regenerate_floor(player->pos);
 						continue;
 					}
 				}
@@ -1691,7 +1691,7 @@ void Game::render()
 		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
-	draw_floor_collision_voxels(vp);
-	draw_floor_maneuvers(vp);
+	//draw_floor_collision_voxels(vp);
+	//draw_floor_maneuvers(vp);
 	draw_player_bbox(vp);
 }

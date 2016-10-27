@@ -68,7 +68,7 @@ public:
 	}
 
 	//Creates the building
-	void generate()
+	void generate(Vec3 player_pos)
 	{
 		active_floor_number = 10;
 
@@ -83,13 +83,32 @@ public:
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs);
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
 	}
 
-	void regenerate_floor()
+	void regenerate_floor(Vec3 player_pos)
 	{
 		active_floor->clear();
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs);
+
+		floors = 20;
+
+		//Range from [10 -> 20]
+		float size_x = 10 + floorf(Random::rand() * 11);
+		float size_y = 10 + floorf(Random::rand() * 11);
+
+		dimensions = Vec3(size_x,size_y,floors);
+
+		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
+
+		pos = Vec3(0,0,GROUNDLEVEL);
+
+		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
+		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
+
+
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
+
+
 	}
 
 	//Clears the created building, zeroes everything out
