@@ -540,6 +540,35 @@ public:
 
 		// ============ Player Route Generation =============
 		//			TODO: branching generation
+		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
+		//TODO: based on where the next building is, get the goal range of what column we have to
+		//TODO: 	(cont) move the player to so that the player can jump to the next building
+
+		int goal_min_column = 0;
+		int goal_max_column = width - 2;//FIXME, this is not accurate
+
+		//TODO: starting at [player_start_column][0], branch recursively with semi random routes that all
+		//TODO: (cont) end at the tiles [(goal_min_column -- through --> goal_max_column)][length - 1]
+
+		//Branching possibilities
+		//the algorithm can do one of the following at each tile:
+		// continue forward
+		// continue left, blocking forward
+		// continue right, blocking forward
+		// continue left, continuing forward
+		// continue right, continuing forward
+		// continue left, right, and forward
+
+		//FIXME: for branching, should we do it on the tile immediately to the left? or both that & the one in front of it?
+		//FIXME: how should brancihg look? are we going to make 45 degree slanted wall tiles that force the slant?
+
+
+		//TODO: if a route collides with a wall placed by bsp:
+			//if the wall is horizontal, replace that wall tile with a wall obstacle tile (i.e. doorway, vent, etc..)
+			//if the wall is vertical, remove that wall (FIXME and maybe some walls before and after to give the player room?)
+
+		//FIXME: conditions for placing a obstacle?
+
 		// ==================================================
 
 
