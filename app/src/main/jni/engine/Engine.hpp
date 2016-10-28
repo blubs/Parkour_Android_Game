@@ -64,6 +64,9 @@ public:
 	bool data_initialized = false;
 
 	void draw_frame();
+	void update();
+
+	bool is_first_frame = true;
 
 	void first_frame();
 	void last_frame();

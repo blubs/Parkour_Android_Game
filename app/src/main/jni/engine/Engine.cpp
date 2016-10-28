@@ -363,8 +363,7 @@ void Engine::draw_frame()
 	//Need to initialize data before the screen context has been created.
 	if(!data_initialized)
 	{
-		if(!init_data())
-			return;
+		return;
 	}
 #ifdef DEBUG_MODE
 	static bool was_rendering = true;
@@ -389,7 +388,39 @@ void Engine::draw_frame()
 		return;
 	}
 
-	static bool is_first_frame = true;
+	//Don't try rendering until update has executed first frame logic
+	if(is_first_frame)
+	{
+		return;
+	}
+
+	float t = Time::time();
+	//Evaluating global time variables
+	Time::delta_time = t - Time::current_time;
+	//If way too much time has elapsed since last frame, lerping things will get messed up, so make delta_time be 0
+	if(Time::delta_time >= 1.0f/5.0f)
+		Time::delta_time = 0.0f;//(setting delta time to 0 may cause issues)
+	Time::current_time = t;
+
+	game->update();//FIXME: remove this from here
+	game->render();
+	eglSwapBuffers(egl_display, egl_surface);
+}
+
+void Engine::update()
+{
+	//Need to initialize data before the screen context has been created.
+	if(!data_initialized)
+	{
+		if(!init_data())
+			return;
+	}
+
+	if(!egl_display)
+	{
+		return;
+	}
+
 	if(is_first_frame)
 	{
 		first_frame();
@@ -405,6 +436,8 @@ void Engine::draw_frame()
 	Time::current_time = t;
 
 	game->update();
-	game->render();
-	eglSwapBuffers(egl_display, egl_surface);
+	//TODO: really go through the update / render code to make sure there are no issues with situations such as:
+		//update being called twice, render being called once
+		//render being called twice in a row without update
+		//render being called twice for 1 update call
 }

@@ -77,6 +77,9 @@ void android_main(struct android_app *app)
 
 		if(engine.animating)
 		{
+			//TODO: decouple draw_frame from update
+			//TODO: when ready, call the following function from the right update timing code
+			//engine.update();
 			engine.draw_frame();
 
 			//No guarantees that the we're actually drawing until gl_initialized is 1
@@ -84,6 +87,30 @@ void android_main(struct android_app *app)
 			{
 				//Drawing throttled by screen update rate, no timing code needed here
 				static long frame = 0;
+
+
+				static float frame_count_start_time = Time::time();
+				static int frame_count = 0;
+				static float fps = 0.0f;
+
+				//Count average fps over 60 frames
+				if(frame_count >= 60)
+				{
+					fps = frame_count / Time::time() - frame_count_start_time;
+					frame_count = 0;
+				}
+				frame_count++;
+
+
+				//Drawing FPS
+				char fps_str[20];
+				snprintf(fps_str,20,"FPS: %.2f",fps);
+
+				UI_Text::draw_text(fps_str,
+					Vec3(engine.width * 0.4f, engine.height * 0.4f,0.5),
+					Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
+					engine.game->camera->ortho_proj_m);
+
 				//if(frame % 60 == 0)
 				//	LOGE("60 frames passed\n");
 				//LOGE("Frame: %ld, frame mod 60 = %ld\n",frame,(frame % 60));
