@@ -579,7 +579,7 @@ void Game::start()
 		buildings[i] = new Building();
 	}
 
-	buildings[0]->generate(player_pos);
+	buildings[0]->generate(player->pos);
 
 	current_building = buildings[0];
 

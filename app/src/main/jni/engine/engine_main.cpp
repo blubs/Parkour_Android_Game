@@ -111,11 +111,7 @@ void android_main(struct android_app *app)
 					Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
 					engine.game->camera->ortho_proj_m);
 
-				//if(frame % 60 == 0)
-				//	LOGE("60 frames passed\n");
-				//LOGE("Frame: %ld, frame mod 60 = %ld\n",frame,(frame % 60));
 				frame++;
-				//LOGE("delta_time = %f,  last_frame_time = %f, avg fps = %f\n",delta_time, last_frame_time,frame/time());
 			}
 		}
 	}
