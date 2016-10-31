@@ -11,7 +11,6 @@ int Player::render(Mat4 vp)
 
 	//TODO: implement more general player model rendering, not so hard-coded
 	//mat->bind_material();
-	skel->update_frame();
 	mat1->bind_material();
 	player_model1->render(Mat4::IDENTITY(),vp,mat1);
 	mat2->bind_material();
@@ -24,5 +23,6 @@ int Player::render(Mat4 vp)
 //Update method that is ran every frame
 int Player::update()
 {
+	skel->update_frame();
 	return 1;
 }

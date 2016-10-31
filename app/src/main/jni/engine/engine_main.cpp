@@ -79,6 +79,7 @@ void android_main(struct android_app *app)
 		{
 			//TODO: decouple draw_frame from update
 			//TODO: when ready, call the following function from the right update timing code
+
 			//engine.update();
 			engine.draw_frame();
 
