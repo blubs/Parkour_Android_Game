@@ -81,14 +81,31 @@ void android_main(struct android_app *app)
 			//TODO: when ready, call the following function from the right update timing code
 
 			//engine.update();
-			engine.draw_frame();
+			//engine.draw_frame();
+
+			static int test_flip_flop 0;
+			test_flip_flop++;
+			if(test_flip_flop < 5)
+			{
+				engine.draw_frame();
+			}
+			else if(test_flip_flop < 10)
+			{
+				engine.update();
+			}
+			else
+			{
+				test_flip_flop = 0;
+			}
+
+			//Testing worst case scenario: flip flopping between running 5 consecutive update calls and 5 consecutive render calls
+
 
 			//No guarantees that the we're actually drawing until gl_initialized is 1
 			if(engine.gl_initialized)
 			{
 				//Drawing throttled by screen update rate, no timing code needed here
 				static long frame = 0;
-
 
 				static float frame_count_start_time = Time::time();
 				static int frame_count = 0;

@@ -402,7 +402,7 @@ void Engine::draw_frame()
 		Time::delta_time = 0.0f;//(setting delta time to 0 may cause issues)
 	Time::current_time = t;
 
-	game->update();//FIXME: remove this from here
+	//game->update();//FIXME: remove this from here
 	game->render();
 	eglSwapBuffers(egl_display, egl_surface);
 }
