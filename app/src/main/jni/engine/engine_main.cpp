@@ -83,20 +83,22 @@ void android_main(struct android_app *app)
 			//engine.update();
 			//engine.draw_frame();
 
-			static int test_flip_flop 0;
-			test_flip_flop++;
+			static int test_flip_flop = 0;
 			if(test_flip_flop < 5)
 			{
+				test_flip_flop++;
 				engine.draw_frame();
 			}
 			else if(test_flip_flop < 10)
 			{
+				test_flip_flop++;
 				engine.update();
 			}
 			else
 			{
 				test_flip_flop = 0;
 			}
+
 
 			//Testing worst case scenario: flip flopping between running 5 consecutive update calls and 5 consecutive render calls
 
