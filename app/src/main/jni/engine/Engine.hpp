@@ -49,9 +49,6 @@ public:
 	void term_display();
 	int init_display();
 
-	int load_assets();
-	void unload_assets();
-
 	Audio_Engine* audio_engine;
 
 	int init_gl();
@@ -64,7 +61,9 @@ public:
 	bool data_initialized = false;
 
 	void draw_frame();
+	uint frame_count = 0;
 	void update();
+	uint update_count = 0;
 
 	bool is_first_frame = true;
 

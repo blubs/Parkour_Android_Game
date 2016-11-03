@@ -87,7 +87,7 @@ void Camera::update_viewbob ()
 			//float resistance = 0.9;
 			float resistance = viewbob_resistance;
 			force = spring_constant*force - resistance*viewbob_vel;
-			viewbob_vel = viewbob_vel + Time::delta_time * force;
+			viewbob_vel = viewbob_vel + Time::udelta_time * force;
 			//Don't let angles stray too far
 
 			//float max_stray = 30.0f * DEG_TO_RAD;
@@ -109,7 +109,7 @@ void Camera::update_viewbob ()
 				viewbob_vel.z *= 0.5;
 			}
 
-			viewbob_angles = viewbob_angles + Time::delta_time * viewbob_vel;
+			viewbob_angles = viewbob_angles + Time::udelta_time * viewbob_vel;
 
 			break;
 		}

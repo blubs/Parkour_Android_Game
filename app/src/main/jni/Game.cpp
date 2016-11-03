@@ -817,15 +817,15 @@ Vec3 Game::cap_to_bounds(Vec3 pos, Vec3 mins, Vec3 maxs)
 	return result;
 }
 
-void Game::mnvr_movement ()
+void Game::mnvr_movement()
 {
-	mnvr_y_vel += mnvr_frame->y_accel * Time::delta_time;
+	mnvr_y_vel += mnvr_frame->y_accel * Time::udelta_time;
 	if(mnvr_y_vel <= mnvr_frame->min_y_vel)
 	{
 		mnvr_y_vel = mnvr_frame->min_y_vel;
 	}
 
-	player->pos.y += mnvr_y_vel * Time::delta_time;
+	player->pos.y += mnvr_y_vel * Time::udelta_time;
 
 	//Lerping x & z player coordinates
 
@@ -1052,9 +1052,9 @@ char Game::clip_player_bbox(Vec3 p)
 bool Game::move_player(Vec3 v)
 {
 	//Split up movement into forward, sideways, and vertical movement
-	float delta_y = v.y * Time::delta_time;
-	float delta_x = v.x * Time::delta_time;
-	float delta_z = v.z * Time::delta_time;
+	float delta_y = v.y * Time::udelta_time;
+	float delta_x = v.x * Time::udelta_time;
+	float delta_z = v.z * Time::udelta_time;
 
 	//Checking forward collisions
 	Vec3 forward_pos = player->pos + Vec3(0,delta_y,0);
@@ -1269,8 +1269,8 @@ void Game::update()
 					float delta_x = -1.0f * fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
 					delta_x *= cam_ang_vel;
 					delta_y *= cam_ang_vel;
-					move_ent->angles.x += delta_y * Time::delta_time;
-					move_ent->angles.y += delta_x * Time::delta_time;
+					move_ent->angles.x += delta_y * Time::udelta_time;
+					move_ent->angles.y += delta_x * Time::udelta_time;
 					continue;
 				}
 			}
@@ -1287,7 +1287,7 @@ void Game::update()
 					delta_y *= cam_vel;
 					Vec3 forward, right, up;
 					move_ent->angles.angles_to_dirs(&forward,&right,&up);
-					move_ent->pos = move_ent->pos + (forward * delta_y * Time::delta_time) + (right * delta_x * Time::delta_time);
+					move_ent->pos = move_ent->pos + (forward * delta_y * Time::udelta_time) + (right * delta_x * Time::udelta_time);
 					continue;
 				}
 			}
@@ -1302,7 +1302,7 @@ void Game::update()
 					delta_y *= cam_vel;
 					Vec3 forward, right, up;
 					move_ent->angles.angles_to_dirs(&forward,&right,&up);
-					move_ent->pos = move_ent->pos + (up * delta_y * Time::delta_time);
+					move_ent->pos = move_ent->pos + (up * delta_y * Time::udelta_time);
 					continue;
 				}
 			}
@@ -1531,11 +1531,11 @@ void Game::update()
 	}
 	if(player_state == PLAYER_STATE_FALLING)
 	{
-		player_phys_vel.z += -9.8 * Time::delta_time;
+		player_phys_vel.z += -9.8 * Time::udelta_time;
 		if(player_phys_vel.z < -40.0f)//terminal vel
 			player_phys_vel.z = -40.0f;
 
-		Vec3 delta_pos = Time::delta_time * player_phys_vel;
+		Vec3 delta_pos = Time::udelta_time * player_phys_vel;
 
 		if(player->pos.z + delta_pos.z < current_building->active_floor->altitude)
 		{
@@ -1568,7 +1568,7 @@ void Game::update()
 		}
 		//In this context, subtate_time is the time that the player will slide for
 
-		player_slide_speed += PLAYER_SLIDE_ACCEL * Time::delta_time;
+		player_slide_speed += PLAYER_SLIDE_ACCEL * Time::udelta_time;
 		if(player_slide_speed < PLAYER_SLIDE_MIN_SPEED)
 			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
 
@@ -1629,8 +1629,6 @@ void Game::render()
 	//Directional light color
 	float light_col[] = {1.0,0.0,0.0};
 	Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_COL, light_col);
-
-
 
 	Mat4 vp = camera->persp_proj_m * camera->view_m;
 

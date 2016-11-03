@@ -393,17 +393,40 @@ void Engine::draw_frame()
 	{
 		return;
 	}
-
 	float t = Time::time();
 	//Evaluating global time variables
-	Time::delta_time = t - Time::current_time;
+	Time::fdelta_time = t - Time::last_frame_time;
 	//If way too much time has elapsed since last frame, lerping things will get messed up, so make delta_time be 0
-	if(Time::delta_time >= 1.0f/5.0f)
-		Time::delta_time = 0.0f;//(setting delta time to 0 may cause issues)
-	Time::current_time = t;
+	if(Time::fdelta_time >= 1.0f/5.0f)
+		Time::fdelta_time = 0.0f;//(setting delta time to 0 may cause issues)
+	Time::last_frame_time = t;
 
-	//game->update();//FIXME: remove this from here
 	game->render();
+
+	frame_count++;
+
+	//======================================== FPS Rendering ================================================
+	static float frame_count_start_time = Time::time();
+	static int frame_count_60 = 0;//set to 0 every 60 frames
+	static float fps = 0;
+
+	//Count average fps over 60 frames
+	if(frame_count_60 >= 60)
+	{
+		fps = frame_count / (Time::time() - frame_count_start_time);
+		frame_count_60 = -1;
+	}
+	frame_count_60++;
+
+	LOGE("Render fps: %.2f",fps);
+
+	//Drawing FPS
+	//char fps_str[20];
+	//snprintf(fps_str,20,"FPS: %.2f",fps);
+	//UI_Text::draw_text(fps_str,Vec3(width * 0.4f, height * 0.4f,0.5),Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
+	//	game->camera->ortho_proj_m);
+	//============================================================================================
+
 	eglSwapBuffers(egl_display, egl_surface);
 }
 
@@ -429,15 +452,30 @@ void Engine::update()
 
 	float t = Time::time();
 	//Evaluating global time variables
-	Time::delta_time = t - Time::current_time;
+	Time::udelta_time = t - Time::last_update_time;
 	//If way too much time has elapsed since last frame, lerping things will get messed up, so make delta_time be 0
-	if(Time::delta_time >= 1.0f/5.0f)
-		Time::delta_time = 0.0f;//(setting delta time to 0 may cause issues)
-	Time::current_time = t;
+	if(Time::udelta_time >= 1.0f/5.0f)
+		Time::udelta_time = 0.0f;//(setting delta time to 0 may cause issues)
+	Time::last_update_time = t;
 
 	game->update();
-	//TODO: really go through the update / render code to make sure there are no issues with situations such as:
-		//update being called twice, render being called once
-		//render being called twice in a row without update
-		//render being called twice for 1 update call
+
+	update_count++;
+
+	//======================================== Updates per second calculations ================================================
+	static float update_count_start_time = Time::time();
+	static int update_count_60 = 0;//set to 0 every 60 frames
+	static float ups = 0;
+
+	//Count average fps over 60 frames
+	if(update_count_60 >= 60)
+	{
+		ups = frame_count / (Time::time() - update_count_start_time);
+		update_count_60 = -1;
+	}
+	update_count_60++;
+
+	LOGE("Update ups: %.2f, updates: %d",ups,update_count);
+
+	//============================================================================================
 }

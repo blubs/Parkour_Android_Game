@@ -12,9 +12,15 @@ class Time
 {
 public:
 	//Variable that holds time since last frame
-	static float delta_time;
-	//Variable that holds the time at the beginning of the last frame
-	static float current_time;
+	//Time since last draw frame call
+	static float fdelta_time;
+	//Time since last update call
+	static float udelta_time;
+
+	//Holds time at start of last frame
+	static float last_frame_time;
+	//Holds time at start of last update
+	static float last_update_time;
 
 	//Set at game start
 	//We use double here for more precision then convert down to float once subtracting time from this

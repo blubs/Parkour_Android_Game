@@ -30,6 +30,7 @@ void android_main(struct android_app *app)
 	free((char*)data);
 	File_Utils::write_savedata("test.dat");
 
+
 	//run the engine loop
 	while(1)
 	{
@@ -77,62 +78,9 @@ void android_main(struct android_app *app)
 
 		if(engine.animating)
 		{
-			//TODO: decouple draw_frame from update
-			//TODO: when ready, call the following function from the right update timing code
-
-			//engine.update();
-			//engine.draw_frame();
-
-			static int test_flip_flop = 0;
-			if(test_flip_flop < 5)
-			{
-				test_flip_flop++;
-				engine.draw_frame();
-			}
-			else if(test_flip_flop < 10)
-			{
-				test_flip_flop++;
-				engine.update();
-			}
-			else
-			{
-				test_flip_flop = 0;
-			}
-
-
-			//Testing worst case scenario: flip flopping between running 5 consecutive update calls and 5 consecutive render calls
-
-
-			//No guarantees that the we're actually drawing until gl_initialized is 1
-			if(engine.gl_initialized)
-			{
-				//Drawing throttled by screen update rate, no timing code needed here
-				static long frame = 0;
-
-				static float frame_count_start_time = Time::time();
-				static int frame_count = 0;
-				static float fps = 0.0f;
-
-				//Count average fps over 60 frames
-				if(frame_count >= 60)
-				{
-					fps = frame_count / Time::time() - frame_count_start_time;
-					frame_count = 0;
-				}
-				frame_count++;
-
-
-				//Drawing FPS
-				char fps_str[20];
-				snprintf(fps_str,20,"FPS: %.2f",fps);
-
-				UI_Text::draw_text(fps_str,
-					Vec3(engine.width * 0.4f, engine.height * 0.4f,0.5),
-					Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
-					engine.game->camera->ortho_proj_m);
-
-				frame++;
-			}
+			//TODO: throttle update to a different (lower) calls per second than draw_frame
+			engine.update();
+			engine.draw_frame();
 		}
 	}
 }
