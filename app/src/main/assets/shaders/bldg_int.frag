@@ -25,24 +25,22 @@ void main()
 	//Light Calculation
 	//float diffuse = clamp(dot(normal_dir,dirlight_dir_tanspace),0.0,1.0);
 
-	const float wrap_amount = 0.7;
-	float wrapped_diffuse = clamp((dot(normal_dir,dirlight_dir_tanspace) + wrap_amount)/(1.0 + wrap_amount),0.0,1.0);
-
 	//Specular shading
 	const float shininess = 5.0;//ranged 1-20
-	float specular = wrapped_diffuse * pow(clamp(dot(reflect(-dirlight_dir_tanspace,normal_dir),cam_dir_tanspace),0.0,1.0),shininess);
+	float specular = pow(clamp(dot(reflect(-dirlight_dir_tanspace,normal_dir),cam_dir_tanspace),0.0,1.0),shininess);
 
 	//Rim light shading
-	const float rim_power = 3.0;//ranged 0.1-10
-	float rim = 1.0 - clamp(dot(cam_dir_tanspace,normal_dir),0.0,1.0);
-	rim = pow(rim,rim_power);
+	//const float rim_power = 3.0;//ranged 0.1-10
+	//float rim = 1.0 - clamp(dot(cam_dir_tanspace,normal_dir),0.0,1.0);
+	//rim = pow(rim,rim_power);
 
 	const float ambient_light = 0.1;
 
 	//Lightmaps are currently monochromatic
 	float lightmap_brightness = texture2D(tex_lm,v_uv_2).x;
 	//float light_power = ambient_light + diffuse + specular + rim;
-	float light_power = ambient_light + wrapped_diffuse + 0.7*specular + rim + lightmap_brightness;
+	//float light_power = ambient_light + 0.7*specular + rim + lightmap_brightness;
+	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
 	vec3 color = texture2D(tex_diff,v_uv_1).rgb;
 	gl_FragColor = vec4(color*light_power, 1.0);

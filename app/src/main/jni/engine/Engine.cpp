@@ -406,25 +406,23 @@ void Engine::draw_frame()
 	frame_count++;
 
 	//======================================== FPS Rendering ================================================
-	static float frame_count_start_time = Time::time();
+	static float frame_count_start_time = t;
 	static int frame_count_60 = 0;//set to 0 every 60 frames
 	static float fps = 0;
 
 	//Count average fps over 60 frames
 	if(frame_count_60 >= 60)
 	{
-		fps = frame_count / (Time::time() - frame_count_start_time);
+		fps = frame_count_60 / (t - frame_count_start_time);
+		frame_count_start_time = t;
 		frame_count_60 = -1;
 	}
 	frame_count_60++;
-
-	LOGE("Render fps: %.2f",fps);
-
 	//Drawing FPS
-	//char fps_str[20];
-	//snprintf(fps_str,20,"FPS: %.2f",fps);
-	//UI_Text::draw_text(fps_str,Vec3(width * 0.4f, height * 0.4f,0.5),Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
-	//	game->camera->ortho_proj_m);
+	char fps_str[20];
+	snprintf(fps_str,20,"FPS: %.2f",fps);
+	UI_Text::draw_text(fps_str,Vec3(width * 0.1f, height * 0.4f,0.5),Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
+		game->camera->ortho_proj_m);
 	//============================================================================================
 
 	eglSwapBuffers(egl_display, egl_surface);
@@ -463,7 +461,7 @@ void Engine::update()
 	update_count++;
 
 	//======================================== Updates per second calculations ================================================
-	static float update_count_start_time = Time::time();
+	/*static float update_count_start_time = Time::time();
 	static int update_count_60 = 0;//set to 0 every 60 frames
 	static float ups = 0;
 
@@ -473,9 +471,6 @@ void Engine::update()
 		ups = frame_count / (Time::time() - update_count_start_time);
 		update_count_60 = -1;
 	}
-	update_count_60++;
-
-	LOGE("Update ups: %.2f, updates: %d",ups,update_count);
-
+	update_count_60++;*/
 	//============================================================================================
 }

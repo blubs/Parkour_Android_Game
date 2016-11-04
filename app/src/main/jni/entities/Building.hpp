@@ -150,203 +150,213 @@ public:
 		return false;
 	}
 
-	int render(Mat4 vp)
+	int render(Vec3 player_pos, Mat4 vp)
 	{
 		//TODO: if this building is generated
 		//TODO: render this building
+		//If we are in the building, only render floor and interior glass
+		//if we are out of the building, only render exterior FIXME: this needs additional checks for broken windows (culling sides of building as well)
+		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
 
-		Global_Tiles::instance->window_mat->bind_material();
-
-		Material* mat = Global_Tiles::instance->window_mat;
-		mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_tex0);
-		mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_tex0);
-
-		Mat4 m;
-		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
-
-		Static_Model* model = Global_Tiles::instance->window_model;
-
-		//Quick unoptimized test for rendering
-
-		//Only have to bind the mesh once
-		model->bind_mesh_data2(mat);
-		//Rendering the front wall of the building
-		for(int i = 0; i < dimensions.x; i++)
+		if(!plyr_in_bldg)
 		{
-			for(int j = 0; j < dimensions.z; j++)
+			Global_Tiles::instance->window_mat->bind_material();
+
+			Material* mat = Global_Tiles::instance->window_mat;
+			mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_tex0);
+			mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_tex0);
+
+			Mat4 m;
+			Mat4 world_trans = Mat4::TRANSLATE(global_mins);
+
+			Static_Model* model = Global_Tiles::instance->window_model;
+
+			//Quick unoptimized test for rendering
+
+			//Only have to bind the mesh once
+			model->bind_mesh_data2(mat);
+			//Rendering the front wall of the building
+			for(int i = 0; i < dimensions.x; i++)
 			{
-				//model->bind_mesh_data2(mat);
+				for(int j = 0; j < dimensions.z; j++)
+				{
+					//model->bind_mesh_data2(mat);
 
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+					m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
 
-				Mat4 mvp = vp * m;
-				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+					Mat4 mvp = vp * m;
+					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
 
-				Mat3 m_it = m.inverted_then_transposed().get_mat3();
-				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+					Mat3 m_it = m.inverted_then_transposed().get_mat3();
+					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
-				model->render_without_bind();
+					model->render_without_bind();
+				}
+			}
+
+
+			//Rendering the back wall of the building
+			Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+			for(int i = 0; i < dimensions.x; i++)
+			{
+				for(int j = 0; j < dimensions.z; j++)
+				{
+					//model->bind_mesh_data2(mat);
+
+					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+
+					Mat4 mvp = vp * m;
+					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+					Mat3 m_it = m.inverted_then_transposed().get_mat3();
+					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+					model->render_without_bind();
+				}
+			}
+
+			//Rendering the right wall of the building
+			wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+			for(int i = 0; i < dimensions.y; i++)
+			{
+				for(int j = 0; j < dimensions.z; j++)
+				{
+					//model->bind_mesh_data2(mat);
+
+					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+
+					Mat4 mvp = vp * m;
+					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+					Mat3 m_it = m.inverted_then_transposed().get_mat3();
+					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+					model->render_without_bind();
+				}
+			}
+
+			//Rendering the left wall of the building
+			wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+			for(int i = 0; i < dimensions.y; i++)
+			{
+				for(int j = 0; j < dimensions.z; j++)
+				{
+					//model->bind_mesh_data2(mat);
+
+					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+
+					Mat4 mvp = vp * m;
+					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+					Mat3 m_it = m.inverted_then_transposed().get_mat3();
+					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+					model->render_without_bind();
+				}
 			}
 		}
 
-
-		//Rendering the back wall of the building
-		Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.x; i++)
-		{
-			for(int j = 0; j < dimensions.z; j++)
-			{
-				//model->bind_mesh_data2(mat);
-
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-
-				Mat4 mvp = vp * m;
-				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-				Mat3 m_it = m.inverted_then_transposed().get_mat3();
-				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-				model->render_without_bind();
-			}
-		}
-
-		//Rendering the right wall of the building
-		wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.y; i++)
-		{
-			for(int j = 0; j < dimensions.z; j++)
-			{
-				//model->bind_mesh_data2(mat);
-
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-
-				Mat4 mvp = vp * m;
-				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-				Mat3 m_it = m.inverted_then_transposed().get_mat3();
-				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-				model->render_without_bind();
-			}
-		}
-
-		//Rendering the left wall of the building
-		wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.y; i++)
-		{
-			for(int j = 0; j < dimensions.z; j++)
-			{
-				//model->bind_mesh_data2(mat);
-
-				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-
-				Mat4 mvp = vp * m;
-				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-				Mat3 m_it = m.inverted_then_transposed().get_mat3();
-				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-				model->render_without_bind();
-			}
-		}
-
-		if(active_floor)
+		if(active_floor && plyr_in_bldg)
 			active_floor->render(vp);
 		return 1;
 	}
 
 	//Rendering method called at the end to render transparent windows and tiles
-	int render_transparent_meshes(Mat4 vp)
+	int render_transparent_meshes(Vec3 player_pos, Mat4 vp)
 	{
 		//TODO: if this building is generated
 		//TODO: render this building
+		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
 
-		Global_Tiles::instance->window_int_mat->bind_material();
-
-		Material* mat = Global_Tiles::instance->window_int_mat;
-		mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_int_tex0);
-		mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_int_tex0);
-		mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) Global_Tiles::instance->window_int_misc_tex0);
-
-		//Drawing the interior windows only on the active floor number
-		//TODO: skip drawing of broken interior windows (and draw their skeletal animations)
-		Mat4 m;
-		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
-
-		Static_Model* model = Global_Tiles::instance->window_int_model;
-
-		//Quick unoptimized test for rendering
-
-		//Only have to bind the mesh once
-		model->bind_mesh_data2(mat);
-		//Rendering the front transparent windows
-		for(int i = 0; i < dimensions.x; i++)
+		//Only render the interior windows if we are in the building
+		if(plyr_in_bldg)
 		{
-			//model->bind_mesh_data2(mat);
+			Global_Tiles::instance->window_int_mat->bind_material();
 
-			m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+			Material* mat = Global_Tiles::instance->window_int_mat;
+			mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_int_tex0);
+			mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_int_tex0);
+			mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) Global_Tiles::instance->window_int_misc_tex0);
 
-			Mat4 mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+			//Drawing the interior windows only on the active floor number
+			//TODO: skip drawing of broken interior windows (and draw their skeletal animations)
+			Mat4 m;
+			Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
 
-			Mat3 m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+			Static_Model* model = Global_Tiles::instance->window_int_model;
 
-			model->render_without_bind();
+			//Quick unoptimized test for rendering
+
+			//Only have to bind the mesh once
+			model->bind_mesh_data2(mat);
+			//Rendering the front transparent windows
+			for(int i = 0; i < dimensions.x; i++)
+			{
+				//model->bind_mesh_data2(mat);
+
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+
+
+			//Rendering the back transparent windows
+			Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+			for(int i = 0; i < dimensions.x; i++)
+			{
+				//model->bind_mesh_data2(mat);
+
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+
+			//Rendering the right transparent windows
+			wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+			for(int i = 0; i < dimensions.y; i++)
+			{
+				//model->bind_mesh_data2(mat);
+
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+
+			//Rendering the left transparent windows
+			wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+			for(int i = 0; i < dimensions.y; i++)
+			{
+				//model->bind_mesh_data2(mat);
+
+				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+
+				Mat4 mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				Mat3 m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
 		}
-
-
-		//Rendering the back transparent windows
-		Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.x; i++)
-		{
-			//model->bind_mesh_data2(mat);
-
-			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
-
-			Mat4 mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			Mat3 m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-		}
-
-		//Rendering the right transparent windows
-		wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.y; i++)
-		{
-			//model->bind_mesh_data2(mat);
-
-			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
-
-			Mat4 mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			Mat3 m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-		}
-
-		//Rendering the left transparent windows
-		wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-		for(int i = 0; i < dimensions.y; i++)
-		{
-			//model->bind_mesh_data2(mat);
-
-			m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
-
-			Mat4 mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			Mat3 m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-		}
-
 		//FIXME: if we end up using transparency in tiles, call transparent render for floor
 		//if(active_floor)
 		//	active_floor->render(vp);

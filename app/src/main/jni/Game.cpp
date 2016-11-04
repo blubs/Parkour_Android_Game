@@ -1635,14 +1635,14 @@ void Game::render()
 	player->render(vp);
 	Mat4 view_no_translation = camera->inf_proj_m * ((camera->view_m).pos_removed());
 
-	buildings[0]->render(vp);
+	buildings[0]->render(player->pos,vp);
 
 	skybox->render(view_no_translation);
 
 	//Have to draw transparent objects after skybox
 	test_sound_source->render(vp);
 
-	buildings[0]->render_transparent_meshes(vp);
+	buildings[0]->render_transparent_meshes(player->pos,vp);
 
 
 	//Test UI image
