@@ -560,7 +560,7 @@ public:
 		// continue left, right, and forward
 
 		//FIXME: for branching, should we do it on the tile immediately to the left? or both that & the one in front of it?
-		//FIXME: how should brancihg look? are we going to make 45 degree slanted wall tiles that force the slant?
+		//FIXME: how should branching look? are we going to make 45 degree slanted wall tiles that force the slant?
 
 
 		//TODO: if a route collides with a wall placed by bsp:
@@ -570,6 +570,13 @@ public:
 		//FIXME: conditions for placing a obstacle?
 
 		// ==================================================
+
+		//TODO: sketch some floor tile obstacle types:
+		//TODO:	floor obstacles that would look okay with walls attached to left/right/both sides
+		//TODO:	slant guide obstacles that force the player to move in a certain direction
+		//TODO:		must not look out of place, and must not look navigable
+		//TODO:			(must not look as though the player can go through/over/under it)
+
 
 
 		populate_floor();
