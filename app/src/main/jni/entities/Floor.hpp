@@ -496,10 +496,10 @@ public:
 		//last_room_ptr now points to the last room on the stack
 
 		//Printing rooms
-		for(Room* ptr = room_stack; ptr <= last_room_ptr; ptr++)
-		{
-			LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
-		}
+		//for(Room* ptr = room_stack; ptr <= last_room_ptr; ptr++)
+		//{
+		//	LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
+		//}
 
 		Wall unique_walls[length * width * 4];
 		Wall* next_free_wall = unique_walls;
@@ -520,7 +520,7 @@ public:
 			//Skip walls randomly
 			if(Random::rand() < 0.3f)
 			{
-				LOGE("skipped a wall!");
+				//LOGE("skipped a wall!");
 				continue;
 			}
 
@@ -536,7 +536,6 @@ public:
 		}
 
 		// ============ end BSP Floor Generation ============
-
 
 		// ============ Player Route Generation =============
 		//			TODO: branching generation
@@ -562,7 +561,6 @@ public:
 		//FIXME: for branching, should we do it on the tile immediately to the left? or both that & the one in front of it?
 		//FIXME: how should branching look? are we going to make 45 degree slanted wall tiles that force the slant?
 
-
 		//TODO: if a route collides with a wall placed by bsp:
 			//if the wall is horizontal, replace that wall tile with a wall obstacle tile (i.e. doorway, vent, etc..)
 			//if the wall is vertical, remove that wall (FIXME and maybe some walls before and after to give the player room?)
@@ -576,8 +574,6 @@ public:
 		//TODO:	slant guide obstacles that force the player to move in a certain direction
 		//TODO:		must not look out of place, and must not look navigable
 		//TODO:			(must not look as though the player can go through/over/under it)
-
-
 
 		populate_floor();
 	}
