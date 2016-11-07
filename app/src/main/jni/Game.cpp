@@ -1587,7 +1587,14 @@ void Game::update()
 		camera->update_viewbob();
 
 		if(!move_player(player_phys_vel))
+		{
+			//End slide
+			//TODO: replace this with sliding death
+			player_substate = 1.0f;
+			player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
+			player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
 			return;
+		}
 	}
 	//TODO: other states
 
