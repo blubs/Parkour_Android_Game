@@ -59,6 +59,11 @@ public:
 
 	Grid_Tile* wall_subtypes[WALL_TYPE_COUNT] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
+	Grid_Tile* tun_right;
+	Grid_Tile* tun_left;
+	Grid_Tile* tun_r2l;
+	Grid_Tile* tun_l2r;
+
 	/*//Corners
 	Grid_Tile* wall_oXoY;
 	Grid_Tile* wall_xooY;
