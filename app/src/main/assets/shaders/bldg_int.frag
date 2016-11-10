@@ -5,10 +5,12 @@ varying vec2 v_uv_2;
 
 varying vec3 cam_dir_tanspace;
 varying vec3 dirlight_dir_tanspace;
+varying vec3 ref_dir;
 
 uniform sampler2D tex_nor;
 uniform sampler2D tex_diff;
 uniform sampler2D tex_lm;
+uniform samplerCube cube_map;
 
 
 //TODO: misc color map with specular, transparent, and reflective values
@@ -43,7 +45,7 @@ void main()
 	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
 	vec3 color = texture2D(tex_diff,v_uv_1).rgb;
-	gl_FragColor = vec4(color*light_power, 1.0);
+	gl_FragColor = vec4(color*light_power, 1.0) * 0.01 + textureCube(cube_map,ref_dir);
 	//gl_FragColor = vec4(1.0,0.0,0.0,1.0);
 
 }

@@ -41,7 +41,8 @@ int Global_Tiles::init_data()
 		Shader::PARAM_M_IT_MATRIX,
 		Shader::PARAM_TEXTURE_DIFFUSE,
 		Shader::PARAM_TEXTURE_NORMAL,
-		Shader::PARAM_TEXTURE_LIGHTMAP
+		Shader::PARAM_TEXTURE_LIGHTMAP,
+		Shader::PARAM_CUBE_MAP
 		//,Shader::PARAM_COLOR_MULT
 	};
 	const char *shader_pnames[] =
@@ -56,11 +57,13 @@ int Global_Tiles::init_data()
 		"m_IT",
 		"tex_diff",
 		"tex_nor",
-		"tex_lm"
+		"tex_lm",
+		"cube_map"
 		//,"color"
 	};
+	//TODO: load cubemap
 
-	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,11);
+	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,12);
 
 	instance = new Global_Tiles();
 
@@ -213,6 +216,9 @@ Global_Tiles::Global_Tiles()
 
 	//Initializing window exterior shader
 
+	test_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);//TODO: move this to interior style
+
+
 	GLuint shader_ptypes[] =
 	{
 		Shader::PARAM_VERTICES,
@@ -299,7 +305,7 @@ Global_Tiles::~Global_Tiles()
 	delete style[0]->wall_vent;
 
 	//===================================================
-
+	delete test_cube_map;//TODO: move this to interior style
 
 	delete window_model;
 	delete window_mat;
@@ -336,6 +342,8 @@ void Global_Tiles::init_gl()
 	instance->window_shad->init_gl();
 	instance->window_tex0->init_gl();
 
+	instance->test_cube_map->init_gl();//TODO: move this to interior style
+
 	instance->window_int_model->init_gl();
 	instance->window_int_shad->init_gl();
 	instance->window_int_tex0->init_gl();
@@ -363,6 +371,8 @@ void Global_Tiles::term_gl()
 	instance->window_model->term_gl();
 	instance->window_shad->term_gl();
 	instance->window_tex0->term_gl();
+
+	instance->test_cube_map->term_gl();//TODO: move this to interior style
 
 	instance->window_int_model->term_gl();
 	instance->window_int_shad->term_gl();

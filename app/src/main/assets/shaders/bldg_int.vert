@@ -9,6 +9,7 @@ attribute vec3 vert_nor;
 attribute vec3 vert_tan;
 attribute vec3 vert_binor;
 
+uniform vec3 cam_pos;
 uniform vec3 cam_dir;
 uniform vec3 dirlight_dir;
 
@@ -17,6 +18,7 @@ varying vec2 v_uv_1;
 varying vec2 v_uv_2;
 varying vec3 cam_dir_tanspace;
 varying vec3 dirlight_dir_tanspace;
+varying vec3 ref_dir;
 
 void main()
 {
@@ -29,6 +31,10 @@ void main()
 	vec3 v_nor = m_IT * vert_nor;
 	vec3 v_tan = m_IT * vert_tan;
 	vec3 v_binor = m_IT * vert_binor;
+
+	//Calculating cubemap reflection direction
+	ref_dir = cam_pos - gl_Position.xyz;
+	ref_dir = reflect(ref_dir,v_nor);//should we do the reflection here?
 
 	mat3 temp = mat3(v_tan,v_binor,v_nor);
 	//Manually transposing the matrix... (Does GLES2 not have a transpose function?)

@@ -7,6 +7,7 @@
 
 #include "../entities/Grid_Tile.hpp"
 #include "Interior_Variant.hpp"
+#include "../engine/graphics/Cube_Map.hpp"
 
 //TODO: finalize implementation of this (we are doing some starter testing things for now)
 //Tile Terminology
@@ -107,6 +108,8 @@ public:
 	static void term_data();
 
 	Interior_Style* style[1];
+
+	Cube_Map* test_cube_map;
 
 	//temp remove this
 	Static_Model* window_int_model;
