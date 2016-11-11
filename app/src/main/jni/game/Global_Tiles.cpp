@@ -84,6 +84,8 @@ Global_Tiles::Global_Tiles()
 	style[0]->variants[0]->diffuse_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
 	style[0]->variants[0]->normal_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
 	style[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
+	style[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
+
 	//style[0]->variants[0]->misc_map = new Texture();
 
 	//style[0] = new Tile_Style();
@@ -216,9 +218,6 @@ Global_Tiles::Global_Tiles()
 
 	//Initializing window exterior shader
 
-	test_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);//TODO: move this to interior style
-
-
 	GLuint shader_ptypes[] =
 	{
 		Shader::PARAM_VERTICES,
@@ -305,8 +304,6 @@ Global_Tiles::~Global_Tiles()
 	delete style[0]->wall_vent;
 
 	//===================================================
-	delete test_cube_map;//TODO: move this to interior style
-
 	delete window_model;
 	delete window_mat;
 	delete window_shad;
@@ -342,8 +339,6 @@ void Global_Tiles::init_gl()
 	instance->window_shad->init_gl();
 	instance->window_tex0->init_gl();
 
-	instance->test_cube_map->init_gl();//TODO: move this to interior style
-
 	instance->window_int_model->init_gl();
 	instance->window_int_shad->init_gl();
 	instance->window_int_tex0->init_gl();
@@ -371,8 +366,6 @@ void Global_Tiles::term_gl()
 	instance->window_model->term_gl();
 	instance->window_shad->term_gl();
 	instance->window_tex0->term_gl();
-
-	instance->test_cube_map->term_gl();//TODO: move this to interior style
 
 	instance->window_int_model->term_gl();
 	instance->window_int_shad->term_gl();

@@ -7,6 +7,7 @@
 
 #include "../engine/graphics/Material.hpp"
 #include "../engine/graphics/Texture.hpp"
+#include "../engine/graphics/Cube_Map.hpp"
 
 //This class is responsible for handling the materials / textures of each variety of interior tile style
 class Interior_Variant
@@ -21,6 +22,8 @@ public:
 	Texture* diffuse_map = NULL;
 	Texture* normal_map = NULL;
 	Texture* light_map = NULL;
+
+	Cube_Map* ref_cube_map = NULL;//TODO: instantiate this and use it
 
 
 	//Three components to misc map:
@@ -58,6 +61,7 @@ public:
 	{
 		delete diffuse_map;
 		delete normal_map;
+		delete ref_cube_map;
 		delete light_map;
 		delete mat;
 	}
@@ -76,8 +80,8 @@ public:
 			mat->bind_value(Shader::PARAM_TEXTURE_LIGHTMAP,(void*) light_map);
 		if(misc_map)
 			mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) misc_map);
-
-		//TODO: cubemaps
+		if(ref_cube_map)
+			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) ref_cube_map);
 
 		//TODO: pass in all material data here (not including any mesh data)
 		//this includes generated color palettes and cubemaps
@@ -102,6 +106,8 @@ public:
 			light_map->init_gl();
 		if(misc_map)
 			misc_map->init_gl();
+		if(ref_cube_map)
+			ref_cube_map->init_gl();
 		return 1;
 	}
 	void term_gl()
@@ -120,6 +126,8 @@ public:
 			light_map->term_gl();
 		if(misc_map)
 			misc_map->term_gl();
+		if(ref_cube_map)
+			ref_cube_map->term_gl();
 	}
 
 };

@@ -18,23 +18,20 @@ varying vec2 v_uv_1;
 varying vec2 v_uv_2;
 varying vec3 cam_dir_tanspace;
 varying vec3 dirlight_dir_tanspace;
-varying vec3 ref_dir;
+varying vec3 cam_to_vert_tanspace;
 
 void main()
 {
 	vec4 pos;
 	pos = vec4(vert_pos.xyz,1.0);
-	gl_Position = mvp * pos;
+	vec4 vert = mvp * pos;
+	gl_Position = vert;
 
 	//Calculating the camera direction and light direction in tangent space
 	//These 3 vectors are in world space
 	vec3 v_nor = m_IT * vert_nor;
 	vec3 v_tan = m_IT * vert_tan;
 	vec3 v_binor = m_IT * vert_binor;
-
-	//Calculating cubemap reflection direction
-	ref_dir = cam_pos - gl_Position.xyz;
-	ref_dir = reflect(ref_dir,v_nor);//should we do the reflection here?
 
 	mat3 temp = mat3(v_tan,v_binor,v_nor);
 	//Manually transposing the matrix... (Does GLES2 not have a transpose function?)
@@ -44,6 +41,10 @@ void main()
 
 	dirlight_dir_tanspace = world_to_tangent * -dirlight_dir;
 	cam_dir_tanspace = world_to_tangent * -cam_dir;
+
+	//Calculating cubemap reflection direction
+	vec3 cam_to_vert = normalize(cam_pos - vert.xyz );
+	cam_to_vert_tanspace = world_to_tangent * cam_to_vert;//FIXME: reflection has to be done in worldspace
 
 	v_uv_1 = vert_uv_1;
 	v_uv_2 = vert_uv_2;
