@@ -601,6 +601,7 @@ public:
 				tile_model[i][j]->bind_mesh_data(mat);
 
 				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,j*TILE_SIZE,0));
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);

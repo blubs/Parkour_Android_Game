@@ -32,19 +32,20 @@ public:
 	static const int PARAM_VERT_UV1 = 6;
 	static const int PARAM_VERT_UV2 = 7;
 	static const int PARAM_MVP_MATRIX = 8;
-	static const int PARAM_M_IT_MATRIX = 9;
-	static const int PARAM_TEXTURE_DIFFUSE = 10;
-	static const int PARAM_TEXTURE_NORMAL = 11;
-	static const int PARAM_TEXTURE_MISC = 12;
-	static const int PARAM_TEXTURE_LIGHTMAP = 13;
-	static const int PARAM_BONE_MATRICES = 14;
-	static const int PARAM_BONE_IT_MATRICES = 15;
-	static const int PARAM_BONE_INDICES = 16;
-	static const int PARAM_BONE_WEIGHTS = 17;
-	static const int PARAM_COLOR_MULT = 18;
-	static const int PARAM_COLOR_ADD = 19;
-	static const int PARAM_CUBE_MAP = 20;
-	static const int PARAM_TEST_FIELD = 21;
+	static const int PARAM_M_MATRIX = 9;
+	static const int PARAM_M_IT_MATRIX = 10;
+	static const int PARAM_TEXTURE_DIFFUSE = 11;
+	static const int PARAM_TEXTURE_NORMAL = 12;
+	static const int PARAM_TEXTURE_MISC = 13;
+	static const int PARAM_TEXTURE_LIGHTMAP = 14;
+	static const int PARAM_BONE_MATRICES = 15;
+	static const int PARAM_BONE_IT_MATRICES = 16;
+	static const int PARAM_BONE_INDICES = 17;
+	static const int PARAM_BONE_WEIGHTS = 18;
+	static const int PARAM_COLOR_MULT = 19;
+	static const int PARAM_COLOR_ADD = 20;
+	static const int PARAM_CUBE_MAP = 21;
+	static const int PARAM_TEST_FIELD = 22;
 	//TODO: any other parameter types
 
 

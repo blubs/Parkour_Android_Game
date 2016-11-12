@@ -38,6 +38,7 @@ int Global_Tiles::init_data()
 		Shader::PARAM_VERT_BINORMALS,
 		Shader::PARAM_VERT_TANGENTS,
 		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_MATRIX,
 		Shader::PARAM_M_IT_MATRIX,
 		Shader::PARAM_TEXTURE_DIFFUSE,
 		Shader::PARAM_TEXTURE_NORMAL,
@@ -54,6 +55,7 @@ int Global_Tiles::init_data()
 		"vert_binor",
 		"vert_tan",
 		"mvp",
+		"m",
 		"m_IT",
 		"tex_diff",
 		"tex_nor",
@@ -63,7 +65,7 @@ int Global_Tiles::init_data()
 	};
 	//TODO: load cubemap
 
-	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,12);
+	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,13);
 
 	instance = new Global_Tiles();
 

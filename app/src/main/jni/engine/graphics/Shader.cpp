@@ -153,6 +153,7 @@ int Shader::init_gl()
 			//Uniforms
 			case PARAM_CUBE_MAP:
 			case PARAM_MVP_MATRIX:
+			case PARAM_M_MATRIX:
 			case PARAM_M_IT_MATRIX:
 			case PARAM_TEXTURE_DIFFUSE:
 			case PARAM_TEXTURE_NORMAL:
@@ -293,6 +294,7 @@ int Shader::bind_shader_value_by_index (int index, void *data, int extra_data)
 			glUniformMatrix3fv(loc, 1, GL_FALSE, ((float *) data));
 			break;
 		case PARAM_MVP_MATRIX:
+		case PARAM_M_MATRIX:
 			loc = *((GLint*)(param_locs[index]));
 			glUniformMatrix4fv(loc, 1, GL_FALSE, ((float *) data));
 			break;

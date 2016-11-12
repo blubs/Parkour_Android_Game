@@ -1628,7 +1628,9 @@ void Game::render()
 	float cam_dir[] = {camera->forward.x,camera->forward.y,camera->forward.z};
 	Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_CAM_DIR, cam_dir);
 	//Camera position
-	float cam_pos[] = {camera->pos.x,camera->pos.y,camera->pos.z};
+	//Evaluating global camera position
+	Vec3 global_cam_pos = camera->world_transform * camera->pos;
+	float cam_pos[] = {global_cam_pos.x,global_cam_pos.y,global_cam_pos.z};
 	Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_CAM_POS, cam_pos);
 	//Directional light direction
 	float light_dir[] = {0,0,-1};

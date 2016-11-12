@@ -33,7 +33,6 @@ public:
 	void set_persp_view(float field_of_view, int width, int height, float near_clipping_plane, float far_clipping_plane);
 	void set_ortho_view(int width, int height, float near_clipping_plane, float far_clipping_plane);
 
-
 	//Converts angles to forward,right,and up vectors, and sets the view matrix
 	void update_view_matrix();
 
