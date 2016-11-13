@@ -47,8 +47,11 @@ void main()
 	float lightmap_brightness = texture2D(tex_lm,v_uv_2).x;
 	//float light_power = ambient_light + diffuse + specular + rim;
 	//float light_power = ambient_light + 0.7*specular + rim + lightmap_brightness;
-	float light_power = ambient_light + 0.7*specular + lightmap_brightness + diffuse * 0.1;
+	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
-	vec3 color = texture2D(tex_diff,v_uv_1).rgb;
-	gl_FragColor = vec4(color*light_power, 1.0)*0.01 + vec4(ref_color,1.0);
+	float reflectivity = 0.5;//FIXME: use value from misc shader.
+
+	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,reflectivity);
+
+	gl_FragColor = vec4(color*light_power, 1.0);
 }

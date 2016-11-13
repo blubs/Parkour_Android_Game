@@ -1629,7 +1629,7 @@ void Game::render()
 	Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_CAM_DIR, cam_dir);
 	//Camera position
 	//Evaluating global camera position
-	Vec3 global_cam_pos = camera->world_transform * camera->pos;
+	Vec3 global_cam_pos = camera->world_transform.get_pos();
 	float cam_pos[] = {global_cam_pos.x,global_cam_pos.y,global_cam_pos.z};
 	Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_CAM_POS, cam_pos);
 	//Directional light direction
