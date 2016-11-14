@@ -50,7 +50,6 @@ void main()
 	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
 	float reflectivity = 0.5;//FIXME: use value from misc shader.
-
 	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,reflectivity);
 
 	gl_FragColor = vec4(color*light_power, 1.0);

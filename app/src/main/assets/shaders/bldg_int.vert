@@ -14,7 +14,6 @@ uniform vec3 cam_pos;
 uniform vec3 cam_dir;
 uniform vec3 dirlight_dir;
 
-
 varying vec2 v_uv_1;
 varying vec2 v_uv_2;
 varying vec3 cam_dir_tanspace;
@@ -26,7 +25,6 @@ void main()
 {
 	vec4 pos;
 	pos = vec4(vert_pos.xyz,1.0);
-
 	gl_Position = mvp * pos;
 	vec3 world_vert = (m * pos).xyz;
 

@@ -228,9 +228,11 @@ Global_Tiles::Global_Tiles()
 		Shader::PARAM_VERT_BINORMALS,
 		Shader::PARAM_VERT_TANGENTS,
 		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_MATRIX,
 		Shader::PARAM_M_IT_MATRIX,
 		Shader::PARAM_TEXTURE_DIFFUSE,
-		Shader::PARAM_TEXTURE_NORMAL
+		Shader::PARAM_TEXTURE_NORMAL,
+		Shader::PARAM_CUBE_MAP
 	};
 	const char *shader_pnames[] =
 	{
@@ -240,11 +242,13 @@ Global_Tiles::Global_Tiles()
 		"vert_binor",
 		"vert_tan",
 		"mvp",
+		"m",
 		"m_IT",
 		"tex_diff",
-		"tex_nor"
+		"tex_nor",
+		"cube_map"
 	};
-	window_shad = new Shader("shaders/bldg_ext.vert","shaders/bldg_ext.frag",shader_ptypes,shader_pnames,9);
+	window_shad = new Shader("shaders/bldg_ext.vert","shaders/bldg_ext.frag",shader_ptypes,shader_pnames,12);
 
 	window_mat = new Material();
 	window_mat->set_shader(window_shad);
@@ -259,10 +263,12 @@ Global_Tiles::Global_Tiles()
 		Shader::PARAM_VERT_BINORMALS,
 		Shader::PARAM_VERT_TANGENTS,
 		Shader::PARAM_MVP_MATRIX,
+		Shader::PARAM_M_MATRIX,
 		Shader::PARAM_M_IT_MATRIX,
 		Shader::PARAM_TEXTURE_DIFFUSE,
 		Shader::PARAM_TEXTURE_NORMAL,
-		Shader::PARAM_TEXTURE_MISC
+		Shader::PARAM_TEXTURE_MISC,
+		Shader::PARAM_CUBE_MAP
 	};
 	const char *pnames2[] =
 	{
@@ -272,12 +278,14 @@ Global_Tiles::Global_Tiles()
 		"vert_binor",
 		"vert_tan",
 		"mvp",
+		"m",
 		"m_IT",
 		"tex_diff",
 		"tex_nor",
-		"tex_misc"
+		"tex_misc",
+		"cube_map"
 	};
-	window_int_shad = new Shader("shaders/bldgwin_int.vert","shaders/bldgwin_int.frag",ptypes2,pnames2,10);
+	window_int_shad = new Shader("shaders/bldgwin_int.vert","shaders/bldgwin_int.frag",ptypes2,pnames2,12);
 
 	window_int_mat = new Material();
 	window_int_mat->set_shader(window_int_shad);

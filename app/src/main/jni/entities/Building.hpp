@@ -149,7 +149,7 @@ public:
 		//Z bounds are not handled here
 		return false;
 	}
-
+	//TODO: pass in cubemap
 	int render(Vec3 player_pos, Mat4 vp)
 	{
 		//TODO: if this building is generated
@@ -183,6 +183,7 @@ public:
 					//model->bind_mesh_data2(mat);
 
 					m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 					Mat4 mvp = vp * m;
 					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -204,6 +205,7 @@ public:
 					//model->bind_mesh_data2(mat);
 
 					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 					Mat4 mvp = vp * m;
 					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -224,6 +226,7 @@ public:
 					//model->bind_mesh_data2(mat);
 
 					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 					Mat4 mvp = vp * m;
 					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -244,6 +247,7 @@ public:
 					//model->bind_mesh_data2(mat);
 
 					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 					Mat4 mvp = vp * m;
 					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -295,6 +299,7 @@ public:
 				//model->bind_mesh_data2(mat);
 
 				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -313,6 +318,7 @@ public:
 				//model->bind_mesh_data2(mat);
 
 				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -330,6 +336,7 @@ public:
 				//model->bind_mesh_data2(mat);
 
 				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -347,6 +354,7 @@ public:
 				//model->bind_mesh_data2(mat);
 
 				m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,0));
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				Mat4 mvp = vp * m;
 				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
