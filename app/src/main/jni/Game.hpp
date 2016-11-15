@@ -70,8 +70,6 @@ public:
 	Texture *tex_leg_nor = NULL;
 	Texture *tex_leg_diff = NULL;
 
-	Cube_Map *test_cube_map = NULL;
-
 	//------------- Models --------------------
 	Skel_Model *test_arms = NULL;
 	Skel_Model *test_torso = NULL;

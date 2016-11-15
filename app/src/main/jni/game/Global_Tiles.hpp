@@ -108,6 +108,9 @@ public:
 
 	Interior_Style* style[1];
 
+	//Used for both skybox and building exterior reflections
+	Cube_Map* sky_cube_map = NULL;
+
 	//temp remove this
 	Static_Model* window_int_model;
 	Material* window_int_mat;

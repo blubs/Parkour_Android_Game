@@ -201,7 +201,6 @@ int Game::load_textures()
 	tex_torso_diff = new Texture("textures/torso_diff.pkm",512,512);
 	tex_leg_nor = new Texture("textures/leg_nor.pkm",512,512);
 	tex_leg_diff = new Texture("textures/leg_diff.pkm",512,512);
-	test_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
 	return 1;
 }
 void Game::unload_textures()
@@ -214,7 +213,6 @@ void Game::unload_textures()
 	delete tex_torso_diff;
 	delete tex_leg_nor;
 	delete tex_leg_diff;
-	delete test_cube_map;
 }
 
 int Game::load_models()
@@ -313,7 +311,6 @@ int Game::init_gl()
 	tex_torso_diff->init_gl();
 	tex_leg_nor->init_gl();
 	tex_leg_diff->init_gl();
-	test_cube_map->init_gl();
 	//==================================== Setting up Mesh VBOs ====================================
 	test_arms->init_gl();
 	test_torso->init_gl();
@@ -356,7 +353,6 @@ void Game::term_gl()
 	Global_Tiles::term_gl();
 
 	//Terminating all loaded textures
-	test_cube_map->term_gl();
 	tex_arm_nor->term_gl();
 	tex_arm_diff->term_gl();
 	tex_torso_diff->term_gl();
@@ -527,7 +523,7 @@ void Game::start()
 
 	//===================================================================================
 
-	skybox->set_cube_map(test_cube_map);
+	skybox->set_cube_map(Global_Tiles::instance->sky_cube_map);
 
 	test_sound_source->model = model_prim_cube;
 	test_sound_source->mat = static_color_mat;

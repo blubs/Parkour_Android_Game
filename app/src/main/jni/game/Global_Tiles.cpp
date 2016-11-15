@@ -81,6 +81,8 @@ void Global_Tiles::term_data()
 
 Global_Tiles::Global_Tiles()
 {
+	sky_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
+
 	style[0] = new Interior_Style();
 
 	style[0]->variants[0]->diffuse_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
@@ -294,6 +296,7 @@ Global_Tiles::Global_Tiles()
 }
 Global_Tiles::~Global_Tiles()
 {
+	delete sky_cube_map;
 	delete style[0];
 
 	//============== Deleting Interior Style ============
@@ -330,6 +333,7 @@ void Global_Tiles::init_gl()
 {
 	if(!instance)
 		return;
+	instance->sky_cube_map->init_gl();
 	instance->style[0]->variants[0]->init_gl();
 
 	//==================== Style 0 models init gl ===================
@@ -358,6 +362,7 @@ void Global_Tiles::term_gl()
 {
 	if(!instance)
 		return;
+	instance->sky_cube_map->term_gl();
 	instance->style[0]->variants[0]->term_gl();
 
 	//==================== Style 0 models term gl ===================

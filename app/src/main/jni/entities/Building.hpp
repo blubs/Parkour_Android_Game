@@ -149,7 +149,6 @@ public:
 		//Z bounds are not handled here
 		return false;
 	}
-	//TODO: pass in cubemap
 	int render(Vec3 player_pos, Mat4 vp)
 	{
 		//TODO: if this building is generated
@@ -165,6 +164,9 @@ public:
 			Material* mat = Global_Tiles::instance->window_mat;
 			mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_tex0);
 			mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_tex0);
+
+			//Using Skybox cubemap
+			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->sky_cube_map);
 
 			Mat4 m;
 			Mat4 world_trans = Mat4::TRANSLATE(global_mins);
@@ -281,6 +283,11 @@ public:
 			mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_int_tex0);
 			mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_int_tex0);
 			mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) Global_Tiles::instance->window_int_misc_tex0);
+
+			//Using Floor interior cubemap
+			//FIXME: make sure we reference the correct style and variant for the floor style and variant
+			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->style[0]->variants[0]->ref_cube_map);
+
 
 			//Drawing the interior windows only on the active floor number
 			//TODO: skip drawing of broken interior windows (and draw their skeletal animations)
