@@ -81,7 +81,9 @@ void Global_Tiles::term_data()
 
 Global_Tiles::Global_Tiles()
 {
+	LOGE("Global Tiles instantiation started");
 	sky_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
+	LOGE("cubemap done loading");
 
 	style[0] = new Interior_Style();
 
@@ -89,13 +91,14 @@ Global_Tiles::Global_Tiles()
 	style[0]->variants[0]->normal_map = new Texture("textures/tiles/s0v1_nor.pkm",2048,2048);
 	style[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
 	style[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
-
+	LOGE("interior cubemap done loading");
 	//style[0]->variants[0]->misc_map = new Texture();
-
 	//style[0] = new Tile_Style();
 
 	//style[0]->type[0]->model->load_model();
 	//style[0]->type[0]->collision_map = new Collision_Map();
+
+	LOGE("Global Tiles 1");
 
 	//For now just hold the 2 tiles explicitly
 	//Empty tile
@@ -124,6 +127,9 @@ Global_Tiles::Global_Tiles()
 		style[0]->floor_vent->coll_map->voxel[i][3] = CLIP_SOLID;
 		style[0]->wall_vent->coll_map->voxel[i][3] = CLIP_SOLID;
 	}
+
+	LOGE("Global Tiles 2");
+
 
 	//==================== Loading wall tiles =====================
 
@@ -174,6 +180,8 @@ Global_Tiles::Global_Tiles()
 	}
 	//Don't have to worry about center voxel, because the above wall segments overlap
 
+	LOGE("Global Tiles 3");
+
 
 	//=============================================================
 
@@ -213,6 +221,8 @@ Global_Tiles::Global_Tiles()
 	frames[4]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
 
 	frames[5]->set_bounds(Vec3(1.75f,12,0));
+
+	LOGE("Global Tiles 4");
 
 
 	//TODO: continue the rest of the frames
@@ -287,12 +297,14 @@ Global_Tiles::Global_Tiles()
 		"tex_misc",
 		"cube_map"
 	};
+	LOGE("Global Tiles 5");
 	window_int_shad = new Shader("shaders/bldgwin_int.vert","shaders/bldgwin_int.frag",ptypes2,pnames2,12);
 
 	window_int_mat = new Material();
 	window_int_mat->set_shader(window_int_shad);
 	window_int_tex0 = new Texture("textures/windows/variant0.pkm",512,512);
 	window_int_misc_tex0 = new Texture("textures/windows/variant0_int_misc.pkm",512,512);
+	LOGE("Global Tiles instantiation finished");
 }
 Global_Tiles::~Global_Tiles()
 {

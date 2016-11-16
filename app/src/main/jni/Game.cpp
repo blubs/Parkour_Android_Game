@@ -474,6 +474,7 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 //This is where we set up our game objects and their relationships
 void Game::start()
 {
+	LOGE("Game Start started");
 	camera = new Camera();
 	player = new Player();
 	cam_to_bone = new Entity_Bone_Joint();
@@ -581,6 +582,7 @@ void Game::start()
 
 	player->pos.y = 1;
 	player_state = PLAYER_STATE_NOCLIP;
+	LOGE("Game start done");
 }
 
 //Ran on last frame
