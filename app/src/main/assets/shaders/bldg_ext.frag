@@ -37,7 +37,7 @@ void main()
 	//float rim = 1.0 - clamp(dot(cam_dir_tanspace,normal_dir),0.0,1.0);
 	//rim = pow(rim,rim_power);
 
-	const float ambient_light = 0.1;
+	const float ambient_light = 0.7;
 
 	//float light_power = ambient_light + diffuse + specular + rim;
 	float light_power = ambient_light + 0.7*specular;

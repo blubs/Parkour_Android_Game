@@ -38,11 +38,9 @@ Shader::Shader(const char *vshader_name, const char *fshader_name,const GLuint *
 {
 	load(vshader_name,fshader_name);
 
-
 	param_names = (char**) malloc(sizeof(char*) * pcount);
 	param_types = (GLuint *) malloc(sizeof(GLuint) * pcount);
 	param_locs = (void **) malloc(sizeof(void *) * pcount);
-
 
 
 	for(int i = 0; i < pcount; i++)
@@ -51,7 +49,6 @@ Shader::Shader(const char *vshader_name, const char *fshader_name,const GLuint *
 		param_types[i] = ptypes[i];
 		param_locs[i] = NULL;
 	}
-
 
 	param_count = pcount;
 }
