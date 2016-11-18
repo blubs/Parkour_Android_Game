@@ -576,6 +576,16 @@ void Game::start()
 	}
 
 	buildings[0]->generate(player->pos);
+	Vec3 last_building_end_point = Vec3(buildings[0]->pos.z,buildings[0]->global_maxs.y,buildings[0]->pos.z);
+
+	//Distance between buildings
+	Vec3 building_offset = Vec3(0,10,0);
+
+	for(int i = 1; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->generate(last_building_end_point + building_offset);
+		last_building_end_point = Vec3(buildings[i]->pos.z,buildings[i]->global_maxs.y,buildings[i]->pos.z);
+	}
 
 	current_building = buildings[0];
 
@@ -1640,15 +1650,22 @@ void Game::render()
 	player->render(vp);
 	Mat4 view_no_translation = camera->inf_proj_m * ((camera->view_m).pos_removed());
 
+
 	buildings[0]->render(player->pos,vp);
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->render(player->pos,vp);
+	}
 
 	skybox->render(view_no_translation);
-
 	//Have to draw transparent objects after skybox
 	test_sound_source->render(vp);
 
-	buildings[0]->render_transparent_meshes(player->pos,vp);
-
+	//buildings[0]->render_transparent_meshes(player->pos,vp);
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->render_transparent_meshes(player->pos,vp);
+	}
 
 	//Test UI image
 	test_img->render(camera->ortho_proj_m);

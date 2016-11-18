@@ -8,7 +8,7 @@
 #include "../engine/math/math.hpp"
 #include "Floor.hpp"
 
-class Building : Entity
+class Building : public Entity
 {
 public:
 	//Pos of the building is going to be defined as (center,smallest(closest to 0),bottom of building)
