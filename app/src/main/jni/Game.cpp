@@ -576,7 +576,7 @@ void Game::start()
 	}
 
 	buildings[0]->generate(player->pos);
-	Vec3 last_building_end_point = Vec3(buildings[0]->pos.z,buildings[0]->global_maxs.y,buildings[0]->pos.z);
+	Vec3 last_building_end_point = Vec3(buildings[0]->pos.x,buildings[0]->global_maxs.y,buildings[0]->pos.z);
 
 	//Distance between buildings
 	Vec3 building_offset = Vec3(0,10,0);
@@ -584,7 +584,8 @@ void Game::start()
 	for(int i = 1; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->generate(last_building_end_point + building_offset);
-		last_building_end_point = Vec3(buildings[i]->pos.z,buildings[i]->global_maxs.y,buildings[i]->pos.z);
+		buildings[i]->pos = last_building_end_point + building_offset;
+		last_building_end_point = Vec3(buildings[i]->pos.x,buildings[i]->global_maxs.y,buildings[i]->pos.z);
 	}
 
 	current_building = buildings[0];
