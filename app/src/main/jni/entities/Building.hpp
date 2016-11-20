@@ -68,7 +68,7 @@ public:
 	}
 
 	//Creates the building
-	void generate(Vec3 player_pos)
+	void generate(Vec3 player_pos, Vec3 building_pos)
 	{
 		active_floor_number = 10;
 
@@ -78,7 +78,7 @@ public:
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
-		pos = Vec3(0,0,GROUNDLEVEL);
+		pos = building_pos + Vec3(0,0,GROUNDLEVEL);
 
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
