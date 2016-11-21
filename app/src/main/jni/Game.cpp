@@ -1657,20 +1657,20 @@ void Game::render()
 
 
 	buildings[0]->render(player->pos,vp);
-	for(int i = 0; i < MAX_BUILDINGS; i++)
-	{
-		buildings[i]->render(player->pos,vp);
-	}
+	//for(int i = 0; i < MAX_BUILDINGS; i++)
+	//{
+	//	buildings[i]->render(player->pos,vp);
+	//}
 
 	skybox->render(view_no_translation);
 	//Have to draw transparent objects after skybox
 	test_sound_source->render(vp);
 
-	//buildings[0]->render_transparent_meshes(player->pos,vp);
-	for(int i = 0; i < MAX_BUILDINGS; i++)
-	{
-		buildings[i]->render_transparent_meshes(player->pos,vp);
-	}
+	buildings[0]->render_transparent_meshes(player->pos,vp);
+	//for(int i = 0; i < MAX_BUILDINGS; i++)
+	//{
+	//	buildings[i]->render_transparent_meshes(player->pos,vp);
+	//}
 
 	//Test UI image
 	test_img->render(camera->ortho_proj_m);
