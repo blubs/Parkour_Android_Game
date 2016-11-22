@@ -15,7 +15,6 @@ public:
 	unsigned int vertex_count;
 	unsigned int tri_vert_count;
 
-
 	const unsigned int* raw_data = NULL;
 	const float* verts;
 	const float* uv_coords_1;
@@ -25,12 +24,6 @@ public:
 	const float* binormals;
 
 	const unsigned int* tri_verts;
-
-
-	//arrays of vertex attributes
-	//	uvs
-	//	normals
-	//		do we need tangents?
 
 	GLuint tri_verts_buffer;
 
@@ -51,6 +44,11 @@ public:
 
 	void term_gl();
 
+	//Copies the other static model
+	Static_Model(Static_Model* other);
+	//Combines two static models together
+	Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model* model2, Mat4 model2_trans);
+	//Loads static model from file
 	Static_Model(const char* filepath);
 	~Static_Model();
 private:
