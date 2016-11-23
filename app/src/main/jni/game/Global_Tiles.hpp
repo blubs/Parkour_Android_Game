@@ -7,6 +7,7 @@
 
 #include "../entities/Grid_Tile.hpp"
 #include "Interior_Variant.hpp"
+#include "Window_Model_Holder.hpp"
 
 //TODO: finalize implementation of this (we are doing some starter testing things for now)
 //Tile Terminology
@@ -118,6 +119,7 @@ public:
 	Texture* window_int_tex0;
 	Texture* window_int_misc_tex0;
 
+	Window_Model_Holder* window_models;
 	Static_Model* window_model;
 	Material* window_mat;
 	Shader* window_shad;

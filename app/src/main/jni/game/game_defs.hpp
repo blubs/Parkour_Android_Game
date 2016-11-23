@@ -66,6 +66,7 @@
 
 #define BUILDING_MAX_WIDTH 60
 #define BUILDING_MAX_LENGTH 120
+#define BUILDING_MAX_HEIGHT 40
 
 //2 voxels per meter, 3.5m x 3.5m tile = 7v x 7v voxel map
 #define TILE_VOXEL_DIMS 7

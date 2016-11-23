@@ -215,6 +215,8 @@ Global_Tiles::Global_Tiles()
 	window_model = new Static_Model("models/windows/style0.stmf");
 	window_int_model = new Static_Model("models/windows/style0_int.stmf");
 
+	window_models = new Window_Model_Holder("models/windows/style0.stmf");
+
 	//Initializing window exterior shader
 
 	GLuint shader_ptypes[] =

@@ -17,6 +17,7 @@ public:
 
 	static const int MAX_WIDTH = BUILDING_MAX_WIDTH;
 	static const int MAX_LENGTH = BUILDING_MAX_LENGTH;
+	static const int MAX_HEIGHT = BUILDING_MAX_HEIGHT;
 
 	//pos is center near bottom of building
 
@@ -175,6 +176,7 @@ public:
 
 			//Quick unoptimized test for rendering
 
+			/*
 			//Only have to bind the mesh once
 			model->bind_mesh_data2(mat);
 			//Rendering the front wall of the building
@@ -196,7 +198,98 @@ public:
 					model->render_without_bind();
 				}
 			}
+			*/
+			//FIXME: test render of matrix meshes
+			//==========================================================================================
+			Vec3 ofs = Vec3(0,0,0);
+			//32x32 mesh
+			Global_Tiles::instance->window_models->m32x32_model->bind_mesh_data2(mat);
+			m = world_trans * Mat4::TRANSLATE(ofs);
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
+			Mat4 mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			Mat3 m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			Global_Tiles::instance->window_models->m32x32_model->render_without_bind();
+			//16x16 mesh
+			ofs.x += 33*TILE_SIZE;
+			Global_Tiles::instance->window_models->m16x16_model->bind_mesh_data2(mat);
+			m = world_trans * Mat4::TRANSLATE(ofs);
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			Global_Tiles::instance->window_models->m16x16_model->render_without_bind();
+			//8x8 mesh
+			ofs.x += 17*TILE_SIZE;
+			Global_Tiles::instance->window_models->m8x8_model->bind_mesh_data2(mat);
+			m = world_trans * Mat4::TRANSLATE(ofs);
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			Global_Tiles::instance->window_models->m8x8_model->render_without_bind();
+			//4x4 mesh
+			ofs.x += 9*TILE_SIZE;
+			Global_Tiles::instance->window_models->m4x4_model->bind_mesh_data2(mat);
+			m = world_trans * Mat4::TRANSLATE(ofs);
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			Global_Tiles::instance->window_models->m4x4_model->render_without_bind();
+			//2x2 mesh
+			ofs.x += 5*TILE_SIZE;
+			Global_Tiles::instance->window_models->m2x2_model->bind_mesh_data2(mat);
+			m = world_trans * Mat4::TRANSLATE(ofs);
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			Global_Tiles::instance->window_models->m2x2_model->render_without_bind();
+			//1x1 mesh
+			ofs.x += 3*TILE_SIZE;
+			Global_Tiles::instance->window_models->tile_model->bind_mesh_data2(mat);
+			m = world_trans * Mat4::TRANSLATE(ofs);
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			Global_Tiles::instance->window_models->tile_model->render_without_bind();
+			//==========================================================================================
+
+
+			//Only have to bind the mesh once//FIXME: put this above the first loop
+			model->bind_mesh_data2(mat);
 
 			//Rendering the back wall of the building
 			Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));

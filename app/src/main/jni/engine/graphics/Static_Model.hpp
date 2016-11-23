@@ -55,6 +55,7 @@ private:
 	int load_model(const char* filepath);
 	void unload_model();
 
+	void parse_raw_data();
 };
 
 #endif //ENGINE_STATIC_MODEL_H

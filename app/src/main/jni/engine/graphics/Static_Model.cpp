@@ -91,15 +91,8 @@ int Static_Model::render_without_bind()
 	return 1;
 }
 
-int Static_Model::load_model(const char* filepath)
+void Static_Model::parse_raw_data()
 {
-	raw_data = (unsigned int*) File_Utils::load_raw_asset(filepath);
-	if(!raw_data)
-	{
-		LOGE("Error: failed to load \"%s\"\n",filepath);
-		return 0;
-	}
-
 	//File Schematics
 	//First int is the vertex count
 	//Second int is the triangle count * 3
@@ -123,6 +116,18 @@ int Static_Model::load_model(const char* filepath)
 	binormals = (float*) raw_data + 2 + 3*(vertex_count*3) + 2*(vertex_count*2);
 
 	tri_verts = raw_data + 2 + 4*(vertex_count*3) + 2*(vertex_count*2);
+}
+
+int Static_Model::load_model(const char* filepath)
+{
+	raw_data = (unsigned int*) File_Utils::load_raw_asset(filepath);
+	if(!raw_data)
+	{
+		LOGE("Error: failed to load \"%s\"\n",filepath);
+		return 0;
+	}
+
+	parse_raw_data();
 
 	return 1;
 }
@@ -170,35 +175,139 @@ Static_Model::Static_Model(Static_Model* other)
 		temp_raw_data[i] = other->raw_data[i];
 	}
 	raw_data = temp_raw_data;
-	//Setting up references to the appropriate indices (just as load_model does)
-	//File Schematics
-	//First int is the vertex count
-	//Second int is the triangle count * 3
-	//List thereafter is the position (3 floats) of all vertices
-	//List thereafter is the uv tex coords of the 1st uv map (2 floats) of all vertices
-	//List thereafter is the uv tex coords of the 2nd uv map (2 floats) of all vertices
-	//List thereafter is the normals (3 floats) of all vertices
-	//List thereafter is the tangents (3 floats) of all vertices
-	//List thereafter is the binormals (3 floats) of all vertices
-	//List thereafter is the indices of vertices that make up the triangles
-	vertex_count = raw_data[0];
-	tri_vert_count = raw_data[1];
 
-	verts = (float*) (raw_data + 2);
-
-	uv_coords_1 = (float*) raw_data + 2 + (vertex_count*3);
-	uv_coords_2 = (float*) raw_data + 2 + (vertex_count*3) + (vertex_count*2);
-
-	normals = (float*) raw_data + 2 + (vertex_count*3) + 2*(vertex_count*2);
-	tangents = (float*) raw_data + 2 + 2*(vertex_count*3) + 2*(vertex_count*2);
-	binormals = (float*) raw_data + 2 + 3*(vertex_count*3) + 2*(vertex_count*2);
-
-	tri_verts = raw_data + 2 + 4*(vertex_count*3) + 2*(vertex_count*2);
+	parse_raw_data();
 }
 //Combines two static models together
 Static_Model::Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model* model2, Mat4 model2_trans)
 {
-	//TODO combine the two meshes
+	//Allocate enough room for both meshes
+	int raw_data_size = (2 + (16 * model1->vertex_count) + model1->tri_vert_count) + (2 + (16 * model2->vertex_count) + model2->tri_vert_count);
+
+	//Though the raw data is a int pointer, most attributes are floats, so I'll make this a float pointer to avoid multiple casts
+	float* temp_raw_data = NULL;
+	temp_raw_data = (float*) malloc(sizeof(float) * raw_data_size);
+
+	if(!temp_raw_data)
+	{
+		LOGE("Error: failed to allocate memory for raw data when combining two static models");
+		return;
+	}
+
+	unsigned int m1_vert_count = model1->vertex_count;
+	unsigned int m2_vert_count = model2->vertex_count;
+	unsigned int new_vert_count = m1_vert_count + m2_vert_count;
+
+	unsigned int m1_tri_vert_count = model1->tri_vert_count;
+	unsigned int m2_tri_vert_count = model2->tri_vert_count;
+
+	//============================================ Setting up raw model data ====================================================
+
+	//Assignining vertex count
+	((unsigned int*)temp_raw_data)[0] = m1_vert_count + m2_vert_count;
+	//Assigning triangle vertices count
+	((unsigned int*)temp_raw_data)[1] = model1->tri_vert_count + model2->tri_vert_count;
+
+	Vec3 temp_v;
+
+	//==== Copying over the vertex attributes ====
+	//Disclaimer: I know the transformations for the meshes will be isometric,
+	// therefore taking the inverse-transpose of the model transform matrices is unnecessary for the normal/tangent/binormal calculation
+
+	//Copying vertex attributes from model 1
+	for(unsigned int i = 0; i < m1_vert_count; i++)
+	{
+		//Vertex position
+		temp_v = Vec3(model1->verts + i*3);
+		temp_v = model1_trans * temp_v;
+		temp_raw_data[2 + 3*i] = temp_v.x;
+		temp_raw_data[2 + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + 3*i + 2] = temp_v.z;
+
+		//UV 1 coords
+		temp_raw_data[2 + (3*new_vert_count) + 2*i] = model1->uv_coords_1[i*2];
+		temp_raw_data[2 + (3*new_vert_count) + 2*i + 1] = model1->uv_coords_1[i*2 + 1];
+		//UV 2 coords
+		temp_raw_data[2 + (5*new_vert_count) + 2*i] = model1->uv_coords_2[i*2];
+		temp_raw_data[2 + (5*new_vert_count) + 2*i + 1] = model1->uv_coords_2[i*2 + 1];
+
+		//Normals
+		temp_v = Vec3(model1->normals + i*3);
+		temp_v = model1_trans * temp_v;
+		temp_raw_data[2 + (7*new_vert_count) + 3*i] = temp_v.x;
+		temp_raw_data[2 + (7*new_vert_count) + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + (7*new_vert_count) + 3*i + 2] = temp_v.z;
+
+		//Tangents
+		temp_v = Vec3(model1->tangents + i*3);
+		temp_v = model1_trans * temp_v;
+		temp_raw_data[2 + (10*new_vert_count) + 3*i] = temp_v.x;
+		temp_raw_data[2 + (10*new_vert_count) + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + (10*new_vert_count) + 3*i + 2] = temp_v.z;
+
+		//Binormals
+		temp_v = Vec3(model1->binormals + i*3);
+		temp_v = model1_trans * temp_v;
+		temp_raw_data[2 + (13*new_vert_count) + 3*i] = temp_v.x;
+		temp_raw_data[2 + (13*new_vert_count) + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + (13*new_vert_count) + 3*i + 2] = temp_v.z;
+	}
+	//Copying vertex attributes from model 2
+	for(unsigned int i = 0; i < m2_vert_count; i++)
+	{
+		//Vertex position
+		temp_v = Vec3(model2->verts + i*3);
+		temp_v = model2_trans * temp_v;
+		temp_raw_data[2 + 3*i + m1_vert_count] = temp_v.x;
+		temp_raw_data[2 + 3*i + m1_vert_count + 1] = temp_v.y;
+		temp_raw_data[2 + 3*i + m1_vert_count + 2] = temp_v.z;
+
+		//UV 1 coords
+		temp_raw_data[2 + (3*new_vert_count) + (2*m1_vert_count) + 2*i] = model2->uv_coords_1[i*2];
+		temp_raw_data[2 + (3*new_vert_count) + (2*m1_vert_count) + 2*i + 1] = model2->uv_coords_1[i*2 + 1];
+		//UV 2 coords
+		temp_raw_data[2 + (5*new_vert_count) + (2*m1_vert_count) + 2*i] = model2->uv_coords_2[i*2];
+		temp_raw_data[2 + (5*new_vert_count) + (2*m1_vert_count) + 2*i + 1] = model2->uv_coords_2[i*2 + 1];
+
+		//Normals
+		temp_v = Vec3(model2->normals + i*3);
+		temp_v = model2_trans * temp_v;
+		temp_raw_data[2 + (7*new_vert_count) + (3*m1_vert_count) + 3*i] = temp_v.x;
+		temp_raw_data[2 + (7*new_vert_count) + (3*m1_vert_count) + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + (7*new_vert_count) + (3*m1_vert_count) + 3*i + 2] = temp_v.z;
+
+		//Tangents
+		temp_v = Vec3(model2->tangents + i*3);
+		temp_v = model2_trans * temp_v;
+		temp_raw_data[2 + (10*new_vert_count) + (3*m1_vert_count) + 3*i] = temp_v.x;
+		temp_raw_data[2 + (10*new_vert_count) + (3*m1_vert_count) + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + (10*new_vert_count) + (3*m1_vert_count) + 3*i + 2] = temp_v.z;
+
+		//Binormals
+		temp_v = Vec3(model2->binormals + i*3);
+		temp_v = model2_trans * temp_v;
+		temp_raw_data[2 + (13*new_vert_count) + (3*m1_vert_count) + 3*i] = temp_v.x;
+		temp_raw_data[2 + (13*new_vert_count) + (3*m1_vert_count) + 3*i + 1] = temp_v.y;
+		temp_raw_data[2 + (13*new_vert_count) + (3*m1_vert_count) + 3*i + 2] = temp_v.z;
+	}
+
+	//===== Copying triangle vertex indices =====
+	//Copying triangle vertex indices from model 1
+	for(unsigned int i = 0; i < m1_tri_vert_count; i++)
+	{
+		((unsigned int*)temp_raw_data)[2 + (16*new_vert_count) + i] = model1->tri_verts[i];
+	}
+	//Copying triangle vertex indices from model 2
+	for(unsigned int i = 0; i < m2_tri_vert_count; i++)
+	{
+		((unsigned int*)temp_raw_data)[2 + (16*new_vert_count) + m1_tri_vert_count + i] = m1_vert_count + model2->tri_verts[i];
+	}
+
+	//==============================================================================================================
+
+	raw_data = (unsigned int*) temp_raw_data;
+
+	parse_raw_data();
 }
 Static_Model::~Static_Model()
 {
