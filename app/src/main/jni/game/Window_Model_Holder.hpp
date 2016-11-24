@@ -110,6 +110,85 @@ public:
 		delete m16x1_model;
 		delete m32x1_model;
 	}
+
+	int init_gl()
+	{
+		if(tile_model)
+			tile_model->init_gl();
+		if(m2x2_model)
+			m2x2_model->init_gl();
+		if(m4x4_model)
+			m4x4_model->init_gl();
+		if(m8x8_model)
+			m8x8_model->init_gl();
+		if(m16x16_model)
+			m16x16_model->init_gl();
+		if(m32x32_model)
+			m32x32_model->init_gl();
+
+		//Horizontal strips
+		if(m1x2_model)
+			m1x2_model->init_gl();
+		if(m1x4_model)
+			m1x4_model->init_gl();
+		if(m1x8_model)
+			m1x8_model->init_gl();
+		if(m1x16_model)
+			m1x16_model->init_gl();
+		if(m1x32_model)
+			m1x32_model->init_gl();
+
+		//Vertical strips
+		if(m2x1_model)
+			m2x1_model->init_gl();
+		if(m4x1_model)
+			m4x1_model->init_gl();
+		if(m8x1_model)
+			m8x1_model->init_gl();
+		if(m16x1_model)
+			m16x1_model->init_gl();
+		if(m32x1_model)
+			m32x1_model->init_gl();
+	}
+	int term_gl()
+	{
+		if(tile_model)
+			tile_model->term_gl();
+		if(m2x2_model)
+			m2x2_model->term_gl();
+		if(m4x4_model)
+			m4x4_model->term_gl();
+		if(m8x8_model)
+			m8x8_model->term_gl();
+		if(m16x16_model)
+			m16x16_model->term_gl();
+		if(m32x32_model)
+			m32x32_model->term_gl();
+
+		//Horizontal strips
+		if(m1x2_model)
+			m1x2_model->term_gl();
+		if(m1x4_model)
+			m1x4_model->term_gl();
+		if(m1x8_model)
+			m1x8_model->term_gl();
+		if(m1x16_model)
+			m1x16_model->term_gl();
+		if(m1x32_model)
+			m1x32_model->term_gl();
+
+		//Vertical strips
+		if(m2x1_model)
+			m2x1_model->term_gl();
+		if(m4x1_model)
+			m4x1_model->term_gl();
+		if(m8x1_model)
+			m8x1_model->term_gl();
+		if(m16x1_model)
+			m16x1_model->term_gl();
+		if(m32x1_model)
+			m32x1_model->term_gl();
+	}
 };
 
 //TODO: a version of the above, but only does horizontal strips for interior windows

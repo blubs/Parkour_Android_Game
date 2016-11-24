@@ -75,7 +75,7 @@ public:
 
 		floors = 20;
 
-		dimensions = Vec3(10,10,floors);
+		dimensions = Vec3(11,11,floors);
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
@@ -84,11 +84,15 @@ public:
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
+		generate_exterior_model_list();
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
 	}
 
 	void regenerate_floor(Vec3 player_pos)
 	{
+		int temp = active_floor_number;
+		clear();
+		active_floor_number = temp;
 		active_floor->clear();
 
 		floors = 20;
@@ -106,10 +110,8 @@ public:
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
-
+		generate_exterior_model_list();
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
-
-
 	}
 
 	//Clears the created building, zeroes everything out
@@ -122,6 +124,7 @@ public:
 		pos = Vec3(0,0,0);
 		global_mins = Vec3(0,0,0);
 		global_maxs = Vec3(0,0,0);
+		exterior_model_count = 0;
 
 		//TODO: destroy building and floor model
 	}
@@ -150,6 +153,251 @@ public:
 		//Z bounds are not handled here
 		return false;
 	}
+
+
+	Static_Model* exterior_models[BUILDING_MAX_EXTERIOR_MODELS];
+	Mat4 exterior_model_transforms[BUILDING_MAX_EXTERIOR_MODELS];
+	int exterior_model_count = 0;
+
+//#define DEBUG_SUBDIVIDE_WALL
+
+	void subdivide_wall(Mat4 trans, int wall_width, int wall_height)
+	{
+		Static_Model* models[6];
+		models[0] = Global_Tiles::instance->window_models->tile_model;
+		models[1] = Global_Tiles::instance->window_models->m2x2_model;
+		models[2] = Global_Tiles::instance->window_models->m4x4_model;
+		models[3] = Global_Tiles::instance->window_models->m8x8_model;
+		models[4] = Global_Tiles::instance->window_models->m16x16_model;
+		models[5] = Global_Tiles::instance->window_models->m32x32_model;
+
+		Static_Model* hor_models[6];
+		hor_models[0] = Global_Tiles::instance->window_models->tile_model;
+		hor_models[1] = Global_Tiles::instance->window_models->m1x2_model;
+		hor_models[2] = Global_Tiles::instance->window_models->m1x4_model;
+		hor_models[3] = Global_Tiles::instance->window_models->m1x8_model;
+		hor_models[4] = Global_Tiles::instance->window_models->m1x16_model;
+		hor_models[5] = Global_Tiles::instance->window_models->m1x32_model;
+
+		Static_Model* vert_models[6];
+		vert_models[0] = Global_Tiles::instance->window_models->tile_model;
+		vert_models[1] = Global_Tiles::instance->window_models->m2x1_model;
+		vert_models[2] = Global_Tiles::instance->window_models->m4x1_model;
+		vert_models[3] = Global_Tiles::instance->window_models->m8x1_model;
+		vert_models[4] = Global_Tiles::instance->window_models->m16x1_model;
+		vert_models[5] = Global_Tiles::instance->window_models->m32x1_model;
+
+		Mat4 m;
+
+		for(int i = 5; i >= 0; i--)
+		{
+			int exp = 1 << i;
+			if(wall_width == 1 && wall_height >= exp)
+			{
+				int num_y = wall_height / exp;
+				Static_Model* model = vert_models[i];
+#ifdef DEBUG_SUBDIVIDE_WALL
+				LOGI("Generated 1x%d 1x%d models. bounds:(%d,%d)",num_y,exp,wall_width,wall_height);
+#endif
+				//Generate 1 by num_y
+				for(int k = 0; k < num_y; k++)
+				{
+					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+					{
+						LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+						return;
+					}
+					exterior_models[exterior_model_count] = model;
+					exterior_model_transforms[exterior_model_count++] = trans * Mat4::TRANSLATE(Vec3(0,0,k*exp*WINDOW_TILE_SIZE));
+				}
+
+				//Getting the end point that we filled to:
+				Vec3 ofs = Vec3(1, 0, num_y * exp);
+				//If we did not fill the wall vertically
+				if(wall_height - (num_y * exp) > 0)
+				{
+#ifdef DEBUG_SUBDIVIDE_WALL
+					LOGI("Calling subdivide at top on:  %dx%d area at (0,0,%d)",wall_width, wall_height-(int)ofs.z,(int)ofs.z);
+#endif
+					//Generate from the left all the way to the right
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),1, wall_height-(int)ofs.z);
+				}
+				return;
+			}
+			if(wall_height == 1 && wall_width >= exp)
+			{
+				int num_x = wall_width / exp;
+				Static_Model* model = hor_models[i];
+#ifdef DEBUG_SUBDIVIDE_WALL
+				LOGI("Generated %dx1 %dx1 models. bounds:(%d,%d)",num_x,exp,wall_width,wall_height);
+#endif
+				//Generate num_x by 1
+				for(int j = 0; j < num_x; j++)
+				{
+					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+					{
+						LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+						return;
+					}
+					exterior_models[exterior_model_count] = model;
+					exterior_model_transforms[exterior_model_count++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,0));
+				}
+
+				//Getting the end point that we filled to:
+				Vec3 ofs = Vec3(num_x * exp, 0, 1);
+				//If we did not fill the wall horizontally
+				if(wall_width - (num_x * exp) > 0)
+				{
+#ifdef DEBUG_SUBDIVIDE_WALL
+					LOGI("Calling subdivide on right on:  %dx%d area at (%d,0,0)",wall_width-(int)ofs.x, (int)ofs.z,(int)ofs.x);
+#endif
+					//Generate from bottom to the top of the tiles that we placed
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x, 1);
+				}
+				return;
+			}
+			if(wall_width >= exp && wall_height >= exp && (wall_width > 1 && wall_height > 1))
+			{
+				int num_x = wall_width / exp;
+				int num_y = wall_height / exp;
+
+				Static_Model* model = models[i];
+#ifdef DEBUG_SUBDIVIDE_WALL
+				LOGI("Generated %dx%d %dx%d models. bounds:(%d,%d)",num_x,num_y,exp,exp,wall_width,wall_height);
+#endif
+				//Generate num_x by num_y
+				for(int j = 0; j < num_x; j++)
+				{
+					for(int k = 0; k < num_y; k++)
+					{
+						if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+						{
+							LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+							return;
+						}
+						exterior_models[exterior_model_count] = model;
+						exterior_model_transforms[exterior_model_count++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,k*exp*WINDOW_TILE_SIZE));
+					}
+				}
+
+				//Getting the end point that we filled to:
+				Vec3 ofs = Vec3(num_x * exp, 0, num_y * exp);
+
+
+				//If we did not fill the wall vertically
+				if(wall_height - (num_y * exp) > 0)
+				{
+#ifdef DEBUG_SUBDIVIDE_WALL
+					LOGI("Calling subdivide at top on:  %dx%d area at (0,0,%d)",wall_width, wall_height-(int)ofs.z,(int)ofs.z);
+#endif
+
+					//Generate from the left all the way to the right
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),wall_width, wall_height-(int)ofs.z);
+				}
+				//If we did not fill the wall horizontally
+				if(wall_width - (num_x * exp) > 0)
+				{
+#ifdef DEBUG_SUBDIVIDE_WALL
+					LOGI("Calling subdivide on right on:  %dx%d area at (%d,0,0)",wall_width-(int)ofs.x, (int)ofs.z,(int)ofs.x);
+#endif
+					//Generate from bottom to the top of the tiles that we placed
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x, (int)ofs.z);
+				}
+				return;
+			}
+		}
+	}
+
+	void generate_exterior_model_list()
+	{
+		//Static_Model* model = Global_Tiles::instance->window_model;
+
+		//Generating the front wall of the building
+		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
+		subdivide_wall(world_trans,(int)dimensions.x,(int)dimensions.z);
+
+		//Generating the back wall of the building
+		Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+		subdivide_wall(wall_orientation,(int)dimensions.x,(int)dimensions.z);
+
+		//Rendering the right wall of the building
+		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+		subdivide_wall(wall_orientation,(int)dimensions.y,(int)dimensions.z);
+
+		//Rendering the left wall of the building
+		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+		subdivide_wall(wall_orientation,(int)dimensions.y,(int)dimensions.z);
+
+		LOGE("Exterior model list generation finished using %d models",exterior_model_count);
+	}
+
+
+	int render_ext_walls(Mat4 vp)
+	{
+		//TODO: just render list
+		//===== old single tile method =====
+		/*Mat4 m;
+		Mat4 mvp;
+		Mat3 m_it;
+		Static_Model* model = Global_Tiles::instance->window_model;
+		Material* mat = Global_Tiles::instance->window_mat;
+
+		model->bind_mesh_data2(mat);
+		//Rendering the front wall of the building
+		for(int i = 0; i < wall_width; i++)
+		{
+			for(int j = 0; j < wall_height; j++)
+			{
+				//model->bind_mesh_data2(mat);
+				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+				mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+				m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+			}
+		}*/
+		//==================================
+		//===== New matrix using method =====
+
+		Mat4 m;
+		Mat4 mvp;
+		Mat3 m_it;
+		Static_Model* model;
+		Material* mat = Global_Tiles::instance->window_mat;
+
+		for(int i = 0; i < exterior_model_count; i++)
+		{
+			model = exterior_models[i];
+			model->bind_mesh_data2(mat);
+			m = exterior_model_transforms[i];
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+		}
+
+		//===================================
+
+
+
+		return 1;
+	}
+	//TODO: render interior wall strips for floors
+	int render_int_wall()
+	{
+		return 1;
+	}
+
 	int render(Vec3 player_pos, Mat4 vp)
 	{
 		//TODO: if this building is generated
@@ -172,13 +420,17 @@ public:
 			Mat4 m;
 			Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
-			Static_Model* model = Global_Tiles::instance->window_model;
+			render_ext_walls(vp);
+
+			//Static_Model* model = Global_Tiles::instance->window_model;
 
 			//Quick unoptimized test for rendering
 
-			/*
+
+			//render_ext_wall(world_trans,vp,(int)dimensions.x,(int)dimensions.z);
+
 			//Only have to bind the mesh once
-			model->bind_mesh_data2(mat);
+			/*model->bind_mesh_data2(mat);
 			//Rendering the front wall of the building
 			for(int i = 0; i < dimensions.x; i++)
 			{
@@ -197,102 +449,17 @@ public:
 
 					model->render_without_bind();
 				}
-			}
-			*/
-			//FIXME: test render of matrix meshes
-			//==========================================================================================
-			Vec3 ofs = Vec3(0,0,0);
-			//32x32 mesh
-			Global_Tiles::instance->window_models->m32x32_model->bind_mesh_data2(mat);
-			m = world_trans * Mat4::TRANSLATE(ofs);
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-			Mat4 mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			Mat3 m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-			Global_Tiles::instance->window_models->m32x32_model->render_without_bind();
-			//16x16 mesh
-			ofs.x += 33*TILE_SIZE;
-			Global_Tiles::instance->window_models->m16x16_model->bind_mesh_data2(mat);
-			m = world_trans * Mat4::TRANSLATE(ofs);
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-			Global_Tiles::instance->window_models->m16x16_model->render_without_bind();
-			//8x8 mesh
-			ofs.x += 17*TILE_SIZE;
-			Global_Tiles::instance->window_models->m8x8_model->bind_mesh_data2(mat);
-			m = world_trans * Mat4::TRANSLATE(ofs);
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-			Global_Tiles::instance->window_models->m8x8_model->render_without_bind();
-			//4x4 mesh
-			ofs.x += 9*TILE_SIZE;
-			Global_Tiles::instance->window_models->m4x4_model->bind_mesh_data2(mat);
-			m = world_trans * Mat4::TRANSLATE(ofs);
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-			Global_Tiles::instance->window_models->m4x4_model->render_without_bind();
-			//2x2 mesh
-			ofs.x += 5*TILE_SIZE;
-			Global_Tiles::instance->window_models->m2x2_model->bind_mesh_data2(mat);
-			m = world_trans * Mat4::TRANSLATE(ofs);
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-			Global_Tiles::instance->window_models->m2x2_model->render_without_bind();
-			//1x1 mesh
-			ofs.x += 3*TILE_SIZE;
-			Global_Tiles::instance->window_models->tile_model->bind_mesh_data2(mat);
-			m = world_trans * Mat4::TRANSLATE(ofs);
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-			model->render_without_bind();
-			Global_Tiles::instance->window_models->tile_model->render_without_bind();
-			//==========================================================================================
-
+			}*/
 
 			//Only have to bind the mesh once//FIXME: put this above the first loop
-			model->bind_mesh_data2(mat);
+			//model->bind_mesh_data2(mat);
 
 			//Rendering the back wall of the building
-			Mat4 wall_orientation = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+
+			//Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+			//render_ext_wall(wall_orientation,vp,(int)dimensions.x,(int)dimensions.z);
+
+			/*
 			for(int i = 0; i < dimensions.x; i++)
 			{
 				for(int j = 0; j < dimensions.z; j++)
@@ -310,11 +477,14 @@ public:
 
 					model->render_without_bind();
 				}
-			}
+			}*/
+
 
 			//Rendering the right wall of the building
-			wall_orientation = Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-			for(int i = 0; i < dimensions.y; i++)
+			//wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+			//render_ext_wall(wall_orientation,vp,(int)dimensions.y,(int)dimensions.z);
+
+			/*for(int i = 0; i < dimensions.y; i++)
 			{
 				for(int j = 0; j < dimensions.z; j++)
 				{
@@ -331,11 +501,12 @@ public:
 
 					model->render_without_bind();
 				}
-			}
+			}*/
 
 			//Rendering the left wall of the building
-			wall_orientation = Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-			for(int i = 0; i < dimensions.y; i++)
+			//wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+			//render_ext_wall(wall_orientation,vp,(int)dimensions.y,(int)dimensions.z);
+			/*for(int i = 0; i < dimensions.y; i++)
 			{
 				for(int j = 0; j < dimensions.z; j++)
 				{
@@ -352,7 +523,7 @@ public:
 
 					model->render_without_bind();
 				}
-			}
+			}*/
 		}
 
 		if(active_floor && plyr_in_bldg)

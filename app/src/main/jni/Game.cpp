@@ -586,11 +586,6 @@ void Game::start()
 		buildings[i]->generate(player->pos,last_building_end_point + building_offset);
 		last_building_end_point = Vec3(buildings[i]->pos.x,buildings[i]->global_maxs.y,0);
 	}
-	//Debug printing the building positions
-	for(int i = 0; i < MAX_BUILDINGS; i++)
-	{
-		LOGE("Bldg[%d]: (%.2f,%.2f,%.2f)\n",i,buildings[i]->pos.x,buildings[i]->pos.y,buildings[i]->pos.z);
-	}
 
 	current_building = buildings[0];
 
@@ -1656,21 +1651,21 @@ void Game::render()
 	Mat4 view_no_translation = camera->inf_proj_m * ((camera->view_m).pos_removed());
 
 
-	buildings[0]->render(player->pos,vp);
-	//for(int i = 0; i < MAX_BUILDINGS; i++)
-	//{
-	//	buildings[i]->render(player->pos,vp);
-	//}
+	//buildings[0]->render(player->pos,vp);
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->render(player->pos,vp);
+	}
 
 	skybox->render(view_no_translation);
 	//Have to draw transparent objects after skybox
 	test_sound_source->render(vp);
 
-	buildings[0]->render_transparent_meshes(player->pos,vp);
-	//for(int i = 0; i < MAX_BUILDINGS; i++)
-	//{
-	//	buildings[i]->render_transparent_meshes(player->pos,vp);
-	//}
+	//buildings[0]->render_transparent_meshes(player->pos,vp);
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->render_transparent_meshes(player->pos,vp);
+	}
 
 	//Test UI image
 	test_img->render(camera->ortho_proj_m);

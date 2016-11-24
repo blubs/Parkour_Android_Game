@@ -182,7 +182,7 @@ Static_Model::Static_Model(Static_Model* other)
 Static_Model::Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model* model2, Mat4 model2_trans)
 {
 	//Allocate enough room for both meshes
-	int raw_data_size = (2 + (16 * model1->vertex_count) + model1->tri_vert_count) + (2 + (16 * model2->vertex_count) + model2->tri_vert_count);
+	int raw_data_size = 2 + ((16 * model1->vertex_count) + model1->tri_vert_count) + ((16 * model2->vertex_count) + model2->tri_vert_count);
 
 	//Though the raw data is a int pointer, most attributes are floats, so I'll make this a float pointer to avoid multiple casts
 	float* temp_raw_data = NULL;
@@ -214,6 +214,9 @@ Static_Model::Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model
 	//Disclaimer: I know the transformations for the meshes will be isometric,
 	// therefore taking the inverse-transpose of the model transform matrices is unnecessary for the normal/tangent/binormal calculation
 
+	Mat3 model1_nortrans = model1_trans.inverted_then_transposed().get_mat3();
+	Mat3 model2_nortrans = model2_trans.inverted_then_transposed().get_mat3();
+
 	//Copying vertex attributes from model 1
 	for(unsigned int i = 0; i < m1_vert_count; i++)
 	{
@@ -233,21 +236,21 @@ Static_Model::Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model
 
 		//Normals
 		temp_v = Vec3(model1->normals + i*3);
-		temp_v = model1_trans * temp_v;
+		temp_v = model1_nortrans * temp_v;
 		temp_raw_data[2 + (7*new_vert_count) + 3*i] = temp_v.x;
 		temp_raw_data[2 + (7*new_vert_count) + 3*i + 1] = temp_v.y;
 		temp_raw_data[2 + (7*new_vert_count) + 3*i + 2] = temp_v.z;
 
 		//Tangents
 		temp_v = Vec3(model1->tangents + i*3);
-		temp_v = model1_trans * temp_v;
+		temp_v = model1_nortrans * temp_v;
 		temp_raw_data[2 + (10*new_vert_count) + 3*i] = temp_v.x;
 		temp_raw_data[2 + (10*new_vert_count) + 3*i + 1] = temp_v.y;
 		temp_raw_data[2 + (10*new_vert_count) + 3*i + 2] = temp_v.z;
 
 		//Binormals
 		temp_v = Vec3(model1->binormals + i*3);
-		temp_v = model1_trans * temp_v;
+		temp_v = model1_nortrans * temp_v;
 		temp_raw_data[2 + (13*new_vert_count) + 3*i] = temp_v.x;
 		temp_raw_data[2 + (13*new_vert_count) + 3*i + 1] = temp_v.y;
 		temp_raw_data[2 + (13*new_vert_count) + 3*i + 2] = temp_v.z;
@@ -258,9 +261,9 @@ Static_Model::Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model
 		//Vertex position
 		temp_v = Vec3(model2->verts + i*3);
 		temp_v = model2_trans * temp_v;
-		temp_raw_data[2 + 3*i + m1_vert_count] = temp_v.x;
-		temp_raw_data[2 + 3*i + m1_vert_count + 1] = temp_v.y;
-		temp_raw_data[2 + 3*i + m1_vert_count + 2] = temp_v.z;
+		temp_raw_data[2 + 3*i + (3*m1_vert_count)] = temp_v.x;
+		temp_raw_data[2 + 3*i + (3*m1_vert_count) + 1] = temp_v.y;
+		temp_raw_data[2 + 3*i + (3*m1_vert_count) + 2] = temp_v.z;
 
 		//UV 1 coords
 		temp_raw_data[2 + (3*new_vert_count) + (2*m1_vert_count) + 2*i] = model2->uv_coords_1[i*2];
@@ -271,21 +274,21 @@ Static_Model::Static_Model(Static_Model* model1, Mat4 model1_trans, Static_Model
 
 		//Normals
 		temp_v = Vec3(model2->normals + i*3);
-		temp_v = model2_trans * temp_v;
+		temp_v = model2_nortrans * temp_v;
 		temp_raw_data[2 + (7*new_vert_count) + (3*m1_vert_count) + 3*i] = temp_v.x;
 		temp_raw_data[2 + (7*new_vert_count) + (3*m1_vert_count) + 3*i + 1] = temp_v.y;
 		temp_raw_data[2 + (7*new_vert_count) + (3*m1_vert_count) + 3*i + 2] = temp_v.z;
 
 		//Tangents
 		temp_v = Vec3(model2->tangents + i*3);
-		temp_v = model2_trans * temp_v;
+		temp_v = model2_nortrans * temp_v;
 		temp_raw_data[2 + (10*new_vert_count) + (3*m1_vert_count) + 3*i] = temp_v.x;
 		temp_raw_data[2 + (10*new_vert_count) + (3*m1_vert_count) + 3*i + 1] = temp_v.y;
 		temp_raw_data[2 + (10*new_vert_count) + (3*m1_vert_count) + 3*i + 2] = temp_v.z;
 
 		//Binormals
 		temp_v = Vec3(model2->binormals + i*3);
-		temp_v = model2_trans * temp_v;
+		temp_v = model2_nortrans * temp_v;
 		temp_raw_data[2 + (13*new_vert_count) + (3*m1_vert_count) + 3*i] = temp_v.x;
 		temp_raw_data[2 + (13*new_vert_count) + (3*m1_vert_count) + 3*i + 1] = temp_v.y;
 		temp_raw_data[2 + (13*new_vert_count) + (3*m1_vert_count) + 3*i + 2] = temp_v.z;

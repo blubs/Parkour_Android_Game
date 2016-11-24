@@ -360,6 +360,7 @@ void Global_Tiles::init_gl()
 	instance->style[0]->wall_vent->model->init_gl();
 	//===============================================================
 
+	instance->window_models->init_gl();
 	instance->window_model->init_gl();
 	instance->window_shad->init_gl();
 	instance->window_tex0->init_gl();
@@ -389,6 +390,7 @@ void Global_Tiles::term_gl()
 	instance->style[0]->wall_vent->model->term_gl();
 	//===============================================================
 
+	instance->window_models->term_gl();
 	instance->window_model->term_gl();
 	instance->window_shad->term_gl();
 	instance->window_tex0->term_gl();
