@@ -122,7 +122,7 @@
 #define INPUT_SWIPE_RIGHT 16
 
 //=========================== Game Logic Defs ==========================
-#define MAX_BUILDINGS 5
+#define MAX_BUILDINGS 3
 
 //Player States
 #define PLAYER_STATE_MENU 0

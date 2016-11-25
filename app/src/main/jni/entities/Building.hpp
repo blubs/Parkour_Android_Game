@@ -367,13 +367,18 @@ public:
 		Mat4 m;
 		Mat4 mvp;
 		Mat3 m_it;
+		//Slight optimization: the way in which I populate this array gives a high probability
+		// that two consecutive models are the same model.
+		// Thus if the last model we rendered is the same as the current model, we can skip binding this model
+		Static_Model* last_model = NULL;
 		Static_Model* model;
 		Material* mat = Global_Tiles::instance->window_mat;
 
 		for(int i = 0; i < exterior_model_count; i++)
 		{
 			model = exterior_models[i];
-			model->bind_mesh_data2(mat);
+			if(model != last_model)
+				model->bind_mesh_data2(mat);
 			m = exterior_model_transforms[i];
 			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
@@ -384,6 +389,7 @@ public:
 			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
 			model->render_without_bind();
+			last_model = model;
 		}
 
 		//===================================
@@ -420,110 +426,8 @@ public:
 			Mat4 m;
 			Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
+			//Should I render walls independently and cull non-visible ones?
 			render_ext_walls(vp);
-
-			//Static_Model* model = Global_Tiles::instance->window_model;
-
-			//Quick unoptimized test for rendering
-
-
-			//render_ext_wall(world_trans,vp,(int)dimensions.x,(int)dimensions.z);
-
-			//Only have to bind the mesh once
-			/*model->bind_mesh_data2(mat);
-			//Rendering the front wall of the building
-			for(int i = 0; i < dimensions.x; i++)
-			{
-				for(int j = 0; j < dimensions.z; j++)
-				{
-					//model->bind_mesh_data2(mat);
-
-					m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-					Mat4 mvp = vp * m;
-					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-					Mat3 m_it = m.inverted_then_transposed().get_mat3();
-					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-					model->render_without_bind();
-				}
-			}*/
-
-			//Only have to bind the mesh once//FIXME: put this above the first loop
-			//model->bind_mesh_data2(mat);
-
-			//Rendering the back wall of the building
-
-			//Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
-			//render_ext_wall(wall_orientation,vp,(int)dimensions.x,(int)dimensions.z);
-
-			/*
-			for(int i = 0; i < dimensions.x; i++)
-			{
-				for(int j = 0; j < dimensions.z; j++)
-				{
-					//model->bind_mesh_data2(mat);
-
-					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-					Mat4 mvp = vp * m;
-					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-					Mat3 m_it = m.inverted_then_transposed().get_mat3();
-					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-					model->render_without_bind();
-				}
-			}*/
-
-
-			//Rendering the right wall of the building
-			//wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-			//render_ext_wall(wall_orientation,vp,(int)dimensions.y,(int)dimensions.z);
-
-			/*for(int i = 0; i < dimensions.y; i++)
-			{
-				for(int j = 0; j < dimensions.z; j++)
-				{
-					//model->bind_mesh_data2(mat);
-
-					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-					Mat4 mvp = vp * m;
-					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-					Mat3 m_it = m.inverted_then_transposed().get_mat3();
-					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-					model->render_without_bind();
-				}
-			}*/
-
-			//Rendering the left wall of the building
-			//wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-			//render_ext_wall(wall_orientation,vp,(int)dimensions.y,(int)dimensions.z);
-			/*for(int i = 0; i < dimensions.y; i++)
-			{
-				for(int j = 0; j < dimensions.z; j++)
-				{
-					//model->bind_mesh_data2(mat);
-
-					m = world_trans * wall_orientation * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-					mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-					Mat4 mvp = vp * m;
-					mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-					Mat3 m_it = m.inverted_then_transposed().get_mat3();
-					mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-					model->render_without_bind();
-				}
-			}*/
 		}
 
 		if(active_floor && plyr_in_bldg)
