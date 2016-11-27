@@ -38,6 +38,7 @@ public:
 
 	//char tile_types[MAX_WIDTH][MAX_LENGTH];
 
+	bool floor_generated = false;
 	Floor *active_floor = NULL;
 	int active_floor_number = 0;
 
@@ -69,7 +70,7 @@ public:
 	}
 
 	//Creates the building
-	void generate(Vec3 player_pos, Vec3 building_pos)
+	void generate(Vec3 building_pos)
 	{
 		active_floor_number = 10;
 
@@ -85,6 +86,11 @@ public:
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
 		generate_exterior_model_list();
+	}
+
+	void generate_floor(Vec3 player_pos)
+	{
+		floor_generated = true;
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
 	}
 
@@ -125,6 +131,7 @@ public:
 		global_mins = Vec3(0,0,0);
 		global_maxs = Vec3(0,0,0);
 		exterior_model_count = 0;
+		floor_generated = false;
 
 		//TODO: destroy building and floor model
 	}
@@ -430,7 +437,7 @@ public:
 			render_ext_walls(vp);
 		}
 
-		if(active_floor && plyr_in_bldg)
+		if(floor_generated && active_floor && plyr_in_bldg)
 			active_floor->render(vp);
 		return 1;
 	}

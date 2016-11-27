@@ -575,7 +575,8 @@ void Game::start()
 		buildings[i] = new Building();
 	}
 
-	buildings[0]->generate(player->pos,Vec3::ZERO());
+	buildings[0]->generate(Vec3::ZERO());
+	buildings[0]->generate_floor(player->pos);
 	Vec3 last_building_end_point = Vec3(buildings[0]->pos.x,buildings[0]->global_maxs.y,0);
 
 	//Distance between buildings
@@ -583,7 +584,7 @@ void Game::start()
 
 	for(int i = 1; i < MAX_BUILDINGS; i++)
 	{
-		buildings[i]->generate(player->pos,last_building_end_point + building_offset);
+		buildings[i]->generate(last_building_end_point + building_offset);
 		last_building_end_point = Vec3(buildings[i]->pos.x,buildings[i]->global_maxs.y,0);
 	}
 
