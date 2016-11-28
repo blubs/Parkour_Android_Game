@@ -196,7 +196,7 @@ public:
 
 		Mat4 m;
 
-		for(int i = 5; i >= 0; i--)
+		for(int i = BUILDING_WINDOW_MAX_TILE_MATRIX; i >= 0; i--)
 		{
 			int exp = 1 << i;
 			if(wall_width == 1 && wall_height >= exp)
