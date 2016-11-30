@@ -40,5 +40,24 @@ public:
 	int term_gl();
 };
 
-//TODO: a version of the above, but only does horizontal strips for interior windows
+//This class is for only holding horizontal tiles
+class Interior_Window_Model_Holder
+{
+public:
+	Static_Model* tile_model = NULL;
+	//Horizontal strips
+	Static_Model* m1x2_model = NULL;
+	Static_Model* m1x4_model = NULL;
+	Static_Model* m1x8_model = NULL;
+	Static_Model* m1x16_model = NULL;
+	Static_Model* m1x32_model = NULL;
+
+	Interior_Window_Model_Holder(const char* filepath);
+
+	~Interior_Window_Model_Holder ();
+
+	int init_gl();
+	int term_gl();
+};
+
 #endif //PARKOUR_WINDOW_MESH_HOLDER_HPP

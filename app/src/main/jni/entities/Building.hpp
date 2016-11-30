@@ -400,9 +400,6 @@ public:
 		}
 
 		//===================================
-
-
-
 		return 1;
 	}
 	//TODO: render interior wall strips for floors
