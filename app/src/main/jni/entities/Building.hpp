@@ -466,7 +466,8 @@ public:
 			Mat4 m;
 			Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
 
-			Static_Model* model = Global_Tiles::instance->window_int_model;
+			Static_Model* model = Global_Tiles::instance->int_window_models->tile_model;
+			//TODO: partition the windows into the biggest chunks that fit
 
 			//Quick unoptimized test for rendering
 

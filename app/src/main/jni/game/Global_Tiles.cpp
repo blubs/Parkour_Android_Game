@@ -212,10 +212,12 @@ Global_Tiles::Global_Tiles()
 	frames[5]->set_bounds(Vec3(1.75f,12,0));
 
 	//TODO: continue the rest of the frames
-	window_model = new Static_Model("models/windows/style0.stmf");
-	window_int_model = new Static_Model("models/windows/style0_int.stmf");
+	//window_model = new Static_Model("models/windows/style0.stmf");
+	//window_int_model = new Static_Model("models/windows/style0_int.stmf");
 
 	window_models = new Window_Model_Holder("models/windows/style0.stmf");
+
+	int_window_models = new Interior_Window_Model_Holder("models/windows/style0_int.stmf");
 
 	//Initializing window exterior shader
 
@@ -328,12 +330,14 @@ Global_Tiles::~Global_Tiles()
 	delete style[0]->wall_vent;
 
 	//===================================================
-	delete window_model;
+	delete window_models;
+	delete int_window_models;
+	//delete window_model;
 	delete window_mat;
 	delete window_shad;
 	delete window_tex0;
 
-	delete window_int_model;
+	//delete window_int_model;
 	delete window_int_mat;
 	delete window_int_shad;
 	delete window_int_tex0;
@@ -361,11 +365,13 @@ void Global_Tiles::init_gl()
 	//===============================================================
 
 	instance->window_models->init_gl();
-	instance->window_model->init_gl();
+	instance->int_window_models->init_gl();
+
+	//instance->window_model->init_gl();
 	instance->window_shad->init_gl();
 	instance->window_tex0->init_gl();
 
-	instance->window_int_model->init_gl();
+	//instance->window_int_model->init_gl();
 	instance->window_int_shad->init_gl();
 	instance->window_int_tex0->init_gl();
 	instance->window_int_misc_tex0->init_gl();
@@ -391,11 +397,13 @@ void Global_Tiles::term_gl()
 	//===============================================================
 
 	instance->window_models->term_gl();
-	instance->window_model->term_gl();
+	instance->int_window_models->term_gl();
+	instance->int_window_models->term_gl();
+	//instance->window_model->term_gl();
 	instance->window_shad->term_gl();
 	instance->window_tex0->term_gl();
 
-	instance->window_int_model->term_gl();
+	//instance->window_int_model->term_gl();
 	instance->window_int_shad->term_gl();
 	instance->window_int_tex0->term_gl();
 	instance->window_int_misc_tex0->term_gl();

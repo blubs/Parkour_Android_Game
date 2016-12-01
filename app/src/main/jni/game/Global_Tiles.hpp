@@ -113,14 +113,15 @@ public:
 	Cube_Map* sky_cube_map = NULL;
 
 	//temp remove this
-	Static_Model* window_int_model;
+	//Static_Model* window_int_model;
 	Material* window_int_mat;
 	Shader* window_int_shad;
 	Texture* window_int_tex0;
 	Texture* window_int_misc_tex0;
 
 	Window_Model_Holder* window_models;
-	Static_Model* window_model;
+	Interior_Window_Model_Holder* int_window_models;
+	//Static_Model* window_model;
 	Material* window_mat;
 	Shader* window_shad;
 	Texture* window_tex0;
