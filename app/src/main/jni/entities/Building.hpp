@@ -166,6 +166,11 @@ public:
 	Mat4 exterior_model_transforms[BUILDING_MAX_EXTERIOR_MODELS];
 	int exterior_model_count = 0;
 
+	//Members for building interior windows
+	Static_Model* interior_models[BUILDING_MAX_INTERIOR_MODELS];
+	Mat4 interior_model_transforms[BUILDING_MAX_INTERIOR_MODELS];
+	int interior_model_count = 0;
+
 //#define DEBUG_SUBDIVIDE_WALL
 
 	void subdivide_wall(Mat4 trans, int wall_width, int wall_height)
