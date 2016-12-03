@@ -92,6 +92,7 @@ public:
 	{
 		floor_generated = true;
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
+		generate_interior_model_list();
 	}
 
 	void regenerate_floor(Vec3 player_pos)
@@ -117,6 +118,7 @@ public:
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
 
 		generate_exterior_model_list();
+		generate_interior_model_list();
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
 	}
 
@@ -131,6 +133,7 @@ public:
 		global_mins = Vec3(0,0,0);
 		global_maxs = Vec3(0,0,0);
 		exterior_model_count = 0;
+		interior_model_count = 0;
 		floor_generated = false;
 
 		//TODO: destroy building and floor model
@@ -320,6 +323,52 @@ public:
 		}
 	}
 
+	//Subdivide an interior window wall horizontally
+	void subdivide_interior_wall(Mat4 trans, int wall_width)
+	{
+		Static_Model* hor_models[6];
+		hor_models[0] = Global_Tiles::instance->int_window_models->tile_model;
+		hor_models[1] = Global_Tiles::instance->int_window_models->m1x2_model;
+		hor_models[2] = Global_Tiles::instance->int_window_models->m1x4_model;
+		hor_models[3] = Global_Tiles::instance->int_window_models->m1x8_model;
+		hor_models[4] = Global_Tiles::instance->int_window_models->m1x16_model;
+		hor_models[5] = Global_Tiles::instance->int_window_models->m1x32_model;
+
+
+		Mat4 m;
+
+		for(int i = BUILDING_WINDOW_MAX_TILE_MATRIX; i >= 0; i--)
+		{
+			int exp = 1 << i;
+			if(wall_width >= exp)
+			{
+				int num_x = wall_width / exp;
+				Static_Model* model = hor_models[i];
+				//Generate a num_x wide interior wall
+				for(int j = 0; j < num_x; j++)
+				{
+					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+					{
+						LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+						return;
+					}
+					interior_models[interior_model_count] = model;
+					interior_model_transforms[interior_model_count++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,0));
+				}
+
+				//Getting the end point that we filled to:
+				Vec3 ofs = Vec3(num_x * exp, 0, 1);
+				//If we did not fill the wall horizontally
+				if(wall_width - (num_x * exp) > 0)
+				{
+					//Generate from bottom to the top of the tiles that we placed
+					subdivide_interior_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x);
+				}
+				return;
+			}
+		}
+	}
+
 	void generate_exterior_model_list()
 	{
 		//Static_Model* model = Global_Tiles::instance->window_model;
@@ -343,10 +392,30 @@ public:
 		LOGE("Exterior model list generation finished using %d models",exterior_model_count);
 	}
 
+	void generate_interior_model_list()
+	{
+		//Generating the front inside wall of the building
+		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
+		subdivide_interior_wall(world_trans,(int)dimensions.x);
+
+		//Generating the back inside wall of the building
+		Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+		subdivide_interior_wall(wall_orientation,(int)dimensions.x);
+
+		//Rendering the right inside wall of the building
+		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+		subdivide_interior_wall(wall_orientation,(int)dimensions.y);
+
+		//Rendering the left inside wall of the building
+		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+		subdivide_interior_wall(wall_orientation,(int)dimensions.y);
+
+		LOGE("Interior model list generation finished using %d models",interior_model_count);
+	}
+
 
 	int render_ext_walls(Mat4 vp)
 	{
-		//TODO: just render list
 		//===== old single tile method =====
 		/*Mat4 m;
 		Mat4 mvp;
@@ -407,9 +476,36 @@ public:
 		//===================================
 		return 1;
 	}
-	//TODO: render interior wall strips for floors
-	int render_int_wall()
+
+	int render_int_walls(Mat4 vp)
 	{
+		Mat4 m;
+		Mat4 mvp;
+		Mat3 m_it;
+		//Slight optimization: the way in which I populate this array gives a high probability
+		// that two consecutive models are the same model.
+		// Thus if the last model we rendered is the same as the current model, we can skip binding this model
+		Static_Model* last_model = NULL;
+		Static_Model* model;
+		Material* mat = Global_Tiles::instance->window_int_mat;
+
+		for(int i = 0; i < interior_model_count; i++)
+		{
+			model = interior_models[i];
+			if(model != last_model)
+				model->bind_mesh_data2(mat);
+			m = interior_model_transforms[i];
+			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+
+			mvp = vp * m;
+			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+			m_it = m.inverted_then_transposed().get_mat3();
+			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+			model->render_without_bind();
+			last_model = model;
+		}
 		return 1;
 	}
 
@@ -432,15 +528,14 @@ public:
 			//Using Skybox cubemap
 			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->sky_cube_map);
 
-			Mat4 m;
-			Mat4 world_trans = Mat4::TRANSLATE(global_mins);
-
 			//Should I render walls independently and cull non-visible ones?
 			render_ext_walls(vp);
 		}
 
 		if(floor_generated && active_floor && plyr_in_bldg)
+		{
 			active_floor->render(vp);
+		}
 		return 1;
 	}
 
@@ -465,10 +560,10 @@ public:
 			//FIXME: make sure we reference the correct style and variant for the floor style and variant
 			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->style[0]->variants[0]->ref_cube_map);
 
-
+			render_int_walls(vp);
 			//Drawing the interior windows only on the active floor number
 			//TODO: skip drawing of broken interior windows (and draw their skeletal animations)
-			Mat4 m;
+			/*Mat4 m;
 			Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
 
 			Static_Model* model = Global_Tiles::instance->int_window_models->tile_model;
@@ -548,7 +643,7 @@ public:
 				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
 				model->render_without_bind();
-			}
+			}*/
 		}
 		//FIXME: if we end up using transparency in tiles, call transparent render for floor
 		//if(active_floor)
