@@ -95,6 +95,7 @@ public:
 		generate_interior_model_list();
 	}
 
+	//Currently regenerates the building using a different rng numbers
 	void regenerate_floor(Vec3 player_pos)
 	{
 		int temp = active_floor_number;
@@ -135,15 +136,15 @@ public:
 		exterior_model_count = 0;
 		interior_model_count = 0;
 		floor_generated = false;
-
-		//TODO: destroy building and floor model
 	}
 
+	//Returns if the floor has a solid voxel at the point p
 	char is_solid_at(Vec3 p)
 	{
 		return active_floor->is_solid_at(p);
 	}
 
+	//Returns true if the point p is out of the building's inner bounds, false if not
 	bool is_out_of_bounds(Vec3 p)
 	{
 		if(p.x < global_mins.x || p.x > global_maxs.x)
@@ -154,6 +155,7 @@ public:
 		return false;
 	}
 
+	//Returns true if any corner of the bounding box 2*half_width x 2*half_width located at point p is out of bounds
 	bool is_box_out_of_bounds(Vec3 p, float half_width)
 	{
 		if(p.x-half_width < global_mins.x || p.x+half_width > global_maxs.x)
@@ -165,17 +167,20 @@ public:
 	}
 
 
+	//Holds a list of shell models for the building exterior
 	Static_Model* exterior_models[BUILDING_MAX_EXTERIOR_MODELS];
 	Mat4 exterior_model_transforms[BUILDING_MAX_EXTERIOR_MODELS];
 	int exterior_model_count = 0;
 
-	//Members for building interior windows
+	//Holds a list of shell models for the building interior
 	Static_Model* interior_models[BUILDING_MAX_INTERIOR_MODELS];
 	Mat4 interior_model_transforms[BUILDING_MAX_INTERIOR_MODELS];
 	int interior_model_count = 0;
 
 //#define DEBUG_SUBDIVIDE_WALL
 
+	//Recursively 2d partitions a wall into the largest (nxn) (n being 2^i for all integers i in [0,5]) tiles that fit
+	//Then we draw these tiles, drastically reducing the draw call counts for the buildings
 	void subdivide_wall(Mat4 trans, int wall_width, int wall_height)
 	{
 		Static_Model* models[6];
@@ -246,7 +251,7 @@ public:
 #ifdef DEBUG_SUBDIVIDE_WALL
 				LOGI("Generated %dx1 %dx1 models. bounds:(%d,%d)",num_x,exp,wall_width,wall_height);
 #endif
-				//Generate num_x by 1
+				//Generate num_x by 1 wall
 				for(int j = 0; j < num_x; j++)
 				{
 					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
@@ -280,7 +285,7 @@ public:
 #ifdef DEBUG_SUBDIVIDE_WALL
 				LOGI("Generated %dx%d %dx%d models. bounds:(%d,%d)",num_x,num_y,exp,exp,wall_width,wall_height);
 #endif
-				//Generate num_x by num_y
+				//Generate num_x by num_y wall
 				for(int j = 0; j < num_x; j++)
 				{
 					for(int k = 0; k < num_y; k++)
@@ -305,7 +310,6 @@ public:
 #ifdef DEBUG_SUBDIVIDE_WALL
 					LOGI("Calling subdivide at top on:  %dx%d area at (0,0,%d)",wall_width, wall_height-(int)ofs.z,(int)ofs.z);
 #endif
-
 					//Generate from the left all the way to the right
 					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),wall_width, wall_height-(int)ofs.z);
 				}
@@ -327,6 +331,7 @@ public:
 	void subdivide_interior_wall(Mat4 trans, int wall_width)
 	{
 		Static_Model* hor_models[6];
+		//TODO: change these references depending on the style
 		hor_models[0] = Global_Tiles::instance->int_window_models->tile_model;
 		hor_models[1] = Global_Tiles::instance->int_window_models->m1x2_model;
 		hor_models[2] = Global_Tiles::instance->int_window_models->m1x4_model;
@@ -371,8 +376,7 @@ public:
 
 	void generate_exterior_model_list()
 	{
-		//Static_Model* model = Global_Tiles::instance->window_model;
-
+		//TODO: set exterior style model
 		//Generating the front wall of the building
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 		subdivide_wall(world_trans,(int)dimensions.x,(int)dimensions.z);
@@ -381,11 +385,11 @@ public:
 		Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
 		subdivide_wall(wall_orientation,(int)dimensions.x,(int)dimensions.z);
 
-		//Rendering the right wall of the building
+		//Generating the right wall of the building
 		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
 		subdivide_wall(wall_orientation,(int)dimensions.y,(int)dimensions.z);
 
-		//Rendering the left wall of the building
+		//Generating the left wall of the building
 		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
 		subdivide_wall(wall_orientation,(int)dimensions.y,(int)dimensions.z);
 
@@ -394,6 +398,7 @@ public:
 
 	void generate_interior_model_list()
 	{
+		//TODO: set exterior style model
 		//Generating the front inside wall of the building
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
 		subdivide_interior_wall(world_trans,(int)dimensions.x);
@@ -402,11 +407,11 @@ public:
 		Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
 		subdivide_interior_wall(wall_orientation,(int)dimensions.x);
 
-		//Rendering the right inside wall of the building
+		//Generating the right inside wall of the building
 		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
 		subdivide_interior_wall(wall_orientation,(int)dimensions.y);
 
-		//Rendering the left inside wall of the building
+		//Generating the left inside wall of the building
 		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
 		subdivide_interior_wall(wall_orientation,(int)dimensions.y);
 
@@ -416,35 +421,6 @@ public:
 
 	int render_ext_walls(Mat4 vp)
 	{
-		//===== old single tile method =====
-		/*Mat4 m;
-		Mat4 mvp;
-		Mat3 m_it;
-		Static_Model* model = Global_Tiles::instance->window_model;
-		Material* mat = Global_Tiles::instance->window_mat;
-
-		model->bind_mesh_data2(mat);
-		//Rendering the front wall of the building
-		for(int i = 0; i < wall_width; i++)
-		{
-			for(int j = 0; j < wall_height; j++)
-			{
-				//model->bind_mesh_data2(mat);
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,0,j*WINDOW_TILE_SIZE));
-				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-				mvp = vp * m;
-				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-				m_it = m.inverted_then_transposed().get_mat3();
-				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-				model->render_without_bind();
-			}
-		}*/
-		//==================================
-		//===== New matrix using method =====
-
 		Mat4 m;
 		Mat4 mvp;
 		Mat3 m_it;
@@ -472,8 +448,6 @@ public:
 			model->render_without_bind();
 			last_model = model;
 		}
-
-		//===================================
 		return 1;
 	}
 
@@ -511,8 +485,6 @@ public:
 
 	int render(Vec3 player_pos, Mat4 vp)
 	{
-		//TODO: if this building is generated
-		//TODO: render this building
 		//If we are in the building, only render floor and interior glass
 		//if we are out of the building, only render exterior FIXME: this needs additional checks for broken windows (culling sides of building as well)
 		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
@@ -542,8 +514,6 @@ public:
 	//Rendering method called at the end to render transparent windows and tiles
 	int render_transparent_meshes(Vec3 player_pos, Mat4 vp)
 	{
-		//TODO: if this building is generated
-		//TODO: render this building
 		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
 
 		//Only render the interior windows if we are in the building

@@ -13,7 +13,7 @@ class Sound_Source : public Entity
 {
 public:
 	bool used = false;
-	int priority = 0;//the lower the priority, the more important
+	int priority = 0;//the lower the priority, the more important TODO: not yet used
 	float volume = 0.0f;
 	//TODO: maybe add priority constant identifiers for standardized values
 	int sound_pos = 0;
