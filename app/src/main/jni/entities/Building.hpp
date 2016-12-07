@@ -7,6 +7,7 @@
 
 #include "../engine/math/math.hpp"
 #include "Floor.hpp"
+#include "../game/game_defs.hpp"
 
 class Building : public Entity
 {
