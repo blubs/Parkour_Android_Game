@@ -6,8 +6,8 @@
 #define PARKOUR_BUILDING_HPP
 
 #include "../engine/math/math.hpp"
-#include "Floor.hpp"
 #include "../game/game_defs.hpp"
+#include "Floor.hpp"
 
 class Building : public Entity
 {
