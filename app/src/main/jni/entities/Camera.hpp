@@ -36,6 +36,8 @@ public:
 	//Converts angles to forward,right,and up vectors, and sets the view matrix
 	void update_view_matrix();
 
+	Vec3 tilt_angles;
+
 	int viewbob;
 	Vec3 viewbob_vel;
 

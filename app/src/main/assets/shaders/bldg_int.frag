@@ -21,7 +21,7 @@ uniform float time;
 vec2 parallax_map(vec2 tex_coords, vec3 view_dir, float depth)
 {
 	//vec2 ofs = view_dir.xy / (view_dir.z) * -depth;
-	float depth_scale = 0.04;//max depth
+	float depth_scale = 0.12;//max depth
 	vec2 ofs = view_dir.xy / (view_dir.z) * depth * depth_scale;
 	return (tex_coords - ofs);
 }

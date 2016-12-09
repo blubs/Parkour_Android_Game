@@ -33,7 +33,7 @@ void Camera::update_view_matrix()
 	if(use_quaternion)
 		transform = Mat4::ROT_TRANS(rot,pos,&right,&up,&forward) * Mat4::ROTATE(flip_y_and_z);
 	else
-		transform = Mat4::ROT_TRANS(angles + viewbob_angles,pos,&right,&up,&forward) * Mat4::ROTATE(flip_y_and_z);
+		transform = Mat4::ROT_TRANS(angles + viewbob_angles + tilt_angles,pos,&right,&up,&forward) * Mat4::ROTATE(flip_y_and_z);
 
 	if(parent)
 	{
