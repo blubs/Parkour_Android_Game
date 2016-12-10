@@ -1585,8 +1585,9 @@ void Game::update()
 		{
 			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
+		//Slight camera roll rotation when turning
+		camera->tilt_angles.z = (turn_angle - player->angles.y) * 0.5f;
 		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-		//TODO: camera roll rotation from turning
 		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
 
 		player_anim_special_events();
