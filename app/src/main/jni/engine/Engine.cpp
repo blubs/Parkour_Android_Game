@@ -188,6 +188,29 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 		}
 		return 1;
 	}
+	if(type == AINPUT_EVENT_TYPE_KEY)
+	{
+		switch(AKeyEvent_getAction(event))
+		{
+			case AKEY_EVENT_ACTION_DOWN:
+			{
+				int key_code = AKeyEvent_getKeyCode(event);
+				LOGE("Key action down: ( code: %d )",key_code);
+				int key_meta_state = AKeyEvent_getMetaState(event);
+			}
+				break;
+			case AKEY_EVENT_ACTION_UP:
+			{
+				int key_code = AKeyEvent_getKeyCode(event);
+				LOGE("Key action up: ( code: %d )",key_code);
+				break;
+			}
+			default:
+				LOGI("Default key action");
+				break;
+		}
+		return 1;
+	}
 	return 0;
 }
 
