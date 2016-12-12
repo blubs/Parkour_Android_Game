@@ -190,24 +190,48 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 	}
 	if(type == AINPUT_EVENT_TYPE_KEY)
 	{
-		switch(AKeyEvent_getAction(event))
+		int key_action = AKeyEvent_getAction(event);
+		int key_code = AKeyEvent_getKeyCode(event);
+		int key_meta_state = AKeyEvent_getMetaState(event);
+
+		//Don't handle hardware volume up / down
+		if(key_code == AKEYCODE_VOLUME_UP || key_code == AKEYCODE_VOLUME_DOWN)
 		{
-			case AKEY_EVENT_ACTION_DOWN:
+			return 0;
+		}
+
+		if(key_action == AKEY_EVENT_ACTION_DOWN)
+		{
+			int event_type = 0;
+			char event_key_char = 0;
+			if(key_code == AKEYCODE_BACK)
 			{
-				int key_code = AKeyEvent_getKeyCode(event);
-				LOGE("Key action down: ( code: %d )",key_code);
-				int key_meta_state = AKeyEvent_getMetaState(event);
+				event_type = INPUT_KEY_BACK;
+				LOGE("Back key pressed");
+				//TODO: if keyboard is visible, we must keep track that the keyboard has been hidden
 			}
-				break;
-			case AKEY_EVENT_ACTION_UP:
+
+			//if(key_meta_state && AMETA_CAPS_LOCK_ON)//Checks for caps lock
+			//if(key_meta_state && AMETA_SHIFT_ON)//Checks for shift
+			event_key_char = eng->jnii->get_key_event_char(key_action,key_code,key_meta_state);
+
+			//get key event returns null if backspace, and we want to catch backspace characters
+			if(key_code == AKEYCODE_DEL)
 			{
-				int key_code = AKeyEvent_getKeyCode(event);
-				LOGE("Key action up: ( code: %d )",key_code);
-				break;
+				LOGE("backspace caught!");
+				event_key_char = '\b';
 			}
-			default:
-				LOGI("Default key action");
-				break;
+			//Filtering out unwanted character through this array
+			event_key_char = INPUT_CHAR_FILTER[event_key_char];
+			if(event_key_char)
+			{
+				event_type = INPUT_KEY_KEYBOARD;
+				LOGE("Get char returned (%d) = \"%c\"",event_key_char,event_key_char);
+			}
+			if(event_type)
+			{
+				//TODO: call game handle_key_input(event_type,event_key_char)
+			}
 		}
 		return 1;
 	}

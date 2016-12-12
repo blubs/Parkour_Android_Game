@@ -123,6 +123,15 @@
 #define INPUT_SWIPE_LEFT 8
 #define INPUT_SWIPE_RIGHT 16
 
+//Keyboard input defs
+#define INPUT_KEY_BACK 1
+#define INPUT_KEY_KEYBOARD 2
+
+//Array used for filtering out unwanted characters from keyboard input
+//Here we filter out all control characters, except for ' ','\b', and '\n'. (keeps all symbolic & alphanumeric)
+extern char INPUT_CHAR_FILTER[128];
+//Definition is in game_defs.cpp
+
 //=========================== Game Logic Defs ==========================
 #define MAX_BUILDINGS 3
 
