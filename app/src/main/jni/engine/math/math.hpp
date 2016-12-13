@@ -14,6 +14,13 @@
 #define DEG_TO_RAD 0.01745329251f
 #define RAD_TO_DEG 57.2957795131f
 
+
+//Implementation of a weighted average lerp
+inline float lerp_wtd_avg(float a, float b, float slowdown)
+{
+	return ((a * (slowdown - 1)) + b)/slowdown;
+}
+
 //Gives mathematical floored modulo that works for negative numbers as well (unlike standard fmodf, which truncates towards 0)
 inline float efmodf(float a, float m)
 {

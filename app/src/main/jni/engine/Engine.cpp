@@ -192,6 +192,7 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 	{
 		int key_action = AKeyEvent_getAction(event);
 		int key_code = AKeyEvent_getKeyCode(event);
+		//Meta state holds info regarding whether shift was held, ctrl, alt, etc...
 		int key_meta_state = AKeyEvent_getMetaState(event);
 
 		//Don't handle hardware volume up / down
@@ -207,8 +208,6 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 			if(key_code == AKEYCODE_BACK)
 			{
 				event_type = INPUT_KEY_BACK;
-				LOGE("Back key pressed");
-				//TODO: if keyboard is visible, we must keep track that the keyboard has been hidden
 			}
 
 			//if(key_meta_state && AMETA_CAPS_LOCK_ON)//Checks for caps lock
@@ -218,7 +217,6 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 			//get key event returns null if backspace, and we want to catch backspace characters
 			if(key_code == AKEYCODE_DEL)
 			{
-				LOGE("backspace caught!");
 				event_key_char = '\b';
 			}
 			//Filtering out unwanted character through this array
@@ -226,11 +224,10 @@ int32_t Engine::handle_input (struct android_app *app, AInputEvent *event)
 			if(event_key_char)
 			{
 				event_type = INPUT_KEY_KEYBOARD;
-				LOGE("Get char returned (%d) = \"%c\"",event_key_char,event_key_char);
 			}
 			if(event_type)
 			{
-				//TODO: call game handle_key_input(event_type,event_key_char)
+				eng->game->handle_key_input(event_type,event_key_char);
 			}
 		}
 		return 1;

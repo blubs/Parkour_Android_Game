@@ -151,8 +151,10 @@ public:
 
 	float input_turn;
 
-
+	//Handles touch screen input
 	void handle_input(float x, float y, int event,int pointer_id);
+	//Handles hardware back key / keyboard input
+	void handle_key_input(int event_type, char event_key_char);
 
 	Vec3 player_phys_vel;
 

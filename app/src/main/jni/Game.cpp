@@ -469,6 +469,21 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 	}
 }
 
+//Handles hardware back key / keyboard input
+void Game::handle_key_input(int event_type, char event_key_char)
+{
+	if(event_type == INPUT_KEY_BACK)
+	{
+		//TODO: handle back key logic
+		//TODO: handle the following situation:
+		//TODO: 	if the keyboard is visible and back key is pressed, the keyboard is hidden
+		LOGI("The back key has been pressed");
+	}
+	if(event_type == INPUT_KEY_KEYBOARD)
+	{
+		LOGI("Keyboard key pressed: (ascii value: %d) char: %c",event_key_char,event_key_char);
+	}
+}
 
 //Ran on first frame
 //This is where we set up our game objects and their relationships
@@ -1492,11 +1507,11 @@ void Game::update()
 			stepped = true;
 			if(input_x[1] > 0.5f)
 			{
-				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
+				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
 			}
 			else
 			{
-				camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
+				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
 			}
 		}
 		else if(input_y[1] > 0.1f)
@@ -1515,8 +1530,14 @@ void Game::update()
 		{
 			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
+
+		//Slight camera roll rotation when turning
+		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
+		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
+		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
+		//TODO: if not running, how do we zero this tilt angle?
+
 		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-		//TODO: camera roll rotation from turning
 
 		//Make the player move forward, if runs outside of building bounds, reset at building start
 		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
@@ -1586,7 +1607,11 @@ void Game::update()
 			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 		}
 		//Slight camera roll rotation when turning
-		camera->tilt_angles.z = (turn_angle - player->angles.y) * 0.5f;
+		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
+		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
+		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
+		//TODO: if not running/sliding, how do we zero this tilt angle?
+
 		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
 		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
 
