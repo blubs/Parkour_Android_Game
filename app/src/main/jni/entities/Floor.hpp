@@ -28,6 +28,9 @@ public:
 	Vec3 global_mins;
 	Vec3 global_maxs;
 
+	//Has the floor been generated?
+	bool generated = false;
+
 	//Type index of tile
 	int tile_type[MAX_WIDTH][MAX_LENGTH];
 	//Subtype index of tile (used for walls)
@@ -66,6 +69,7 @@ public:
 			}
 		}
 	}
+
 
 	//Populates the floor matrices reading generated type, subtypes, and variants
 	void populate_floor()
@@ -464,6 +468,8 @@ public:
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos)
 	{
+		if(generated)
+			return;
 		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
 		global_pos = p + Vec3(0,0,floor_num*WINDOW_TILE_SIZE);
 		global_mins = mins;
@@ -471,9 +477,6 @@ public:
 		global_mins.z = global_maxs.z = altitude;
 		width = (int)((global_maxs.x - global_mins.x)/TILE_SIZE);
 		length = (int)((global_maxs.y - global_mins.y)/TILE_SIZE);
-
-		//FIXME: this probably shouldn't be here (sets all tile types to 0)
-		clear_floor_tiles();
 
 		//temp: explicitly setting some tiles as stuff
 		//tile_type[2][3] = TILE_TYPE_SOLD;
@@ -576,11 +579,14 @@ public:
 		//TODO:			(must not look as though the player can go through/over/under it)
 
 		populate_floor();
+		generated = true;
 	}
 
 
 	int render(Mat4 vp)
 	{
+		if(!generated)
+			return 1;
 		//how do we get the material?
 		//Need to iterate through all tiles in this floor and draw them
 		//Starting from frontmost tile, render it and all other tiles that use the same model
@@ -620,6 +626,8 @@ public:
 		width = length = 0;
 		global_mins = Vec3::ZERO();
 		global_maxs = Vec3::ZERO();
+		clear_floor_tiles();
+		generated = false;
 	}
 
 	char is_solid_at(Vec3 p)
