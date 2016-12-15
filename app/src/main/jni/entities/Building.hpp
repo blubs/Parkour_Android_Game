@@ -37,6 +37,14 @@ public:
 	//TODO: this array will hold variant index of a tile
 	char tiles[MAX_WIDTH][MAX_LENGTH];
 
+	//Index of the window broken out of the building
+	int broken_owindow_index_x = 0;
+	int broken_owindow_index_y = 0;
+
+	//Index of the window broken into the building
+	int broken_iwindow_index_x = 0;
+	int broken_iwindow_index_y = 0;
+
 	//char tile_types[MAX_WIDTH][MAX_LENGTH];
 
 	bool generated = false;
