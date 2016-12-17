@@ -48,6 +48,12 @@ public:
 	Static_Model* tile_model[MAX_WIDTH][MAX_LENGTH];
 	Grid_Tile* tile_object[MAX_WIDTH][MAX_LENGTH];
 
+	//Temporary array of Vec3s to render as lines
+	Vec3 branch_debug_points[300];
+	//Every 2 points (Vec3) is a line
+	int branch_debug_point_count = 0;
+	Material* debug_branch_mat = NULL;
+
 	Floor()
 	{
 		global_pos = Vec3(0,0,0);
@@ -618,6 +624,34 @@ public:
 				tile_model[i][j]->render_without_bind();
 			}
 		}
+
+		//===== Rendering Debug branch lines =======
+		if(!debug_branch_mat)
+			return 1;
+
+		float edges[branch_debug_point_count * 3];
+
+		for(int i = 0; i < branch_debug_point_count; i += 2)
+		{
+			edges[i] = branch_debug_points[i].x;
+			edges[i + 1] = branch_debug_points[i].y;
+			edges[i + 2] = branch_debug_points[i].z;
+			edges[i + 3] = branch_debug_points[i + 1].x;
+			edges[i + 4] = branch_debug_points[i + 2].y;
+			edges[i + 5] = branch_debug_points[i + 3].z;
+		}
+
+
+		debug_branch_mat->bind_material();
+		debug_branch_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) world_trans.m);
+
+		float color[] = {1.0f,0.0f,0.0f,1.0f};
+		debug_branch_mat->bind_value(Shader::PARAM_VERTICES,(void*) edges);
+		debug_branch_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+		int vert_count = branch_debug_point_count - (branch_debug_point_count % 2);
+		glDrawArrays(GL_LINES, 0, branch_debug_point_count);
+		//==========================================
+		return 1;
 	}
 
 	void clear()

@@ -677,7 +677,7 @@ void Game::draw_player_bbox(Mat4 vp)
 
 	solid_mat->bind_material();
 	Mat4 bbox_pos = vp * Mat4::TRANSLATE(player->pos);
-	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) bbox_pos.m);//TODO: get player pos
+	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) bbox_pos.m);
 
 	float color[] = {0.0f,1.0f,0.0f,1.0f};
 	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
