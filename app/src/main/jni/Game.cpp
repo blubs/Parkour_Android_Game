@@ -592,6 +592,9 @@ void Game::start()
 
 	buildings[0]->generate(Vec3::ZERO());
 	buildings[0]->generate_floor(player->pos);
+	//FIXME remove this:
+	buildings[0]->active_floor->debug_branch_mat = solid_mat;
+
 	Vec3 last_building_end_point = Vec3(buildings[0]->pos.x,buildings[0]->global_maxs.y,0);
 
 	//Distance between buildings
