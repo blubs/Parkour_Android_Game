@@ -53,31 +53,31 @@ public:
 class Random
 {
 public:
-	static float seed;
-	static int modulus;
+	static unsigned long seed;
+	static int base;
 	static int factor;
-	static int sum;
 
 	//Base rand function
+	// This is an implementation of Marsaglia's Multiply-With-Carry PRNG
 	//Returns random float [0,1)
 	static float rand()
 	{
-		seed = (((int)(seed * factor) + sum) % modulus);
-		return (seed/modulus);
+		seed = (((seed & 0xFFFF) * factor) + (seed >> 16));
+		return ((float)(seed % base)  / base);
 	}
 
 	//Returns random float [0,1]
 	static float frand() //short for full random
 	{
-		seed = (((int)(seed * factor) + sum) % (modulus+1));
-		return (seed/modulus);
+		seed = (((seed & 0xFFFF) * factor) + (seed >> 16));
+		return ((float)(seed % (base + 1)) / base);
 	}
 
 	//Returns random float (0,1)
 	static float prand() //short for partial random
 	{
-		seed = (((int)(seed * factor) + sum) % (modulus-1)) + 1;
-		return (seed/modulus);
+		seed = (((seed & 0xFFFF) * factor) + (seed >> 16));
+		return ((float)((seed % (base - 1))+1) / base);
 	}
 
 	//Returns random float (-1,1)

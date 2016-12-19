@@ -477,7 +477,6 @@ public:
 		}
 	}
 
-
 	float prob_of_branch_left = 0.2f;
 	float prob_of_branch_right = 0.2f;
 	float prob_of_branch_forward = 0.5f;
@@ -500,9 +499,48 @@ public:
 			return;
 		}
 
+		bool can_branch_left = (tile_x > 0);
+		bool can_branch_right = (tile_x < width - 1);
+		//bool can_branch_forward = true;
+
+		//bool do_branch_left = false;
+		//bool do_branch_right = false;
+
+
+
+		//If the next tile is a vertical wall, or the tile thereafter is a vertical wall, we must branch left or right
+		//TODO: do not branch left or right if left or right puts us out of range to get to the next building
+		/*if((tile_y <= length - 2) && (tile_type[tile_x][tile_y + 2] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y + 2] & WALL_TYPE_ooyY))
+		{
+			if(can_branch_left && can_branch_right)
+			{
+				//We must branch left or right
+				if(Random::rand() < 0.5) //Branch Left?
+				{
+					branch_left(tile_x,tile_y,gmin_x,gmax_x);
+				}
+				else //Branch Right
+				{
+					branch_right(tile_x,tile_y,gmin_x,gmax_x);
+				}
+			}
+			else if(can_branch_left)
+			{
+				branch_left(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			else if(can_branch_right)
+			{
+				branch_right(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			return;
+		}*/
+
+		//TODO: watch out for branching into a ooyY wall
+
+		//TODO: modulate probability of branching left as we edge closer to the end of the building, and we are still not in range.
 		//Branching left
 		//vvvvvvvvvvvv If we can branch left vvvvvvvvvvvvvvvvvvv
-		if((tile_x > 0 && Random::rand() < prob_of_branch_left))
+		if((can_branch_left && Random::rand() < prob_of_branch_left))
 		{
 			branched |= BRANCH_TYPE_LEFT;
 			tile_branch_type[tile_x-1][tile_y] |= BRANCH_TYPE_FROM_RIGHT | BRANCH_TYPE_FORWARD;
@@ -513,7 +551,7 @@ public:
 
 		//Branching right
 		//vvvvvvvvvvvv If we can branch right vvvvvvvvvvvvvvvvvvvvvvvvv
-		if((tile_x < width-1 && Random::rand() < prob_of_branch_right))
+		if((can_branch_right && Random::rand() < prob_of_branch_right))
 		{
 			branched |= BRANCH_TYPE_RIGHT;
 			tile_branch_type[tile_x+1][tile_y] |= BRANCH_TYPE_FROM_LEFT | BRANCH_TYPE_FORWARD;
