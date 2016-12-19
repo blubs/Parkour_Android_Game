@@ -24,6 +24,16 @@
 //#define CLIP_DOORWAY 2
 //...etc
 
+//Branching path def
+#define BRANCH_TYPE_NONE 		0
+#define BRANCH_TYPE_FORWARD 		1
+#define BRANCH_TYPE_LEFT 		2
+#define BRANCH_TYPE_RIGHT 		4
+#define BRANCH_TYPE_FROM_FORWARD	8
+#define BRANCH_TYPE_FROM_LEFT		32
+#define BRANCH_TYPE_FROM_RIGHT	16
+
+
 //Wall types: to be read as such:
 //the wall always touches the center of the 3x3 tile
 	//x is -x axis

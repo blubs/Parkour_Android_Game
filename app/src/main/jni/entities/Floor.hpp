@@ -38,6 +38,9 @@ public:
 	//Variant index of tile
 	int tile_variant[MAX_WIDTH][MAX_LENGTH];
 
+	//Temp matrix that we're going to use to generate the branching path of the player
+	int tile_branch_type[MAX_WIDTH][MAX_LENGTH];
+
 	//What tile set are we using?
 	int interior_style;
 	//What material are we using?
@@ -49,7 +52,7 @@ public:
 	Grid_Tile* tile_object[MAX_WIDTH][MAX_LENGTH];
 
 	//Temporary array of Vec3s to render as lines
-	Vec3 branch_debug_points[300];
+	Vec3 branch_debug_points[3000];
 	//Every 2 points (Vec3) is a line
 	int branch_debug_point_count = 0;
 	Material* debug_branch_mat = NULL;
@@ -65,13 +68,15 @@ public:
 
 	void clear_floor_tiles()
 	{
-		for(int i = 0; i < width; i++)
+		for(int i = 0; i < MAX_WIDTH; i++)
 		{
-			for(int j = 0; j < length; j++)
+			for(int j = 0; j < MAX_LENGTH; j++)
 			{
 				tile_type[i][j] = TILE_TYPE_EMPT;
 				tile_subtype[i][j] = 0;
 				tile_variant[i][j] = 0;
+
+				tile_branch_type[i][j] = BRANCH_TYPE_NONE;
 			}
 		}
 	}
@@ -472,6 +477,79 @@ public:
 		}
 	}
 
+
+	float prob_of_branch_left = 0.2f;
+	float prob_of_branch_right = 0.2f;
+	float prob_of_branch_forward = 0.5f;
+
+	void recursive_branch_player_path(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	{
+		//Have we reached the end of the building?
+		if(tile_y >= length - 1)
+		{
+			tile_branch_type[tile_x][tile_y] |= (BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD);
+			return;
+		}
+
+		int branched = tile_branch_type[tile_x][tile_y];
+
+		//If we have already branched anywhere from this tile, stop
+			//WARNING: this may lead to undesired results, maybe just check left/right/forward individually
+		if(branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT | BRANCH_TYPE_FORWARD))
+		{
+			return;
+		}
+
+		//Branching left
+		//vvvvvvvvvvvv If we can branch left vvvvvvvvvvvvvvvvvvv
+		if((tile_x > 0 && Random::rand() < prob_of_branch_left))
+		{
+			branched |= BRANCH_TYPE_LEFT;
+			tile_branch_type[tile_x-1][tile_y] |= BRANCH_TYPE_FROM_RIGHT | BRANCH_TYPE_FORWARD;
+			tile_branch_type[tile_x-1][tile_y+1] |= BRANCH_TYPE_FROM_FORWARD;
+			recursive_branch_player_path(tile_x-1,tile_y+1,gmin_x,gmax_x);
+		}
+
+
+		//Branching right
+		//vvvvvvvvvvvv If we can branch right vvvvvvvvvvvvvvvvvvvvvvvvv
+		if((tile_x < width-1 && Random::rand() < prob_of_branch_right))
+		{
+			branched |= BRANCH_TYPE_RIGHT;
+			tile_branch_type[tile_x+1][tile_y] |= BRANCH_TYPE_FROM_LEFT | BRANCH_TYPE_FORWARD;
+			tile_branch_type[tile_x+1][tile_y+1] |= BRANCH_TYPE_FROM_FORWARD;
+			recursive_branch_player_path(tile_x+1,tile_y+1,gmin_x,gmax_x);
+		}
+
+
+		//vvvvvvvvvvvvv If we MUST branch forward vvvvvvvvvvvvv    vvvvvvvv If we can branch forward vvvvvvvv
+		if(!(branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT)) || (Random::rand() < prob_of_branch_forward))
+		{
+			branched |= BRANCH_TYPE_FORWARD;
+			tile_branch_type[tile_x][tile_y + 1] |= BRANCH_TYPE_FROM_FORWARD;
+			recursive_branch_player_path(tile_x,tile_y + 1,gmin_x,gmax_x);
+		}
+
+		//From this tile,
+		//first thing we do, is check if we MUST branch left / right in order to get to our goal
+		//Then we check if we can branch left/right and still get to our goal
+
+		//When branching, we have a higher probability of continuing the branch
+		//Try branching left/right
+		//if we branched left or right, probability of us branching forward is 50%
+		//If we didn't branch left or right, mandatory to branch forward
+
+		//Reassign the matrix value
+		tile_branch_type[tile_x][tile_y] = branched;
+
+		/*Vague design rules:
+		 * I cannot branch left or right when this or the next tile is a horizontal wall
+		 * If I branch left or right through a vertical wall, we remove the offending vertical wall segment
+		 *
+		*/
+
+	}
+
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos)
 	{
 		if(generated)
@@ -585,6 +663,72 @@ public:
 		//TODO:			(must not look as though the player can go through/over/under it)
 
 		populate_floor();
+
+		branch_debug_point_count = 0;
+		//Allowing 1 tile of room before any branching is allowed
+		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;
+		tile_branch_type[player_start_column][1] = BRANCH_TYPE_FROM_FORWARD;
+		recursive_branch_player_path(player_start_column,1,goal_min_column,goal_max_column);
+
+		//Temp iterating through all tiles adding debug branch points to array
+		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				if(branch_debug_point_count >= 3000 - 12)
+				{
+					LOGE("Ran out of room for debugging tiles.");
+					break;
+				}
+				Vec3 tile_ofs = Vec3(i*TILE_SIZE,j*TILE_SIZE,1.0f);
+				int branched = tile_branch_type[i][j];
+				if(branched & BRANCH_TYPE_FROM_FORWARD)
+				{
+					if(branched & BRANCH_TYPE_LEFT)
+					{
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(1,0,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(0,1,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(2.5,0,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(0,2.5,0);
+					}
+					if(branched & BRANCH_TYPE_RIGHT)
+					{
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(1,0,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(3.5,2.5,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(2.5,0,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(3.5,1,0);
+					}
+					if(branched & BRANCH_TYPE_FORWARD)
+					{
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(1,0,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(1,3.5,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(2.5,0,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(2.5,3.5,0);
+					}
+				}
+				if(branched & BRANCH_TYPE_FROM_LEFT)
+				{
+					if(branched & BRANCH_TYPE_FORWARD)
+					{
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(0,2.5,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(1,3.5,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(0,1,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(2.5,3.5,0);
+					}
+				}
+				if(branched & BRANCH_TYPE_FROM_RIGHT)
+				{
+					if(branched & BRANCH_TYPE_FORWARD)
+					{
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(3.5,2.5,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(2.5,3.5,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(3.5,1,0);
+						branch_debug_points[branch_debug_point_count++] = tile_ofs + Vec3(1,3.5,0);
+					}
+				}
+			}
+		}
+
 		generated = true;
 	}
 
@@ -631,25 +775,22 @@ public:
 
 		float edges[branch_debug_point_count * 3];
 
-		for(int i = 0; i < branch_debug_point_count; i += 2)
+		for(int i = 0; i < branch_debug_point_count; i++)
 		{
-			edges[i] = branch_debug_points[i].x;
-			edges[i + 1] = branch_debug_points[i].y;
-			edges[i + 2] = branch_debug_points[i].z;
-			edges[i + 3] = branch_debug_points[i + 1].x;
-			edges[i + 4] = branch_debug_points[i + 2].y;
-			edges[i + 5] = branch_debug_points[i + 3].z;
+			edges[3*i] = branch_debug_points[i].x;
+			edges[3*i + 1] = branch_debug_points[i].y;
+			edges[3*i + 2] = branch_debug_points[i].z;
 		}
 
-
 		debug_branch_mat->bind_material();
-		debug_branch_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) world_trans.m);
+		Mat4 mvp = vp * world_trans;
+		debug_branch_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) mvp.m);
 
 		float color[] = {1.0f,0.0f,0.0f,1.0f};
-		debug_branch_mat->bind_value(Shader::PARAM_VERTICES,(void*) edges);
 		debug_branch_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+		debug_branch_mat->bind_value(Shader::PARAM_VERTICES,(void*) edges);
 		int vert_count = branch_debug_point_count - (branch_debug_point_count % 2);
-		glDrawArrays(GL_LINES, 0, branch_debug_point_count);
+		glDrawArrays(GL_LINES, 0, vert_count);
 		//==========================================
 		return 1;
 	}
@@ -727,7 +868,7 @@ public:
 
 	//As a rule of thumb, the start of the maneuver must lie within the tile itself, or the tile before it
 	//so for a given player position, we must check the tile the player is on and the tile after it (+1 in y direction)
-	//=====================================
+	//===================================================
 
 	Maneuver* input_to_maneuver(Vec3 pos, int input_type)
 	{

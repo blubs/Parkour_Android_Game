@@ -18,21 +18,6 @@ uniform float time;
 
 //TODO: misc color map with specular, transparent, and reflective values
 
-vec2 parallax_map(vec2 tex_coords, vec3 view_dir, float depth)
-{
-	//vec2 ofs = view_dir.xy / (view_dir.z) * -depth;
-	float depth_scale = 0.12;//max depth
-	vec2 ofs = view_dir.xy / (view_dir.z) * depth * depth_scale;
-	return (tex_coords - ofs);
-}
-
-vec4 sample_genned_tex(vec2 tex_coords, vec3 col)
-{
-	float period = 0.02;
-	float x = mod(tex_coords.x,period)/period * mod(tex_coords.y,period)/period;
-	return vec4(col,x) * x;
-}
-
 void main()
 {
 	//gl_FragColor = color*0.01 + v_color*0.01 + vec4( v_uv_1.x , v_uv_1.y , v_uv_2.x , v_uv_2.y );
@@ -66,22 +51,8 @@ void main()
 	//float light_power = ambient_light + 0.7*specular + rim + lightmap_brightness;
 	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
-	float reflectivity = 0.5;//FIXME: use value from misc shader.
+	float reflectivity = 0.2;//FIXME: use value from misc shader.
 	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,reflectivity);
 
-	vec2 scroll = vec2(time * 0.005, 0.0);
-
-	vec3 v_dir = (cam_to_vert_tanspace);
-	vec4 tex1 = sample_genned_tex(v_uv_1 + scroll,vec3(1.0,0.0,0.0));
-	vec4 tex2 = sample_genned_tex(parallax_map(v_uv_1 + scroll,cam_to_vert_tanspace,0.25),vec3(0.0,1.0,0.0));
-	vec4 tex3 = sample_genned_tex(parallax_map(v_uv_1 + scroll,v_dir,0.5),vec3(0.0,0.0,1.0));
-	//vec4 tex4 = sample_genned_tex(parallax_map(v_uv_1,cam_to_vert_tanspace,1.0),vec3(1.0,1.0,1.0));
-
-	//vec4 test_parallax_textures = tex1 + tex2 + tex3 + tex4;
-	//vec4 test_parallax_textures = tex1 + tex2 + tex3;
-	vec4 test_parallax_textures = tex3;
-	test_parallax_textures = test_parallax_textures * (1.0 - tex2.a) + tex2;
-	test_parallax_textures = test_parallax_textures * (1.0 - tex1.a) + tex1;
-
-	gl_FragColor = vec4(color*light_power, 1.0) * 0.01 + test_parallax_textures + vec4(0.0,0.0,0.0,1.0);
+	gl_FragColor = vec4(color*light_power, 1.0);
 }
