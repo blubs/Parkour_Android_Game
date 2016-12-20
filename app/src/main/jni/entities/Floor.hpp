@@ -477,96 +477,117 @@ public:
 		}
 	}
 
+	//Branches left from tile[tile_x][tile_y]
+	void recursive_branch_left(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	{
+		tile_branch_type[tile_x][tile_y] |= BRANCH_TYPE_LEFT;
+		tile_branch_type[tile_x-1][tile_y] |= (BRANCH_TYPE_FROM_RIGHT | BRANCH_TYPE_FORWARD);
+		tile_branch_type[tile_x-1][tile_y+1] |= BRANCH_TYPE_FROM_FORWARD;
+
+		//If we branched through a vertical wall, remove the wall segments
+		if(tile_type[tile_x-1][tile_y+1] == TILE_TYPE_WALL)
+		{
+			tile_subtype[tile_x-1][tile_y+1] &= ~WALL_TYPE_ooyo;
+			if(!tile_subtype[tile_x-1][tile_y+1])
+				tile_type[tile_x-1][tile_y+1] = TILE_TYPE_EMPT;
+		}
+		if(tile_type[tile_x-1][tile_y] == TILE_TYPE_WALL)
+		{
+			tile_subtype[tile_x-1][tile_y] &= ~WALL_TYPE_oooY;
+			if(!tile_subtype[tile_x-1][tile_y])
+				tile_type[tile_x-1][tile_y] = TILE_TYPE_EMPT;
+		}
+
+		recursive_branch_player_path(tile_x-1,tile_y+1,gmin_x,gmax_x,BRANCH_TYPE_LEFT);
+	}
+
+	//Branches right from tile[tile_x][tile_y]
+	void recursive_branch_right(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	{
+		tile_branch_type[tile_x][tile_y] |= BRANCH_TYPE_RIGHT;
+		tile_branch_type[tile_x+1][tile_y] |= (BRANCH_TYPE_FROM_LEFT | BRANCH_TYPE_FORWARD);
+		tile_branch_type[tile_x+1][tile_y+1] |= BRANCH_TYPE_FROM_FORWARD;
+
+		//If we branched through a vertical wall, remove the wall segments
+		if(tile_type[tile_x+1][tile_y+1] == TILE_TYPE_WALL)
+		{
+			tile_subtype[tile_x+1][tile_y+1] &= ~WALL_TYPE_ooyo;
+			if(!tile_subtype[tile_x+1][tile_y+1])
+				tile_type[tile_x+1][tile_y+1] = TILE_TYPE_EMPT;
+		}
+		if(tile_type[tile_x+1][tile_y] == TILE_TYPE_WALL)
+		{
+			tile_subtype[tile_x+1][tile_y] &= ~WALL_TYPE_oooY;
+			if(!tile_subtype[tile_x+1][tile_y])
+				tile_type[tile_x+1][tile_y] = TILE_TYPE_EMPT;
+		}
+
+		recursive_branch_player_path(tile_x+1,tile_y+1,gmin_x,gmax_x,BRANCH_TYPE_RIGHT);
+	}
+
+	//Branches forward from tile[tile_x][tile_y]
+	void recursive_branch_forward(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	{
+		tile_branch_type[tile_x][tile_y] |= BRANCH_TYPE_FORWARD;
+		tile_branch_type[tile_x][tile_y + 1] |= BRANCH_TYPE_FROM_FORWARD;
+		recursive_branch_player_path(tile_x,tile_y + 1,gmin_x,gmax_x,BRANCH_TYPE_FORWARD);
+	}
+
 	float prob_of_branch_left = 0.2f;
 	float prob_of_branch_right = 0.2f;
 	float prob_of_branch_forward = 0.5f;
 
-	void recursive_branch_player_path(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	//Probability that branch left given that we just branched right
+	float prob_of_branch_right_given_branch_left = 0.3f;
+	//Probability that branch right given that we just branched left
+	float prob_of_branch_left_given_branch_right = 0.3f;
+
+	void recursive_branch_player_path(int tile_x, int tile_y, int gmin_x, int gmax_x, int prev_branch)
 	{
+		//TODO: decreased probability of re-branching back after branching off of path (this is a really common occurence)
+		LOGE("Gen Branch on tile: [%d][%d]. Wall: %d, walltype: (%d,%d,%d,%d)",
+			tile_x,tile_y,tile_type[tile_x][tile_y],
+			(tile_subtype[tile_x][tile_y] & WALL_TYPE_xooo)/WALL_TYPE_xooo,
+			(tile_subtype[tile_x][tile_y] & WALL_TYPE_oXoo)/WALL_TYPE_oXoo,
+			(tile_subtype[tile_x][tile_y] & WALL_TYPE_ooyo)/WALL_TYPE_ooyo,
+			(tile_subtype[tile_x][tile_y] & WALL_TYPE_oooY)/WALL_TYPE_oooY);
+
+		//We have somehow reached this tile, regardless of whatever is on this tile: remove the vertical wall segments
+		if(tile_type[tile_x][tile_y] == TILE_TYPE_WALL)
+		{
+			tile_subtype[tile_x][tile_y] &= ~WALL_TYPE_ooyY;
+			if(!tile_subtype[tile_x][tile_y])
+				tile_type[tile_x][tile_y] = TILE_TYPE_EMPT;
+		}
 		//Have we reached the end of the building?
 		if(tile_y >= length - 1)
 		{
+			LOGE("End of building reached at tile[%d][%d]",tile_x,tile_y);
 			tile_branch_type[tile_x][tile_y] |= (BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD);
 			return;
 		}
 
-		int branched = tile_branch_type[tile_x][tile_y];
+		//Storing as a pointer, because called functions may modify the value
+		int *branched = &tile_branch_type[tile_x][tile_y];
 
 		//If we have already branched anywhere from this tile, stop
 			//WARNING: this may lead to undesired results, maybe just check left/right/forward individually
-		if(branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT | BRANCH_TYPE_FORWARD))
+		if(*branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT | BRANCH_TYPE_FORWARD))
 		{
+			LOGE("We have already branched at tile[%d][%d]",tile_x,tile_y);
 			return;
 		}
 
-		bool can_branch_left = (tile_x > 0);
-		bool can_branch_right = (tile_x < width - 1);
-		//bool can_branch_forward = true;
 
-		//bool do_branch_left = false;
-		//bool do_branch_right = false;
-
-
-
+		//================ Temp notes ================================================================================
+		//============================================================================================================
+		//============================================================================================================
+		//============================================================================================================
 		//If the next tile is a vertical wall, or the tile thereafter is a vertical wall, we must branch left or right
 		//TODO: do not branch left or right if left or right puts us out of range to get to the next building
-		/*if((tile_y <= length - 2) && (tile_type[tile_x][tile_y + 2] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y + 2] & WALL_TYPE_ooyY))
-		{
-			if(can_branch_left && can_branch_right)
-			{
-				//We must branch left or right
-				if(Random::rand() < 0.5) //Branch Left?
-				{
-					branch_left(tile_x,tile_y,gmin_x,gmax_x);
-				}
-				else //Branch Right
-				{
-					branch_right(tile_x,tile_y,gmin_x,gmax_x);
-				}
-			}
-			else if(can_branch_left)
-			{
-				branch_left(tile_x,tile_y,gmin_x,gmax_x);
-			}
-			else if(can_branch_right)
-			{
-				branch_right(tile_x,tile_y,gmin_x,gmax_x);
-			}
-			return;
-		}*/
-
 		//TODO: watch out for branching into a ooyY wall
 
 		//TODO: modulate probability of branching left as we edge closer to the end of the building, and we are still not in range.
-		//Branching left
-		//vvvvvvvvvvvv If we can branch left vvvvvvvvvvvvvvvvvvv
-		if((can_branch_left && Random::rand() < prob_of_branch_left))
-		{
-			branched |= BRANCH_TYPE_LEFT;
-			tile_branch_type[tile_x-1][tile_y] |= BRANCH_TYPE_FROM_RIGHT | BRANCH_TYPE_FORWARD;
-			tile_branch_type[tile_x-1][tile_y+1] |= BRANCH_TYPE_FROM_FORWARD;
-			recursive_branch_player_path(tile_x-1,tile_y+1,gmin_x,gmax_x);
-		}
-
-
-		//Branching right
-		//vvvvvvvvvvvv If we can branch right vvvvvvvvvvvvvvvvvvvvvvvvv
-		if((can_branch_right && Random::rand() < prob_of_branch_right))
-		{
-			branched |= BRANCH_TYPE_RIGHT;
-			tile_branch_type[tile_x+1][tile_y] |= BRANCH_TYPE_FROM_LEFT | BRANCH_TYPE_FORWARD;
-			tile_branch_type[tile_x+1][tile_y+1] |= BRANCH_TYPE_FROM_FORWARD;
-			recursive_branch_player_path(tile_x+1,tile_y+1,gmin_x,gmax_x);
-		}
-
-
-		//vvvvvvvvvvvvv If we MUST branch forward vvvvvvvvvvvvv    vvvvvvvv If we can branch forward vvvvvvvv
-		if(!(branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT)) || (Random::rand() < prob_of_branch_forward))
-		{
-			branched |= BRANCH_TYPE_FORWARD;
-			tile_branch_type[tile_x][tile_y + 1] |= BRANCH_TYPE_FROM_FORWARD;
-			recursive_branch_player_path(tile_x,tile_y + 1,gmin_x,gmax_x);
-		}
 
 		//From this tile,
 		//first thing we do, is check if we MUST branch left / right in order to get to our goal
@@ -577,15 +598,508 @@ public:
 		//if we branched left or right, probability of us branching forward is 50%
 		//If we didn't branch left or right, mandatory to branch forward
 
-		//Reassign the matrix value
-		tile_branch_type[tile_x][tile_y] = branched;
-
 		/*Vague design rules:
-		 * I cannot branch left or right when this or the next tile is a horizontal wall
+	//	 * I cannot branch left or right when this or the next tile is a horizontal wall
 		 * If I branch left or right through a vertical wall, we remove the offending vertical wall segment
 		 *
 		*/
 
+		//============================================================================================================
+		//============================================================================================================
+		//============================================================================================================
+		//============================================================================================================
+
+		//Knowing what direction we cannot branch to will inform of us of what directions we must branch to.
+
+		//We begin by assuming we can branch in all directions.
+		unsigned int can_branch = (BRANCH_TYPE_FORWARD | BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT);
+
+		//Checking if branching left or branching right will put us out of bounds
+		if(tile_x <= 0)
+		{
+			LOGE("Cannot branch left at tile[%d][%d]",tile_x,tile_y);
+			can_branch &= ~BRANCH_TYPE_LEFT;
+		}
+		if(tile_x >= width - 1)
+		{
+			LOGE("Cannot branch right at tile[%d][%d]",tile_x,tile_y);
+			can_branch &= ~BRANCH_TYPE_RIGHT;
+		}
+
+		bool failed_breakable_tests[7] = {false,false,false,false,false,false,false};
+		//Do not branch left if the next tile is a wall (no room to handle obstacle)
+		if(tile_x > 0 && tile_y < length - 1)
+		{
+			if((tile_type[tile_x-1][tile_y+1] == TILE_TYPE_WALL) && (tile_subtype[tile_x-1][tile_y+1] & WALL_TYPE_xXoo))
+			{
+				LOGE("Cannot branch left (there is an hwall immediately after branch) at tile[%d][%d]",tile_x,tile_y);
+				can_branch &= ~BRANCH_TYPE_LEFT;
+				failed_breakable_tests[0] = true;
+			}
+		}
+		//Do not branch right if the next tile is a wall (no room to handle obstacle)
+		if(tile_x < width - 1 && tile_y < length - 1)
+		{
+			if((tile_type[tile_x+1][tile_y+1] == TILE_TYPE_WALL) && (tile_subtype[tile_x+1][tile_y+1] & WALL_TYPE_xXoo))
+			{
+				LOGE("Cannot branch right (there is an hwall immediately after branch) at tile[%d][%d]",tile_x,tile_y);
+				can_branch &= ~BRANCH_TYPE_RIGHT;
+				failed_breakable_tests[1] = true;
+			}
+		}
+
+		//Checking if we will branch into a ooyo wall tile which will stop us from being able to branch forward
+		if(tile_y < length - 2)
+		{
+			//Is the tile a ooyo or oooY wall?
+			if((tile_type[tile_x][tile_y+2] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y+2] & WALL_TYPE_ooyo))
+			{
+				LOGE("Cannot branch forward (there is a vwall 2 tiles ahead) at tile[%d][%d]",tile_x,tile_y);
+				can_branch &= ~BRANCH_TYPE_FORWARD;
+				failed_breakable_tests[2] = true;
+			}
+		}
+		//Checking if the next tile is a ooyY wall tile which does not allow us to branch forward
+		if(tile_y < length - 1)
+		{
+			//Is the tile a ooyo or oooY wall?
+			if((tile_type[tile_x][tile_y+1] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y+1] & WALL_TYPE_ooyY))
+			{
+				LOGE("Cannot branch forward (next tile is a vwall ahead) at tile[%d][%d]",tile_x,tile_y);
+				can_branch &= ~BRANCH_TYPE_FORWARD;
+				failed_breakable_tests[3] = true;
+			}
+		}
+
+		//We cannot branch left or right on a horizontal wall tile
+		if((tile_type[tile_x][tile_y] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y] & WALL_TYPE_xXoo))
+		{
+			LOGE("Cannot branch left or right (we are on a hwall) at tile[%d][%d]",tile_x,tile_y);
+			can_branch &= ~(BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT);
+			failed_breakable_tests[4] = true;
+		}
+
+		//We cannot branch left if we branch across a horizontal wall tile
+		if((tile_x > 0) && (tile_type[tile_x-1][tile_y] == TILE_TYPE_WALL) && (tile_subtype[tile_x-1][tile_y] & WALL_TYPE_oXoo))
+		{
+			LOGE("Cannot branch left (branch across an hwall) at tile[%d][%d]",tile_x,tile_y);
+			can_branch &= ~(BRANCH_TYPE_LEFT);
+			failed_breakable_tests[5] = true;
+		}
+		//We cannot branch right if we branch across a horizontal wall tile
+		if((tile_x < width -1) && (tile_type[tile_x+1][tile_y] == TILE_TYPE_WALL) && (tile_subtype[tile_x+1][tile_y] & WALL_TYPE_xooo))
+		{
+			LOGE("Cannot branch right (branch across an hwall) at tile[%d][%d]",tile_x,tile_y);
+			can_branch &= ~(BRANCH_TYPE_RIGHT);
+			failed_breakable_tests[6] = true;
+		}
+
+		LOGE("Branch tests finished at tile[%d][%d]: (%d) L:%d, R:%d, F:%d",tile_x,tile_y,can_branch,
+			(can_branch & BRANCH_TYPE_LEFT)/BRANCH_TYPE_LEFT,
+			(can_branch & BRANCH_TYPE_RIGHT)/BRANCH_TYPE_RIGHT,
+			(can_branch & BRANCH_TYPE_FORWARD)/BRANCH_TYPE_FORWARD);
+
+		//================================================================================================================
+		//This next section modulates probabilities of branching based on certain requirements
+		//================================================================================================================
+
+		float mod_prob_l = prob_of_branch_left;
+		float mod_prob_r = prob_of_branch_right;
+		float mod_prob_f = prob_of_branch_forward;
+
+		//If we previously branched right, decrease the prob of branching left
+		if(prev_branch == BRANCH_TYPE_LEFT)
+		{
+			mod_prob_r *= prob_of_branch_right_given_branch_left;
+		}
+		//If we previously branched left, decrease the prob of branching right
+		if(prev_branch == BRANCH_TYPE_RIGHT)
+		{
+			mod_prob_l *= prob_of_branch_left_given_branch_right;
+		}
+
+
+		//Depending on what directions we can branch to, we are put in 8 distinct categories:
+		//We can branch in any direction: regular branching logic ============================================================
+		//====================================================================================================================
+		if(can_branch == (BRANCH_TYPE_FORWARD | BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT))
+		{
+			LOGE("Can branch in all 3 directions at tile[%d][%d]",tile_x,tile_y);
+			//Branching left
+			//vvvvv If we should branch left vvvvvvv
+			/*if(Random::rand() < mod_prob_l)
+			{
+				LOGE("branched left at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+			}
+
+			//Branching right
+			//vvvvv If we should branch right vvvvvvv
+			if(Random::rand() < mod_prob_r)
+			{
+				LOGE("branched right at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+			}
+
+			//Branching forward
+			//vvvvvvvvvvvvv If we MUST branch forward vvvvvvvvvvvvv    vvvvvv If we should branch forward vvvvvv
+			if(!(*branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT)) || (Random::rand() < mod_prob_f))
+			{
+				LOGE("branched forward at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+			}*/
+			//Testing out alternate logic
+			bool branch_l = false;
+			bool branch_r = false;
+			bool branch_f = false;
+
+			//Probability of branching forward given we choose left, right, or forward
+			float prob_branch_f = mod_prob_f / (mod_prob_f + mod_prob_l + mod_prob_r);
+			float prob_branch_l = mod_prob_l / (mod_prob_f + mod_prob_l + mod_prob_r);
+			float prob_branch_r = mod_prob_r / (mod_prob_f + mod_prob_l + mod_prob_r);
+
+			//Probability of branching left/right given we choose left or right
+			float prob_branch_l_lr = mod_prob_l / (mod_prob_l + mod_prob_r);
+			float prob_branch_r_lr = mod_prob_r / (mod_prob_l + mod_prob_r);
+
+			if(Random::rand() < prob_branch_f)
+			{
+				branch_f = true;
+				if(Random::rand() < prob_branch_l)
+					branch_l = true;
+				if(Random::rand() < prob_branch_r)
+					branch_r = true;
+			}
+			else if(Random::rand() < prob_branch_l_lr)
+				{
+					branch_l = true;
+					if(Random::rand() < prob_branch_r_lr)
+						branch_r = true;
+				}
+				else
+				{
+					branch_r = true;
+				}
+
+			if(branch_l)
+			{
+				LOGE("branched left at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			if(branch_r)
+			{
+				LOGE("branched right at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			if(branch_f)
+			{
+				LOGE("branched forward at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+			}
+
+		}
+		//====================================================================================================================
+		//We can only branch forward -> must branch forward
+		//====================================================================================================================
+		if(can_branch == BRANCH_TYPE_FORWARD)
+		{
+			LOGE("Must branch forward at tile[%d][%d]",tile_x,tile_y);
+			recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+		}
+		//====================================================================================================================
+		//We can only branch left -> must branch left
+		//====================================================================================================================
+		if(can_branch == BRANCH_TYPE_LEFT)
+		{
+			LOGE("Must branch left at tile[%d][%d]",tile_x,tile_y);
+			recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+		}
+		//====================================================================================================================
+		//We can only branch right -> must branch right
+		//====================================================================================================================
+		if(can_branch == BRANCH_TYPE_RIGHT)
+		{
+			LOGE("Must branch right at tile[%d][%d]",tile_x,tile_y);
+			recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+		}
+		//====================================================================================================================
+		//We can only branch left or right -> choose one or both randomly
+		//====================================================================================================================
+		if(can_branch == (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT))
+		{
+			LOGE("Must branch left or right at tile[%d][%d]",tile_x,tile_y);
+			bool branch_left = false;
+			bool branch_right = false;
+
+			//Calculating accurate probabilities of branching left / right / both
+			float prob_l = mod_prob_l / (mod_prob_l + mod_prob_r);
+			float prob_r = mod_prob_r / (mod_prob_l + mod_prob_r);
+
+			//50% chance we branch left or branch right
+			if(Random::rand() < prob_l)
+			{
+				branch_left = true;
+				//Branch right as well?
+				if(Random::rand() < prob_r)
+				{
+					branch_right = true;
+				}
+			}
+			else
+			{
+				branch_right = true;
+			}
+
+			if(branch_left)
+			{
+				LOGE("branching left at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			if(branch_right)
+			{
+				LOGE("branching right at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+			}
+		}
+		//====================================================================================================================
+		//We can only branch forward or left -> choose one or both randomly
+		//====================================================================================================================
+		if(can_branch == (BRANCH_TYPE_LEFT | BRANCH_TYPE_FORWARD))
+		{
+			LOGE("Must branch left or forward at tile[%d][%d]",tile_x,tile_y);
+			bool branch_left = false;
+			bool branch_forward = false;
+			//Calculating accurate probabilities of branching forward / left / both
+			float prob_l = mod_prob_l / (mod_prob_l + mod_prob_f);
+			float prob_f = mod_prob_f / (mod_prob_l + mod_prob_f);
+
+			if(Random::rand() < prob_l)
+			{
+				branch_left = true;
+				//branch forward as well?
+				if(Random::rand() < prob_f)
+				{
+					branch_forward = true;
+				}
+			}
+			else
+			{
+				branch_forward = true;
+			}
+
+			if(branch_left)
+			{
+				LOGE("branching left at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			if(branch_forward)
+			{
+				LOGE("branching forward at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+			}
+		}
+		//====================================================================================================================
+		//We can only branch forward or right -> choose one or both randomly
+		//====================================================================================================================
+		if(can_branch == (BRANCH_TYPE_RIGHT | BRANCH_TYPE_FORWARD))
+		{
+			LOGE("Must branch right or forward at tile[%d][%d]",tile_x,tile_y);
+			bool branch_right = false;
+			bool branch_forward = false;
+			//Calculating accurate probabilities of branching forward / left / both
+			float prob_r = mod_prob_r / (mod_prob_r + mod_prob_f);
+			float prob_f = mod_prob_f / (mod_prob_r + mod_prob_f);
+
+			if(Random::rand() < prob_r)
+			{
+				branch_right = true;
+				//branch forward as well?
+				if(Random::rand() < prob_f)
+				{
+					branch_forward = true;
+				}
+			}
+			else
+			{
+				branch_forward = true;
+			}
+
+			if(branch_right)
+			{
+				LOGE("branching right at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+			}
+			if(branch_forward)
+			{
+				LOGE("branching forward at tile[%d][%d]",tile_x,tile_y);
+				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+			}
+		}
+		//====================================================================================================================
+		//We cannot branch anywhere.
+		//This is a contradiction that we have backed ourselves into a corner with
+		//If this occurs, we should probably return a failed state up the recursion ladder and back up, trying a different path
+		//====================================================================================================================
+		if(can_branch == BRANCH_TYPE_NONE)
+		{
+			LOGE("Warning: we cannot branch anywhere from tile[%d][%d]",tile_x,tile_y);
+			//TODO: consider the following solution:
+			//Keep track of every test we failed that caused us to run into a dead end
+			//Choose a random rule to break, and modify the floor tile layout to reflect the update, and call recursive bsp at this same tile
+
+			LOGE("Failed Breakable Tests: [%d,%d,%d,%d,%d,%d,%d]",
+				failed_breakable_tests[0],
+				failed_breakable_tests[1],
+				failed_breakable_tests[2],
+				failed_breakable_tests[3],
+				failed_breakable_tests[4],
+				failed_breakable_tests[5],
+				failed_breakable_tests[6]);
+
+			//Count the number of failed breakable tests
+			int failed_tests = 0;
+			for(int i = 0; i < 7; i++)
+			{
+				if(failed_breakable_tests[i])
+					failed_tests++;
+			}
+			LOGE("We failed %d tests",failed_tests);
+			//Choosing a random failed test to break
+			int test_to_break = Random::rand_int_in_range(0,failed_tests);
+			LOGE("We choose to break test number %d",test_to_break);
+			int test_to_break_index = test_to_break;
+			//Getting the index of the test to break
+			for(int i = 0; i < 7; i++)
+			{
+				if(failed_breakable_tests[i])
+				{
+					if(test_to_break_index == 0)
+					{
+						test_to_break_index = i;
+						break;
+					}
+					test_to_break_index--;
+				}
+			}
+			LOGE("Test number %d has the index %d",test_to_break,test_to_break_index);
+
+			switch(test_to_break_index)
+			{
+				//Do not branch left if the next tile is a wall (no room to handle obstacle)
+				case 0:
+					LOGE("Removing horizontal wall from left branch");
+					//We will remove the horizontal wall from where we end up if we branch left
+					tile_type[tile_x-1][tile_y+1] = TILE_TYPE_EMPT;
+					tile_subtype[tile_x-1][tile_y+1] = 0;
+					//Removing connecting component from the wall to the left of it
+					if((tile_x-1 > 0) && (tile_type[tile_x-2][tile_y+1] == TILE_TYPE_WALL))
+					{
+						tile_subtype[tile_x-2][tile_y+1] &= ~WALL_TYPE_oXoo;
+						if(!tile_subtype[tile_x-2][tile_y+1])
+							tile_type[tile_x-2][tile_y+1] = TILE_TYPE_EMPT;
+					}
+					//Removing connecting component from the wall to the right of it
+					if(tile_type[tile_x][tile_y+1] == TILE_TYPE_WALL)
+					{
+						tile_subtype[tile_x][tile_y+1] &= ~WALL_TYPE_xooo;
+						if(!tile_subtype[tile_x][tile_y+1])
+							tile_type[tile_x][tile_y+1] = TILE_TYPE_EMPT;
+					}
+					break;
+					//Do not branch right if the next tile is a wall (no room to handle obstacle)
+				case 1:
+					LOGE("Removing horizontal wall from right branch");
+					//We will remove the horizontal wall from where we end up if we branch right
+					tile_type[tile_x+1][tile_y+1] = TILE_TYPE_EMPT;
+					tile_subtype[tile_x+1][tile_y+1] = 0;
+					//Removing connecting component from the wall to the left of it
+					if(tile_type[tile_x][tile_y+1] == TILE_TYPE_WALL)
+					{
+						tile_subtype[tile_x][tile_y+1] &= ~WALL_TYPE_oXoo;
+						if(!tile_subtype[tile_x][tile_y+1])
+							tile_type[tile_x][tile_y+1] = TILE_TYPE_EMPT;
+					}
+					//Removing connecting component from the wall to the right of it
+					if((tile_x+1 < width-1)&&(tile_type[tile_x+2][tile_y+1] == TILE_TYPE_WALL))
+					{
+						tile_subtype[tile_x+2][tile_y+1] &= ~WALL_TYPE_xooo;
+						if(!tile_subtype[tile_x+2][tile_y+1])
+							tile_type[tile_x+2][tile_y+1] = TILE_TYPE_EMPT;
+					}
+					break;
+					//Checking if we will branch into a ooyo wall tile which will stop us from being able to branch forward
+				case 2:
+					LOGE("Removing ooyo component from tile 2 tiles ahead");
+					//We will remove the offending ooyo component from the tile
+					tile_subtype[tile_x][tile_y+2] &= ~WALL_TYPE_ooyo;
+					if(!tile_subtype[tile_x][tile_y+2])
+						tile_type[tile_x][tile_y+2] = TILE_TYPE_EMPT;
+					//Removing connecting segment from the tile before it
+					if(tile_type[tile_x][tile_y+1] == TILE_TYPE_WALL)
+					{
+						tile_subtype[tile_x][tile_y+1] &= ~WALL_TYPE_oooY;
+						if(!tile_subtype[tile_x][tile_y+1])
+							tile_type[tile_x][tile_y+1] = TILE_TYPE_EMPT;
+					}
+					break;
+					//Checking if the next tile is a ooyY wall tile which does not allow us to branch forward
+				case 3:
+					LOGE("Removing ooyY component from the next tile");
+					//We will remove the offending ooyo component from the tile
+					tile_subtype[tile_x][tile_y+1] &= ~WALL_TYPE_ooyY;
+					if(!tile_subtype[tile_x][tile_y+1])
+						tile_type[tile_x][tile_y+1] = TILE_TYPE_EMPT;
+					//Removing connecting segment from the tile after it
+					if((tile_y < length-1)&&(tile_type[tile_x][tile_y+1] == TILE_TYPE_WALL))
+					{
+						tile_subtype[tile_x][tile_y+2] &= ~WALL_TYPE_ooyo;
+						if(!tile_subtype[tile_x][tile_y+2])
+							tile_type[tile_x][tile_y+2] = TILE_TYPE_EMPT;
+					}
+					break;
+					//We cannot branch left or right on a horizontal wall tile
+				case 4:
+					LOGE("Removing xXoo component from the next tile");
+					//We will remove the horizontal wall tile
+					tile_type[tile_x][tile_y] = TILE_TYPE_EMPT;
+					tile_subtype[tile_x][tile_y] = 0;
+					//Removing connecting component from the wall to the left of it
+					if((tile_x > 0) && (tile_type[tile_x-1][tile_y] == TILE_TYPE_WALL))
+					{
+						tile_subtype[tile_x-1][tile_y] &= ~WALL_TYPE_oXoo;
+						if(!tile_subtype[tile_x-1][tile_y])
+							tile_type[tile_x-1][tile_y] = TILE_TYPE_EMPT;
+					}
+					//Removing connecting component from the wall to the right of it
+					if(tile_type[tile_x+1][tile_y] == TILE_TYPE_WALL)
+					{
+						tile_subtype[tile_x+1][tile_y] &= ~WALL_TYPE_xooo;
+						if(!tile_subtype[tile_x+1][tile_y])
+							tile_type[tile_x+1][tile_y] = TILE_TYPE_EMPT;
+					}
+					break;
+					//We cannot branch left if we branch across a horizontal wall tile
+				case 5:
+					LOGE("Removing xXoo component from tile we branch left across");
+					tile_subtype[tile_x-1][tile_y] &= ~WALL_TYPE_xooo;
+					if(!tile_subtype[tile_x-1][tile_y])
+						tile_type[tile_x-1][tile_y] = TILE_TYPE_EMPT;
+					break;
+					//We cannot branch right if we branch across a horizontal wall tile
+				case 6:
+					LOGE("Removing xXoo component from tile we branch right across");
+					tile_subtype[tile_x+1][tile_y] &= ~WALL_TYPE_oXoo;
+					if(!tile_subtype[tile_x+1][tile_y])
+						tile_type[tile_x+1][tile_y] = TILE_TYPE_EMPT;
+					break;
+
+				default:
+					break;
+			}
+			//Now that we've broken the test that failed, retry branch player_path
+			recursive_branch_player_path(tile_x,tile_y,gmin_x,gmax_x,prev_branch);
+		}
+		//====================================================================================================================
 	}
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos)
@@ -700,13 +1214,13 @@ public:
 		//TODO:		must not look out of place, and must not look navigable
 		//TODO:			(must not look as though the player can go through/over/under it)
 
-		populate_floor();
-
 		branch_debug_point_count = 0;
 		//Allowing 1 tile of room before any branching is allowed
 		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;
 		tile_branch_type[player_start_column][1] = BRANCH_TYPE_FROM_FORWARD;
-		recursive_branch_player_path(player_start_column,1,goal_min_column,goal_max_column);
+		recursive_branch_player_path(player_start_column,1,goal_min_column,goal_max_column,BRANCH_TYPE_FORWARD);
+
+		populate_floor();
 
 		//Temp iterating through all tiles adding debug branch points to array
 		for(int i = 0; i < width; i++)

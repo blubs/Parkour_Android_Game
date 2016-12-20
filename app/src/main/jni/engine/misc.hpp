@@ -92,10 +92,10 @@ public:
 		return frand()*2.0f - 1.0f;
 	}
 
-	//Returns a random integer (i,j]
-	static float rand(int i, int j)
+	//Returns a random integer [i,j)
+	static int rand_int_in_range(int i, int j)
 	{
-
+		return (int) (i + rand() * (j-i));
 	}
 
 };
