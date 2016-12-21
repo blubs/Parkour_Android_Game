@@ -718,6 +718,11 @@ public:
 			mod_prob_l *= prob_of_branch_left_given_branch_right;
 		}
 
+		//TODO: increase the probability of branching left / right as we approach the end of a building
+		//Our calculations, however, are based on thinking that every tile is available to branching
+		//So our probability of branching will also be our probability of changing the wall layouts in order to branch
+		//in case we cannot branch in later tiles
+
 
 		//Depending on what directions we can branch to, we are put in 8 distinct categories:
 		//We can branch in any direction: regular branching logic ============================================================
@@ -725,30 +730,6 @@ public:
 		if(can_branch == (BRANCH_TYPE_FORWARD | BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT))
 		{
 			LOGE("Can branch in all 3 directions at tile[%d][%d]",tile_x,tile_y);
-			//Branching left
-			//vvvvv If we should branch left vvvvvvv
-			/*if(Random::rand() < mod_prob_l)
-			{
-				LOGE("branched left at tile[%d][%d]",tile_x,tile_y);
-				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
-			}
-
-			//Branching right
-			//vvvvv If we should branch right vvvvvvv
-			if(Random::rand() < mod_prob_r)
-			{
-				LOGE("branched right at tile[%d][%d]",tile_x,tile_y);
-				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
-			}
-
-			//Branching forward
-			//vvvvvvvvvvvvv If we MUST branch forward vvvvvvvvvvvvv    vvvvvv If we should branch forward vvvvvv
-			if(!(*branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT)) || (Random::rand() < mod_prob_f))
-			{
-				LOGE("branched forward at tile[%d][%d]",tile_x,tile_y);
-				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
-			}*/
-			//Testing out alternate logic
 			bool branch_l = false;
 			bool branch_r = false;
 			bool branch_f = false;
