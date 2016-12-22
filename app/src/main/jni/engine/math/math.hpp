@@ -14,6 +14,14 @@
 #define DEG_TO_RAD 0.01745329251f
 #define RAD_TO_DEG 57.2957795131f
 
+inline int min(int a, int b)
+{
+return (a<b)?a:b;
+}
+inline int max(int a, int b)
+{
+return (a>b)?b:a;
+}
 
 //Implementation of a weighted average lerp
 inline float lerp_wtd_avg(float a, float b, float slowdown)
