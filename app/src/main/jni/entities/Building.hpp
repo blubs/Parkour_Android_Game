@@ -81,6 +81,7 @@ public:
 	//Creates the building
 	void generate(Vec3 building_pos)
 	{
+		//TODO: lateral offset for building
 		if(generated)
 			return;
 		active_floor_number = 10;
@@ -100,6 +101,7 @@ public:
 		generated = true;
 	}
 
+	//TODO: pass in the next building from which to get the goal range for the floor
 	void generate_floor(Vec3 player_pos)
 	{
 		if(!generated)
