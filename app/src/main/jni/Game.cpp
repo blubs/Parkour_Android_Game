@@ -590,7 +590,7 @@ void Game::start()
 		buildings[i] = new Building();
 	}
 
-	buildings[0]->generate(Vec3::ZERO());
+	buildings[0]->generate(NULL,Vec3::ZERO());
 	buildings[0]->generate_floor(player->pos);
 	//FIXME remove this:
 	buildings[0]->active_floor->debug_branch_mat = solid_mat;
@@ -602,7 +602,7 @@ void Game::start()
 
 	for(int i = 1; i < MAX_BUILDINGS; i++)
 	{
-		buildings[i]->generate(last_building_end_point + building_offset);
+		buildings[i]->generate(buildings[i-1],last_building_end_point + building_offset);
 		last_building_end_point = Vec3(buildings[i]->pos.x,buildings[i]->global_maxs.y,0);
 	}
 

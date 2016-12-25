@@ -79,9 +79,9 @@ public:
 	}
 
 	//Creates the building
-	void generate(Vec3 building_pos)
+	void generate(Building* prev_bldg,Vec3 bldg_ofs)
 	{
-		//TODO: lateral offset for building
+		//TODO: use previous building pointer (if it's not null) as lateral building offset
 		if(generated)
 			return;
 		active_floor_number = 10;
@@ -92,7 +92,7 @@ public:
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
-		pos = building_pos + Vec3(0,0,GROUNDLEVEL);
+		pos = bldg_ofs + Vec3(0,0,GROUNDLEVEL);
 
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
