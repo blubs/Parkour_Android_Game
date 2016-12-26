@@ -6,6 +6,11 @@
 
 //This file holds non-preprocessor variable definitions
 
+//Value is the index of the building that precedes the building whose index we are accessing
+int PREV_BLDG[3] = {2,0,1};
+//Value is the index of the building that follows the building whose index we are accessing
+int NEXT_BLDG[3] = {1,2,0};
+
 
 //Array used for filtering out unwanted characters from keyboard input
 //Here we filter out all control characters, except for ' ','\b', and '\n'. (keeps all symbolic & alphanumeric)

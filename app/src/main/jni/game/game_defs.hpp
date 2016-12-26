@@ -137,13 +137,15 @@
 #define INPUT_KEY_BACK 1
 #define INPUT_KEY_KEYBOARD 2
 
+//Definition is in game_defs.cpp
 //Array used for filtering out unwanted characters from keyboard input
 //Here we filter out all control characters, except for ' ','\b', and '\n'. (keeps all symbolic & alphanumeric)
 extern char INPUT_CHAR_FILTER[128];
-//Definition is in game_defs.cpp
 
 //=========================== Game Logic Defs ==========================
 #define MAX_BUILDINGS 3
+extern int NEXT_BLDG[3];
+extern int PREV_BLDG[3];
 
 //Player States
 #define PLAYER_STATE_MENU 0

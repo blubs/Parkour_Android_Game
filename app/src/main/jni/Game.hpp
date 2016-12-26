@@ -99,6 +99,7 @@ public:
 
 	Building **buildings;
 	Building *current_building = NULL;
+	int cbldg_index = 0;
 
 
 	//======================================================================

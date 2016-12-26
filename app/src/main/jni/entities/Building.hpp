@@ -81,7 +81,6 @@ public:
 	//Creates the building
 	void generate(Building* prev_bldg,Vec3 bldg_ofs)
 	{
-		//TODO: use previous building pointer (if it's not null) as lateral building offset
 		if(generated)
 			return;
 		active_floor_number = 10;
@@ -92,7 +91,14 @@ public:
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
-		pos = bldg_ofs + Vec3(0,0,GROUNDLEVEL);
+
+		Vec3 prev_bldg_ofs = Vec3(0,0,0);
+		if(prev_bldg != NULL)
+		{
+			prev_bldg_ofs = Vec3(prev_bldg->pos.x,prev_bldg->global_maxs.y,0);
+			//TODO: calculate building offset based on size and previous building's position and size
+		}
+		pos = prev_bldg_ofs + bldg_ofs + Vec3(0,0,GROUNDLEVEL);
 
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
@@ -102,7 +108,7 @@ public:
 	}
 
 	//TODO: pass in the next building from which to get the goal range for the floor
-	void generate_floor(Vec3 player_pos)
+	void generate_floor(Vec3 player_pos, Building* next_bldg)
 	{
 		if(!generated)
 			return;
@@ -111,7 +117,7 @@ public:
 	}
 
 	//Currently regenerates the building using a different rng numbers
-	void regenerate_floor(Vec3 player_pos)
+	void regenerate_floor(Vec3 player_pos, Building* next_bldg)
 	{
 		int temp = active_floor_number;
 		clear();

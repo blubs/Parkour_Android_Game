@@ -591,22 +591,22 @@ void Game::start()
 	}
 
 	buildings[0]->generate(NULL,Vec3::ZERO());
-	buildings[0]->generate_floor(player->pos);
 	//FIXME remove this:
 	buildings[0]->active_floor->debug_branch_mat = solid_mat;
 
-	Vec3 last_building_end_point = Vec3(buildings[0]->pos.x,buildings[0]->global_maxs.y,0);
-
 	//Distance between buildings
-	Vec3 building_offset = Vec3(0,15,0);
+	Vec3 bldg_offset = Vec3(0,15,0);
 
 	for(int i = 1; i < MAX_BUILDINGS; i++)
 	{
-		buildings[i]->generate(buildings[i-1],last_building_end_point + building_offset);
-		last_building_end_point = Vec3(buildings[i]->pos.x,buildings[i]->global_maxs.y,0);
+		buildings[i]->generate(buildings[PREV_BLDG[i]],bldg_offset);
 	}
 
+	//Generate the first building's floor after we generate all of the buildings themselves
+	buildings[0]->generate_floor(player->pos,buildings[1]);
+
 	current_building = buildings[0];
+	cbldg_index = 0;
 
 	player->pos.y = 1;
 	player_state = PLAYER_STATE_NOCLIP;
@@ -1340,7 +1340,7 @@ void Game::update()
 					if(sy >= 0.66f && sy < 0.85f)
 					{
 						input_touching[i] = false;
-						current_building->regenerate_floor(player->pos);
+						current_building->regenerate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
 						continue;
 					}
 				}
