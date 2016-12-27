@@ -112,7 +112,19 @@ public:
 	{
 		if(!generated)
 			return;
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
+
+		//Finding our goal column range
+		//(what tiles of this building line up with tiles of next_bldg)
+		//Finding tile dimensions of next_bldg in terms of this building's tile dimensions
+		int other_left_endpnt = (int)((next_bldg->pos.x - pos.x)/TILE_SIZE);
+		int other_right_endpnt = ((int)next_bldg->dimensions.x) + other_left_endpnt;
+
+		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt);
+		int goal_max = clamp((int)dimensions.x,other_left_endpnt,other_right_endpnt);
+
+		LOGE("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
+
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
 		generate_interior_model_list();
 	}
 
@@ -142,7 +154,18 @@ public:
 		generate_exterior_model_list();
 		generated = true;
 		generate_interior_model_list();
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos);
+
+		//Finding our goal column range
+		//(what tiles of this building line up with tiles of next_bldg)
+		//Finding tile dimensions of next_bldg in terms of this building's tile dimensions
+		int other_left_endpnt = (int)((next_bldg->pos.x - pos.x)/TILE_SIZE);
+		int other_right_endpnt = ((int)next_bldg->dimensions.x) + other_left_endpnt;
+		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt);
+		int goal_max = clamp((int)dimensions.x,other_left_endpnt,other_right_endpnt);
+		LOGE("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
+
+
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,0,2);
 	}
 
 	//Clears the created building, zeroes everything out

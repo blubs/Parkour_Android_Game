@@ -1180,7 +1180,7 @@ public:
 		//====================================================================================================================
 	}
 
-	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos)
+	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos, int goal_min_column, int goal_max_column)
 	{
 		if(generated)
 			return;
@@ -1257,9 +1257,6 @@ public:
 		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
 		//TODO: based on where the next building is, get the goal range of what column we have to
 		//TODO: 	(cont) move the player to so that the player can jump to the next building
-
-		int goal_min_column = 0;
-		int goal_max_column = 2;//FIXME, this is not accurate
 
 		// ==================================================
 		//TODO: sketch some floor tile obstacle types:
