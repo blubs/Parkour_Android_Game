@@ -568,6 +568,8 @@ public:
 		}
 	}
 
+//#define DEBUG_BRANCH_LOGIC
+
 	// General layout of the logic of this recursive method
 		//============
 		//1: Check if we're at the end of the building, or if this tile has already branched (terminating case)
@@ -586,12 +588,14 @@ public:
 		//============
 	void recursive_branch_player_path(int tile_x, int tile_y, int gmin_x, int gmax_x, int prev_branch)
 	{
+#ifdef DEBUG_BRANCH_LOGIC
 		LOGE("Gen Branch on tile: [%d][%d]. Wall: %d, walltype: (%d,%d,%d,%d)",
 			tile_x,tile_y,tile_type[tile_x][tile_y],
 			(tile_subtype[tile_x][tile_y] & WALL_TYPE_xooo)/WALL_TYPE_xooo,
 			(tile_subtype[tile_x][tile_y] & WALL_TYPE_oXoo)/WALL_TYPE_oXoo,
 			(tile_subtype[tile_x][tile_y] & WALL_TYPE_ooyo)/WALL_TYPE_ooyo,
 			(tile_subtype[tile_x][tile_y] & WALL_TYPE_oooY)/WALL_TYPE_oooY);
+#endif
 
 		//We have somehow reached this tile, regardless of whatever is on this tile: remove the vertical wall segments
 		if(tile_type[tile_x][tile_y] == TILE_TYPE_WALL)
@@ -603,7 +607,9 @@ public:
 		//Have we reached the end of the building?
 		if(tile_y >= length - 1)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("End of building reached at tile[%d][%d]",tile_x,tile_y);
+#endif
 			tile_branch_type[tile_x][tile_y] |= (BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD);
 			return;
 		}
@@ -615,7 +621,9 @@ public:
 			//WARNING: this may lead to undesired results, maybe just check left/right/forward individually
 		if(*branched & (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT | BRANCH_TYPE_FORWARD))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("We have already branched at tile[%d][%d]",tile_x,tile_y);
+#endif
 			return;
 		}
 
@@ -629,25 +637,33 @@ public:
 		//Checking if branching left or branching right will put us out of bounds
 		if(tile_x <= 0)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch left at tile[%d][%d]",tile_x,tile_y);
+#endif
 			can_branch &= ~BRANCH_TYPE_LEFT;
 		}
 		if(tile_x >= width - 1)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch right at tile[%d][%d]",tile_x,tile_y);
+#endif
 			can_branch &= ~BRANCH_TYPE_RIGHT;
 		}
 
 		//Checking if the end tile of a left branch can still get us to our goal range
 		if(prob_of_branch_to_goal(tile_x-1,tile_y+1,gmin_x,gmax_x) > 1.0f)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch left at tile[%d][%d] (could not get to goal_column from branch)",tile_x,tile_y);
+#endif
 			can_branch &= ~BRANCH_TYPE_LEFT;
 		}
 		//Checking if the end tile of a right branch can still get us to our goal range
 		if(prob_of_branch_to_goal(tile_x+1,tile_y+1,gmin_x,gmax_x) > 1.0f)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch right at tile[%d][%d] (could not get to goal_column from branch)",tile_x,tile_y);
+#endif
 			can_branch &= ~BRANCH_TYPE_RIGHT;
 		}
 
@@ -659,7 +675,9 @@ public:
 		{
 			if((tile_type[tile_x-1][tile_y+1] == TILE_TYPE_WALL) && (tile_subtype[tile_x-1][tile_y+1] & WALL_TYPE_xXoo))
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("Cannot branch left (there is an hwall immediately after branch) at tile[%d][%d]",tile_x,tile_y);
+#endif
 				can_branch &= ~BRANCH_TYPE_LEFT;
 				failed_breakable_tests[0] = true;
 			}
@@ -669,7 +687,9 @@ public:
 		{
 			if((tile_type[tile_x+1][tile_y+1] == TILE_TYPE_WALL) && (tile_subtype[tile_x+1][tile_y+1] & WALL_TYPE_xXoo))
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("Cannot branch right (there is an hwall immediately after branch) at tile[%d][%d]",tile_x,tile_y);
+#endif
 				can_branch &= ~BRANCH_TYPE_RIGHT;
 				failed_breakable_tests[1] = true;
 			}
@@ -681,7 +701,9 @@ public:
 			//Is the tile a ooyo or oooY wall?
 			if((tile_type[tile_x][tile_y+2] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y+2] & WALL_TYPE_ooyo))
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("Cannot branch forward (there is a vwall 2 tiles ahead) at tile[%d][%d]",tile_x,tile_y);
+#endif
 				can_branch &= ~BRANCH_TYPE_FORWARD;
 				failed_breakable_tests[2] = true;
 			}
@@ -692,7 +714,9 @@ public:
 			//Is the tile a ooyo or oooY wall?
 			if((tile_type[tile_x][tile_y+1] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y+1] & WALL_TYPE_ooyY))
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("Cannot branch forward (next tile is a vwall ahead) at tile[%d][%d]",tile_x,tile_y);
+#endif
 				can_branch &= ~BRANCH_TYPE_FORWARD;
 				failed_breakable_tests[3] = true;
 			}
@@ -701,7 +725,9 @@ public:
 		//We cannot branch left or right on a horizontal wall tile
 		if((tile_type[tile_x][tile_y] == TILE_TYPE_WALL) && (tile_subtype[tile_x][tile_y] & WALL_TYPE_xXoo))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch left or right (we are on a hwall) at tile[%d][%d]",tile_x,tile_y);
+#endif
 			can_branch &= ~(BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT);
 			failed_breakable_tests[4] = true;
 		}
@@ -709,22 +735,28 @@ public:
 		//We cannot branch left if we branch across a horizontal wall tile
 		if((tile_x > 0) && (tile_type[tile_x-1][tile_y] == TILE_TYPE_WALL) && (tile_subtype[tile_x-1][tile_y] & WALL_TYPE_oXoo))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch left (branch across an hwall) at tile[%d][%d]",tile_x,tile_y);
+#endif
 			can_branch &= ~(BRANCH_TYPE_LEFT);
 			failed_breakable_tests[5] = true;
 		}
 		//We cannot branch right if we branch across a horizontal wall tile
 		if((tile_x < width -1) && (tile_type[tile_x+1][tile_y] == TILE_TYPE_WALL) && (tile_subtype[tile_x+1][tile_y] & WALL_TYPE_xooo))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch right (branch across an hwall) at tile[%d][%d]",tile_x,tile_y);
+#endif
 			can_branch &= ~(BRANCH_TYPE_RIGHT);
 			failed_breakable_tests[6] = true;
 		}
 
+#ifdef DEBUG_BRANCH_LOGIC
 		LOGE("Branch tests finished at tile[%d][%d]: (%d) L:%d, R:%d, F:%d",tile_x,tile_y,can_branch,
 			(can_branch & BRANCH_TYPE_LEFT)/BRANCH_TYPE_LEFT,
 			(can_branch & BRANCH_TYPE_RIGHT)/BRANCH_TYPE_RIGHT,
 			(can_branch & BRANCH_TYPE_FORWARD)/BRANCH_TYPE_FORWARD);
+#endif
 
 		//================================================================================================================
 		//This next section modulates probabilities of branching based on certain requirements
@@ -756,15 +788,21 @@ public:
 		if(tile_x < goal_column)
 		{
 			prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y,gmin_x,gmax_x);
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Prob of branching to column %d is %.2f",goal_column,prob_of_force_branch);
+#endif
 
 			//Try to branch
 			if(Random::rand() < prob_of_force_branch)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("Trying to branch right...");
+#endif
 				if(can_branch & BRANCH_TYPE_RIGHT)
 				{
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Branched right from force prob at tile[%d][%d]!",tile_x,tile_y);
+#endif
 					//do the branch & return
 					recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
 					return;
@@ -773,7 +811,9 @@ public:
 				if(Random::rand() < prob_of_force_branch)
 				{
 					//force the branch & return
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Attempting to force a branch to the right.");
+#endif
 					can_branch &= ~(BRANCH_TYPE_FORWARD | BRANCH_TYPE_LEFT);
 					//The following flow of control will be executed:
 						//We won't be able to branch anywhere
@@ -788,15 +828,21 @@ public:
 		if(tile_x > goal_column)
 		{
 			prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y,gmin_x,gmax_x);
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Prob of branching to column %d is %.2f",goal_column,prob_of_force_branch);
+#endif
 
 			//Try to branch
 			if(Random::rand() < prob_of_force_branch)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("Trying to branch left...");
+#endif
 				if(can_branch & BRANCH_TYPE_LEFT)
 				{
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Branched left from force prob at tile[%d][%d]!",tile_x,tile_y);
+#endif
 					//do the branch & return
 					recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
 					return;
@@ -805,7 +851,9 @@ public:
 				if(Random::rand() < prob_of_force_branch)
 				{
 					//force the branch & return
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Attempting to force a branch to the left.");
+#endif
 					can_branch &= ~(BRANCH_TYPE_FORWARD | BRANCH_TYPE_RIGHT);
 					//The following flow of control will be executed:
 						//We won't be able to branch anywhere
@@ -822,7 +870,9 @@ public:
 		//====================================================================================================
 		if(can_branch == (BRANCH_TYPE_FORWARD | BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Can branch in all 3 directions at tile[%d][%d]",tile_x,tile_y);
+#endif
 			bool branch_l = false;
 			bool branch_r = false;
 			bool branch_f = false;
@@ -857,17 +907,23 @@ public:
 
 			if(branch_l)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branched left at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
 			}
 			if(branch_r)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branched right at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
 			}
 			if(branch_f)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branched forward at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
 			}
 
@@ -877,7 +933,9 @@ public:
 		//====================================================================================================================
 		if(can_branch == BRANCH_TYPE_FORWARD)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch forward at tile[%d][%d]",tile_x,tile_y);
+#endif
 			recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
 		}
 		//====================================================================================================================
@@ -885,7 +943,9 @@ public:
 		//====================================================================================================================
 		if(can_branch == BRANCH_TYPE_LEFT)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch left at tile[%d][%d]",tile_x,tile_y);
+#endif
 			recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
 		}
 		//====================================================================================================================
@@ -893,7 +953,9 @@ public:
 		//====================================================================================================================
 		if(can_branch == BRANCH_TYPE_RIGHT)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch right at tile[%d][%d]",tile_x,tile_y);
+#endif
 			recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
 		}
 		//====================================================================================================================
@@ -901,7 +963,9 @@ public:
 		//====================================================================================================================
 		if(can_branch == (BRANCH_TYPE_LEFT | BRANCH_TYPE_RIGHT))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch left or right at tile[%d][%d]",tile_x,tile_y);
+#endif
 			bool branch_left = false;
 			bool branch_right = false;
 
@@ -926,12 +990,16 @@ public:
 
 			if(branch_left)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching left at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
 			}
 			if(branch_right)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching right at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
 			}
 		}
@@ -940,7 +1008,9 @@ public:
 		//====================================================================================================================
 		if(can_branch == (BRANCH_TYPE_LEFT | BRANCH_TYPE_FORWARD))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch left or forward at tile[%d][%d]",tile_x,tile_y);
+#endif
 			bool branch_left = false;
 			bool branch_forward = false;
 			//Calculating accurate probabilities of branching forward / left / both
@@ -963,12 +1033,16 @@ public:
 
 			if(branch_left)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching left at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
 			}
 			if(branch_forward)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching forward at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
 			}
 		}
@@ -977,7 +1051,9 @@ public:
 		//====================================================================================================================
 		if(can_branch == (BRANCH_TYPE_RIGHT | BRANCH_TYPE_FORWARD))
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch right or forward at tile[%d][%d]",tile_x,tile_y);
+#endif
 			bool branch_right = false;
 			bool branch_forward = false;
 			//Calculating accurate probabilities of branching forward / left / both
@@ -1000,12 +1076,16 @@ public:
 
 			if(branch_right)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching right at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
 			}
 			if(branch_forward)
 			{
+#ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching forward at tile[%d][%d]",tile_x,tile_y);
+#endif
 				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
 			}
 		}
@@ -1016,10 +1096,8 @@ public:
 		//====================================================================================================================
 		if(can_branch == BRANCH_TYPE_NONE)
 		{
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Warning: we cannot branch anywhere from tile[%d][%d]",tile_x,tile_y);
-			//Our current solution: keep track of every test we failed which made us not be able to branch anywhere
-			//Choose a random rule to break, and modify the floor tile layout to reflect the update, and call recursive bsp at this same tile
-
 			LOGE("Failed Breakable Tests: [%d,%d,%d,%d,%d,%d,%d]",
 				failed_breakable_tests[0],
 				failed_breakable_tests[1],
@@ -1028,6 +1106,9 @@ public:
 				failed_breakable_tests[4],
 				failed_breakable_tests[5],
 				failed_breakable_tests[6]);
+#endif
+			//Our current solution: keep track of every test we failed which made us not be able to branch anywhere
+			//Choose a random rule to break, and modify the floor tile layout to reflect the update, and call recursive bsp at this same tile
 
 			//Count the number of failed breakable tests
 			int failed_tests = 0;
@@ -1036,7 +1117,9 @@ public:
 				if(failed_breakable_tests[i])
 					failed_tests++;
 			}
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("We failed %d tests",failed_tests);
+#endif
 			if(failed_tests == 0)
 			{
 				LOGE("Warning: we ran into a dead end with 0 tests failed at tile:[%d][%d]",tile_x,tile_y);
@@ -1044,7 +1127,9 @@ public:
 			}
 			//Choosing a random failed test to break
 			int test_to_break = Random::rand_int_in_range(0,failed_tests);
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("We choose to break test number %d",test_to_break);
+#endif
 			int test_to_break_index = test_to_break;
 			//Getting the index of the test to break
 			for(int i = 0; i < 7; i++)
@@ -1059,13 +1144,17 @@ public:
 					test_to_break_index--;
 				}
 			}
+#ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Test number %d has the index %d",test_to_break,test_to_break_index);
+#endif
 
 			switch(test_to_break_index)
 			{
 				//Do not branch left if the next tile is a wall (no room to handle obstacle)
 				case 0:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing horizontal wall from left branch");
+#endif
 					//We will remove the horizontal wall from where we end up if we branch left
 					tile_type[tile_x-1][tile_y+1] = TILE_TYPE_EMPT;
 					tile_subtype[tile_x-1][tile_y+1] = 0;
@@ -1086,7 +1175,9 @@ public:
 					break;
 				//Do not branch right if the next tile is a wall (no room to handle obstacle)
 				case 1:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing horizontal wall from right branch");
+#endif
 					//We will remove the horizontal wall from where we end up if we branch right
 					tile_type[tile_x+1][tile_y+1] = TILE_TYPE_EMPT;
 					tile_subtype[tile_x+1][tile_y+1] = 0;
@@ -1107,7 +1198,9 @@ public:
 					break;
 				//Checking if we will branch into a ooyo wall tile which will stop us from being able to branch forward
 				case 2:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing ooyo component from tile 2 tiles ahead");
+#endif
 					//We will remove the offending ooyo component from the tile
 					tile_subtype[tile_x][tile_y+2] &= ~WALL_TYPE_ooyo;
 					if(!tile_subtype[tile_x][tile_y+2])
@@ -1122,7 +1215,9 @@ public:
 					break;
 				//Checking if the next tile is a ooyY wall tile which does not allow us to branch forward
 				case 3:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing ooyY component from the next tile");
+#endif
 					//We will remove the offending ooyo component from the tile
 					tile_subtype[tile_x][tile_y+1] &= ~WALL_TYPE_ooyY;
 					if(!tile_subtype[tile_x][tile_y+1])
@@ -1137,7 +1232,9 @@ public:
 					break;
 				//We cannot branch left or right on a horizontal wall tile
 				case 4:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing xXoo component from the next tile");
+#endif
 					//We will remove the horizontal wall tile
 					tile_type[tile_x][tile_y] = TILE_TYPE_EMPT;
 					tile_subtype[tile_x][tile_y] = 0;
@@ -1158,14 +1255,18 @@ public:
 					break;
 				//We cannot branch left if we branch across a horizontal wall tile
 				case 5:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing xXoo component from tile we branch left across");
+#endif
 					tile_subtype[tile_x-1][tile_y] &= ~WALL_TYPE_xooo;
 					if(!tile_subtype[tile_x-1][tile_y])
 						tile_type[tile_x-1][tile_y] = TILE_TYPE_EMPT;
 					break;
 				//We cannot branch right if we branch across a horizontal wall tile
 				case 6:
+#ifdef DEBUG_BRANCH_LOGIC
 					LOGE("Removing xXoo component from tile we branch right across");
+#endif
 					tile_subtype[tile_x+1][tile_y] &= ~WALL_TYPE_oXoo;
 					if(!tile_subtype[tile_x+1][tile_y])
 						tile_type[tile_x+1][tile_y] = TILE_TYPE_EMPT;
