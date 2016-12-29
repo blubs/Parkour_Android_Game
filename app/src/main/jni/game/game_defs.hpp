@@ -44,7 +44,7 @@
 		//Example: xXoo		means the wall extends from -x to +x, through the center
 		//Example: ooyY		means the wall extends from -y to +y, through the center
 		//Example: xXyY		means the wall forms a '+' through the center
-//Integral wall types that make up the rest
+//Primitive wall types that make up the rest
 
 #define WALL_TYPE_oooo 0//this wall type should be neither referenced nor accessed (it's an empty floor with no walls), it is here to maintain the binary assignment of walls
 #define WALL_TYPE_xooo 1
@@ -68,6 +68,31 @@
 //We define the above such that we can construct types out of other types. while maintaining the wall's spatial logic
 // i.e. adding a left wall segment (xooo) and a right wall segment (oXoo) , yields a full horizontal wall (xXoo)
 	// xooo | oXoo = xXoo
+
+
+//Primitive rail types that make up the rest
+#define RAIL_TYPE_NONE	0
+#define RAIL_TYPE_L 	1
+#define RAIL_TYPE_R 	2
+#define RAIL_TYPE_TL 	4
+#define RAIL_TYPE_TL2	8
+#define RAIL_TYPE_TR 	16
+#define RAIL_TYPE_TR2 	32
+
+//Rail types that are composed of the above primitives
+//						(RAIL_TYPE_L| 	RAIL_TYPE_R| 	RAIL_TYPE_TL|	RAIL_TYPE_TL2| 	RAIL_TYPE_TR| 	RAIL_TYPE_TR2	)
+#define RAIL_TYPE_LR 		(RAIL_TYPE_L| 	RAIL_TYPE_R														)//3
+#define RAIL_TYPE_TL_TR 		(						RAIL_TYPE_TL|					RAIL_TYPE_TR				)//20
+#define RAIL_TYPE_TL2_TR2	(									RAIL_TYPE_TL2 | 				RAIL_TYPE_TR2	)//40
+#define RAIL_TYPE_TL_TL2		(						RAIL_TYPE_TL|	RAIL_TYPE_TL2								)//12
+#define RAIL_TYPE_TR_TR2		(													RAIL_TYPE_TR| 	RAIL_TYPE_TR2	)//48
+#define RAIL_TYPE_TL_L 		(RAIL_TYPE_L| 				RAIL_TYPE_TL											)//5
+#define RAIL_TYPE_TL2_R 		(			RAIL_TYPE_R| 				RAIL_TYPE_TL2| 							)//10
+#define RAIL_TYPE_TR_R 		(			RAIL_TYPE_R| 								RAIL_TYPE_TR				)//18
+#define RAIL_TYPE_TR2_L 		(RAIL_TYPE_L| 														RAIL_TYPE_TR2	)//33
+
+
+
 
 //Size of tiles (6 units x 6 units x 6 units)
 #define TILE_SIZE 3.5f
