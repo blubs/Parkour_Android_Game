@@ -165,7 +165,7 @@ public:
 		LOGE("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
 
 
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,0,2);
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
 	}
 
 	//Clears the created building, zeroes everything out

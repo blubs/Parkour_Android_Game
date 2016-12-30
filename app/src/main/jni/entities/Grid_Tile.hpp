@@ -15,10 +15,16 @@ class Collision_Map
 {
 public:
 	char voxel[TILE_VOXEL_DIMS][TILE_VOXEL_DIMS];
+	char voxel_shape[TILE_VOXEL_DIMS][TILE_VOXEL_DIMS];
+
 	Collision_Map();
 	~Collision_Map();
 
+	char get_vox_at(int x, int y, float vpos_x, float vpos_y);
+
 	char get_vox_at(int x, int y);
+
+	char get_vox_shape_at(int x, int y);
 };
 
 class Grid_Tile

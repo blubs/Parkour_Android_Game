@@ -11,6 +11,10 @@ int PREV_BLDG[3] = {2,0,1};
 //Value is the index of the building that follows the building whose index we are accessing
 int NEXT_BLDG[3] = {1,2,0};
 
+//Array whose entries are values of valid rail types
+bool RAIL_TYPE_IS_VALID[RAIL_TYPE_COUNT] = {1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+
 
 //Array used for filtering out unwanted characters from keyboard input
 //Here we filter out all control characters, except for ' ','\b', and '\n'. (keeps all symbolic & alphanumeric)

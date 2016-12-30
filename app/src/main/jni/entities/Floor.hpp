@@ -104,11 +104,16 @@ public:
 						obj = Global_Tiles::instance->style[0]->empty_tile;
 						break;
 					case TILE_TYPE_WALL:
+						//Default to empty wall
 						obj = Global_Tiles::instance->style[0]->empty_tile;
 						if(t_subtype)
 							obj = Global_Tiles::instance->style[0]->wall_subtypes[t_subtype];
-						else //Default to empty wall
-							obj = Global_Tiles::instance->style[0]->empty_tile;
+						break;
+					case TILE_TYPE_RAIL:
+						//Default to empty wall
+						obj = Global_Tiles::instance->style[0]->empty_tile;
+						if(t_subtype && RAIL_TYPE_IS_VALID[t_subtype])
+							obj = Global_Tiles::instance->style[0]->rail_subtypes[t_subtype];
 						break;
 					case TILE_TYPE_SOLD:
 						obj = Global_Tiles::instance->style[0]->solid_tile;
@@ -601,8 +606,16 @@ public:
 		if(tile_type[tile_x][tile_y] == TILE_TYPE_WALL)
 		{
 			tile_subtype[tile_x][tile_y] &= ~WALL_TYPE_ooyY;
+
+			//If we have xooo or oXoo but not both, remove it
+			if(tile_subtype[tile_x][tile_y] != WALL_TYPE_xXoo)
+			{
+				tile_subtype[tile_x][tile_y] = 0;
+			}
+
 			if(!tile_subtype[tile_x][tile_y])
 				tile_type[tile_x][tile_y] = TILE_TYPE_EMPT;
+
 		}
 		//Have we reached the end of the building?
 		if(tile_y >= length - 1)
@@ -1280,6 +1293,146 @@ public:
 		}
 		//====================================================================================================================
 	}
+	//Sets the tile at [x][y] as a rail tile
+	//If the tile is not a rail, sets it's subtype as rail_type
+	//If the tile was already a rail, adds rail_type to it's subtype
+	void set_rail_type(int x, int y, int rail_type)
+	{
+		//This exit condition not replace any walls with rails
+		//if(tile_type[x][y] == TILE_TYPE_WALL && tile_subtype[x][y])
+		//	return;
+
+		//If the tile is a wall
+		if(tile_type[x][y] == TILE_TYPE_WALL)
+		{
+			//If we are placing a L or R rail
+			if(rail_type & (RAIL_TYPE_L | RAIL_TYPE_R))
+			{
+				//If the wall has both ooyo and oooY components
+				if((tile_subtype[x][y] & WALL_TYPE_ooyo) && (tile_subtype[x][y] & WALL_TYPE_oooY))
+				{
+					//Do not place a rail (not necessary)
+					return;
+				}
+			}
+			if(rail_type == RAIL_TYPE_L)
+			{
+				//If the wall has a oXoo component
+				if(tile_subtype[x][y] & WALL_TYPE_oXoo)
+					return;
+			}
+			if(rail_type == RAIL_TYPE_R)
+			{
+				//If the wall has a xooo component
+				if(tile_subtype[x][y] & WALL_TYPE_xooo)
+					return;
+			}
+		}
+
+		int prev_type = RAIL_TYPE_NONE;
+		if(tile_type[x][y] == TILE_TYPE_RAIL)
+		{
+			prev_type = tile_subtype[x][y];
+		}
+		prev_type |= rail_type;
+
+		//If the new type is not a valid type, don't change anything
+		if(!RAIL_TYPE_IS_VALID[prev_type])
+			return;
+
+		tile_type[x][y] = TILE_TYPE_RAIL;
+		tile_subtype[x][y] = prev_type;
+	}
+
+	void place_rail_tiles()
+	{
+		int btype;
+		int btype2;
+
+		//Reading tile_branch_type matrix, and setting the appropriate tiles as rails
+		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				btype = tile_branch_type[i][j];
+
+				//if (I do not branch left nor came from left) and came from forward and branch forward
+				//and the tile to the left did not (come from forward and branch forward)
+				//add a forward rail to my left
+				if(!(btype & BRANCH_TYPE_LEFT) && !(btype & BRANCH_TYPE_FROM_LEFT))
+				{
+					if((btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_FORWARD))
+					{
+						if(i > 0)
+						{
+							btype2 = tile_branch_type[i-1][j];
+							if(!((btype2 & BRANCH_TYPE_FROM_FORWARD) && (btype2 & BRANCH_TYPE_FORWARD)))
+								set_rail_type(i-1,j,RAIL_TYPE_L);
+						}
+					}
+				}
+
+				//if (I do not branch right nor came from right) and came from forward and branch forward
+				//and the tile to the right did not (come from forward and branch forward)
+				//add a forward rail to my right
+				if(!(btype & BRANCH_TYPE_RIGHT) && !(btype & BRANCH_TYPE_FROM_RIGHT))
+				{
+					if((btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_FORWARD))
+					{
+						if(i < width - 1)
+						{
+							btype2 = tile_branch_type[i+1][j];
+							if(!((btype2 & BRANCH_TYPE_FROM_FORWARD) && (btype2 & BRANCH_TYPE_FORWARD)))
+								set_rail_type(i+1,j,RAIL_TYPE_R);
+						}
+					}
+				}
+
+				//If (I do not branch forward) and came from forward and branch right
+				//add a TR rail at my tile
+				if(!(btype & BRANCH_TYPE_FORWARD) && (btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_RIGHT))
+				{
+					set_rail_type(i,j,RAIL_TYPE_TR);
+				}
+
+				//If (I do not branch forward) and came from forward and branch left
+				//add a TL rail at my tile
+				if(!(btype & BRANCH_TYPE_FORWARD) && (btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_LEFT))
+				{
+					set_rail_type(i,j,RAIL_TYPE_TL);
+				}
+
+				//If I come from left and branch forward and (do not come from forward)
+				//add a TR2 rail at my tile
+				if(!(btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_FROM_LEFT) && (btype & BRANCH_TYPE_FORWARD))
+				{
+					set_rail_type(i,j,RAIL_TYPE_TR2);
+				}
+
+				//If I come from right and branch forward and (do not come from forward)
+				//add a TL2 rail at my tile
+				if(!(btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_FROM_RIGHT) && (btype & BRANCH_TYPE_FORWARD))
+				{
+					set_rail_type(i,j,RAIL_TYPE_TL2);
+				}
+
+				//If I come from right and branch forward, and come from forward and branch left
+				//add a TL2 | TL rail at my tile
+				if((btype & BRANCH_TYPE_FROM_RIGHT) && (btype & BRANCH_TYPE_FORWARD) && (btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_LEFT))
+				{
+					set_rail_type(i,j,RAIL_TYPE_TL2 | RAIL_TYPE_TL);
+				}
+
+				//If I come from left and branch forward, and come from forward and branch right
+				//add a TR2 | TR rail at my tile
+				if((btype & BRANCH_TYPE_FROM_LEFT) && (btype & BRANCH_TYPE_FORWARD) && (btype & BRANCH_TYPE_FROM_FORWARD) && (btype & BRANCH_TYPE_RIGHT))
+				{
+					set_rail_type(i,j,RAIL_TYPE_TR2 | RAIL_TYPE_TR);
+				}
+			}
+		}
+
+	}
 
 	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos, int goal_min_column, int goal_max_column)
 	{
@@ -1356,11 +1509,8 @@ public:
 
 		// ============ Player Route Generation =============
 		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
-		//TODO: based on where the next building is, get the goal range of what column we have to
-		//TODO: 	(cont) move the player to so that the player can jump to the next building
 
 		// ==================================================
-		//TODO: sketch some floor tile obstacle types:
 		//TODO:	floor obstacles that would look okay with walls attached to left/right/both sides
 		//TODO:	slant guide obstacles that force the player to move in a certain direction
 		//TODO:		must not look out of place, and must not look navigable
@@ -1372,6 +1522,7 @@ public:
 		tile_branch_type[player_start_column][1] = BRANCH_TYPE_FROM_FORWARD;
 
 		recursive_branch_player_path(player_start_column,1,goal_min_column,goal_max_column,BRANCH_TYPE_FORWARD);
+		place_rail_tiles();
 
 		// =========== end Player Route Generation ===========
 
@@ -1523,6 +1674,7 @@ public:
 		}
 
 		//finding player pos relative to left near corner of floor
+		//Our position within the floor
 		p = p - global_mins;
 
 		int tile_x = (int) floorf(p.x/TILE_SIZE);
@@ -1534,9 +1686,10 @@ public:
 			return CLIP_SOLID;
 		}
 
-		Vec3 vox_p = Vec3(efmodf(p.x,TILE_SIZE),efmodf(p.y,TILE_SIZE),0);
-		int vox_x = (int) (floorf(vox_p.x/GRID_SIZE));
-		int vox_y = (int) (floorf(vox_p.y/GRID_SIZE));
+		//Our position within the tile
+		Vec3 tile_p = Vec3(efmodf(p.x,TILE_SIZE),efmodf(p.y,TILE_SIZE),0);
+		int vox_x = (int) (floorf(tile_p.x/GRID_SIZE));
+		int vox_y = (int) (floorf(tile_p.y/GRID_SIZE));
 
 		if(vox_x < 0 || vox_y < 0 || vox_x >= TILE_VOXEL_DIMS || vox_y >= TILE_VOXEL_DIMS)
 		{
@@ -1544,11 +1697,14 @@ public:
 			return CLIP_SOLID;
 		}
 
-		char rank = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
+		//Our position within the voxel
+		Vec3 vox_p = Vec3(efmodf(tile_x,GRID_SIZE),efmodf(tile_y,GRID_SIZE),0.0f);
+
+		char rank = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y,vox_p.x,vox_p.y);
 		if(rank != 0)
 			LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,rank);
 
-		return tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
+		return rank;
 	}
 
 	bool is_y_out_of_bounds(Vec3 p)

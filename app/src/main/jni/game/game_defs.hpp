@@ -14,8 +14,9 @@
 #define TILE_TYPE_EMPT 0
 #define TILE_TYPE_SOLD 1
 #define TILE_TYPE_WALL 2
+#define TILE_TYPE_RAIL 3
 //FIXME: this next one is temp
-#define TILE_TYPE_OBST 3
+#define TILE_TYPE_OBST 4
 //TODO: ...more tile type const identifiers
 
 //Collision map Voxel Clip Types
@@ -23,6 +24,26 @@
 #define CLIP_SOLID 1
 //#define CLIP_DOORWAY 2
 //...etc
+
+//Defining a few different clip shapes
+#define CLIP_SHAPE_BOX 0
+//Solid area is the area under the line y=x
+#define CLIP_SHAPE_LT_POS 1
+//Solid area is the area above the line y=x
+#define CLIP_SHAPE_GT_POS 2
+//Solid area is the area under the line y=0.5-x
+#define CLIP_SHAPE_LT_NEG 3
+//Solid area is the area above the line y=0.5-x
+#define CLIP_SHAPE_GT_NEG 4
+//Solid area is the area under the line y=abs(x-0.25) + 0.25
+#define CLIP_SHAPE_GT_ABS 5
+//Solid area is the area above the line y=-abs(x-0.25) + 0.25
+#define CLIP_SHAPE_LT_ABS 6
+//Solid area is the area above the line y=x-0.15 and under the line y=x+0.15
+#define CLIP_SHAPE_IN_WALL_POS 7
+//Solid area is the area above the line y=-x+0.35 and under the line y=-x+0.65
+#define CLIP_SHAPE_IN_WALL_NEG 8
+
 
 //Branching path def
 #define BRANCH_TYPE_NONE 		0
@@ -81,17 +102,21 @@
 
 //Rail types that are composed of the above primitives
 //						(RAIL_TYPE_L| 	RAIL_TYPE_R| 	RAIL_TYPE_TL|	RAIL_TYPE_TL2| 	RAIL_TYPE_TR| 	RAIL_TYPE_TR2	)
-#define RAIL_TYPE_LR 		(RAIL_TYPE_L| 	RAIL_TYPE_R														)//3
+#define RAIL_TYPE_LR 		(RAIL_TYPE_L|	RAIL_TYPE_R														)//3
 #define RAIL_TYPE_TL_TR 		(						RAIL_TYPE_TL|					RAIL_TYPE_TR				)//20
 #define RAIL_TYPE_TL2_TR2	(									RAIL_TYPE_TL2 | 				RAIL_TYPE_TR2	)//40
 #define RAIL_TYPE_TL_TL2		(						RAIL_TYPE_TL|	RAIL_TYPE_TL2								)//12
 #define RAIL_TYPE_TR_TR2		(													RAIL_TYPE_TR| 	RAIL_TYPE_TR2	)//48
 #define RAIL_TYPE_TL_L 		(RAIL_TYPE_L| 				RAIL_TYPE_TL											)//5
-#define RAIL_TYPE_TL2_R 		(			RAIL_TYPE_R| 				RAIL_TYPE_TL2| 							)//10
+#define RAIL_TYPE_TL2_R 		(			RAIL_TYPE_R| 				RAIL_TYPE_TL2								)//10
 #define RAIL_TYPE_TR_R 		(			RAIL_TYPE_R| 								RAIL_TYPE_TR				)//18
 #define RAIL_TYPE_TR2_L 		(RAIL_TYPE_L| 														RAIL_TYPE_TR2	)//33
 
+//Even though there are only 16 rail types, we want iteration and indexing to be possible with the above values (there will be holes in the arrays)
+#define RAIL_TYPE_COUNT 64
 
+//Because of these holes, we are going to hold an array to check whether a rail type is a valid rail type
+extern bool RAIL_TYPE_IS_VALID[RAIL_TYPE_COUNT];
 
 
 //Size of tiles (6 units x 6 units x 6 units)
