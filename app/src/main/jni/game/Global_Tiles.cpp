@@ -204,16 +204,16 @@ Global_Tiles::Global_Tiles()
 	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
 	{
 		//Setting the left rail as solid
-		style[0]->rail_subtypes[RAIL_TYPE_L]->coll_map->voxel[0][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_LR]->coll_map->voxel[0][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TL_L]->coll_map->voxel[0][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TR2_L]->coll_map->voxel[0][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_L]->coll_map->voxel[6][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_LR]->coll_map->voxel[6][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TL_L]->coll_map->voxel[6][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TR2_L]->coll_map->voxel[6][i] = CLIP_SOLID;
 
 		//Setting the right rail as solid
-		style[0]->rail_subtypes[RAIL_TYPE_R]->coll_map->voxel[6][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_LR]->coll_map->voxel[6][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TL2_R]->coll_map->voxel[6][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TR_R]->coll_map->voxel[6][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_R]->coll_map->voxel[0][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_LR]->coll_map->voxel[0][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TL2_R]->coll_map->voxel[0][i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TR_R]->coll_map->voxel[0][i] = CLIP_SOLID;
 
 		//Setting the TR rail
 		style[0]->rail_subtypes[RAIL_TYPE_TR]->coll_map->voxel[i][i] = CLIP_SOLID;
@@ -255,11 +255,11 @@ Global_Tiles::Global_Tiles()
 		}
 
 		//Setting TL2 rail
-		style[0]->rail_subtypes[RAIL_TYPE_TL2]->coll_map->voxel[i][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TL2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_LT_NEG;
-		style[0]->rail_subtypes[RAIL_TYPE_TL2_R]->coll_map->voxel[i][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TL2_R]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_LT_NEG;
-		if(i > 0)
+		style[0]->rail_subtypes[RAIL_TYPE_TL2]->coll_map->voxel[i][6-i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TL2]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_LT_NEG;
+		style[0]->rail_subtypes[RAIL_TYPE_TL2_R]->coll_map->voxel[i][6-i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TL2_R]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_LT_NEG;
+		if(i < 6)
 		{
 			style[0]->rail_subtypes[RAIL_TYPE_TL2]->coll_map->voxel[i][5-i] = CLIP_SOLID;
 			style[0]->rail_subtypes[RAIL_TYPE_TL2]->coll_map->voxel_shape[i][5-i] = CLIP_SHAPE_GT_NEG;
@@ -271,8 +271,8 @@ Global_Tiles::Global_Tiles()
 		style[0]->rail_subtypes[RAIL_TYPE_TL_TL2]->coll_map->voxel[i][i] = CLIP_SOLID;
 		style[0]->rail_subtypes[RAIL_TYPE_TL_TL2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_IN_WALL_NEG;
 		//Setting TL & TL2 tile
-		style[0]->rail_subtypes[RAIL_TYPE_TR_TR2]->coll_map->voxel[i][i] = CLIP_SOLID;
-		style[0]->rail_subtypes[RAIL_TYPE_TR_TR2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_IN_WALL_POS;
+		style[0]->rail_subtypes[RAIL_TYPE_TR_TR2]->coll_map->voxel[i][6-i] = CLIP_SOLID;
+		style[0]->rail_subtypes[RAIL_TYPE_TR_TR2]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_IN_WALL_POS;
 
 
 
@@ -296,7 +296,7 @@ Global_Tiles::Global_Tiles()
 		if(i < 3)
 		{
 			style[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel[i][i] = CLIP_SOLID;
-			style[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_GT_NEG;
+			style[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_LT_POS;
 		}
 		else if(i == 3)
 		{
@@ -306,7 +306,7 @@ Global_Tiles::Global_Tiles()
 		else
 		{
 			style[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel[i][6-i] = CLIP_SOLID;
-			style[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_GT_POS;
+			style[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_LT_NEG;
 		}
 	}
 

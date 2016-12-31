@@ -682,9 +682,20 @@ void Game::draw_player_bbox(Mat4 vp)
 	Mat4 bbox_pos = vp * Mat4::TRANSLATE(player->pos);
 	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) bbox_pos.m);
 
-	float color[] = {0.0f,1.0f,0.0f,1.0f};
+	float color_green[] = {0.0f,1.0f,0.0f,1.0f};
+	float color_red[] = {1.0f,0.0f,0.0f,1.0f};
+
+
+
 	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
-	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+
+	//Check if player is colliding:
+	move_player(Vec3::ZERO());
+	//player_colliding is updated by this call (which does nothing)
+	if(!player_colliding)
+		solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color_green);
+	else
+		solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color_red);
 	glDrawArrays(GL_LINES, 0, 40);
 }
 //Draws active floor maneuver keyframes
@@ -773,20 +784,115 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 	Vec3 tile_pos;
 	Vec3 voxel_pos;
 	char voxel_rank;
+	char voxel_shape;
 
-	const float voxel_box[] =
+
+/*#define CLIP_SHAPE_BOX 0
+	//Solid area is the area under the line y=x
+#define CLIP_SHAPE_LT_POS 1
+	//Solid area is the area above the line y=x
+#define CLIP_SHAPE_GT_POS 2
+	//Solid area is the area under the line y=0.5-x
+#define CLIP_SHAPE_LT_NEG 3
+	//Solid area is the area above the line y=0.5-x
+#define CLIP_SHAPE_GT_NEG 4
+	//Solid area is the area under the line y=abs(x-0.25) + 0.25
+#define CLIP_SHAPE_GT_ABS 5
+	//Solid area is the area above the line y=-abs(x-0.25) + 0.25
+#define CLIP_SHAPE_LT_ABS 6
+	//Solid area is the area above the line y=x-0.15 and under the line y=x+0.15
+#define CLIP_SHAPE_IN_WALL_POS 7
+	//Solid area is the area above the line y=-x+0.35 and under the line y=-x+0.65
+#define CLIP_SHAPE_IN_WALL_NEG 8*/
+
+	//=========== Defining the different voxel shapes to render =============
+	const float vshape_box[] =
 	{
 	//Top of box
-	0,0,GRID_SIZE,		0,GRID_SIZE,GRID_SIZE,
-	0,0,GRID_SIZE,		GRID_SIZE,0,GRID_SIZE,
+	0,0,GRID_SIZE,			0,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,GRID_SIZE,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
 
 	//Box x
 	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
 	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
 	};
 
+	const float vshape_lt_pos[] =
+	{
+	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	};
+
+	const float vshape_gt_pos[] =
+	{
+	0,0,GRID_SIZE,			0,GRID_SIZE,GRID_SIZE,
+	0,GRID_SIZE,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	};
+	const float vshape_lt_neg[] =
+	{
+	0,0,GRID_SIZE,			0,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	};
+	const float vshape_gt_neg[] =
+	{
+	GRID_SIZE,0,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,GRID_SIZE,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	};
+	const float vshape_lt_abs[] =
+	{
+	0,0,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,		GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
+	};
+	const float vshape_gt_abs[] =
+	{
+	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
+	GRID_SIZE,GRID_SIZE,GRID_SIZE,	GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
+	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	};
+
+	float wall_ofs = 0.15;
+	const float vshape_in_wall_pos[] =
+	{
+	0,0,GRID_SIZE,							wall_ofs,0,GRID_SIZE,
+	0,0,GRID_SIZE,							0,wall_ofs,GRID_SIZE,
+	wall_ofs,0,GRID_SIZE,					GRID_SIZE,GRID_SIZE-wall_ofs,GRID_SIZE,
+	0,wall_ofs,GRID_SIZE,					GRID_SIZE-wall_ofs,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE,GRID_SIZE-wall_ofs,GRID_SIZE,		GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE-wall_ofs,GRID_SIZE,GRID_SIZE,		GRID_SIZE,GRID_SIZE,GRID_SIZE
+	};
+	const float vshape_in_wall_neg[] =
+	{
+	0,GRID_SIZE,GRID_SIZE,			wall_ofs,GRID_SIZE,GRID_SIZE,
+	0,GRID_SIZE,GRID_SIZE,			0,GRID_SIZE-wall_ofs,GRID_SIZE,
+	wall_ofs,GRID_SIZE,GRID_SIZE,		GRID_SIZE,wall_ofs,GRID_SIZE,
+	0,GRID_SIZE-wall_ofs,GRID_SIZE,	GRID_SIZE-wall_ofs,0,GRID_SIZE,
+	GRID_SIZE,wall_ofs,GRID_SIZE,		GRID_SIZE,0,GRID_SIZE,
+	GRID_SIZE-wall_ofs,0,GRID_SIZE,	GRID_SIZE,0,GRID_SIZE
+	};
+
+	const GLsizei vshape_vert_counts[9] = {12,6,6,6,6,6,6,12,12};
+
+	const float* voxel_shapes[9];
+	voxel_shapes[CLIP_SHAPE_BOX] = vshape_box;
+	voxel_shapes[CLIP_SHAPE_LT_POS] = vshape_lt_pos;
+	voxel_shapes[CLIP_SHAPE_GT_POS] = vshape_gt_pos;
+	voxel_shapes[CLIP_SHAPE_LT_NEG] = vshape_lt_neg;
+	voxel_shapes[CLIP_SHAPE_GT_NEG] = vshape_gt_neg;
+	voxel_shapes[CLIP_SHAPE_GT_ABS] = vshape_gt_abs;
+	voxel_shapes[CLIP_SHAPE_LT_ABS] = vshape_lt_abs;
+	voxel_shapes[CLIP_SHAPE_IN_WALL_POS] = vshape_in_wall_pos;
+	voxel_shapes[CLIP_SHAPE_IN_WALL_NEG] = vshape_in_wall_neg;
+
+	//=======================================================================
+
 	solid_mat->bind_material();
-	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_box);
 	Mat4 vox_trans;
 
 	for(int i = 0; i < current_building->active_floor->width; i++)
@@ -799,6 +905,9 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 				for(int l = 0; l < TILE_VOXEL_DIMS; l++)
 				{
 					voxel_rank = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
+					voxel_shape = current_building->active_floor->tile_coll_map[i][j]->get_vox_shape_at(k,l);
+
+					solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_shapes[voxel_shape]);
 
 					if(voxel_rank == 0)
 					{
@@ -806,13 +915,13 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 					}
 					if(voxel_rank == 1)
 					{
-						float color[] = {0.75f,0.25f,0.25f,1.0f};
+						float color[] = {0.0f,0.75f,1.0f,1.0f};
 						solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
 					}
 					voxel_pos = tile_pos + Vec3(k*GRID_SIZE,l*GRID_SIZE,0.0f);
 					vox_trans = vp * Mat4::TRANSLATE(voxel_pos);
 					solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) vox_trans.m);
-					glDrawArrays(GL_LINES, 0, 8);
+					glDrawArrays(GL_LINES, 0, vshape_vert_counts[voxel_shape]);
 				}
 			}
 		}
@@ -1019,6 +1128,8 @@ char Game::clip_player_bbox(Vec3 p)
 	{
 		//Check front left voxel
 		result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
+		//TODO: get voxel shape and clip type at this position.
+		//Do checks to see if all points are on the same side
 		if(result != 0)
 			return result;
 
@@ -1073,9 +1184,12 @@ char Game::clip_player_bbox(Vec3 p)
 	//TODO: make precedence array for which collision type takes higher precedence, we only return the clip type that has the highest precedence
 }
 
-//returns true if move was succesfull, returns false if we collided with something and set state to DEAD
+//returns true if move was successful, returns false if we collided with something and set state to DEAD
 bool Game::move_player(Vec3 v)
 {
+	//FIXME: remove this next line and variable (just a test)
+	player_colliding = false;
+
 	//Split up movement into forward, sideways, and vertical movement
 	float delta_y = v.y * Time::udelta_time;
 	float delta_x = v.x * Time::udelta_time;
@@ -1093,6 +1207,8 @@ bool Game::move_player(Vec3 v)
 	else
 	{
 		//TODO: we collided! handle death
+		//FIXME: remove this next line:
+		player_colliding = true;
 	}
 
 	//Checking sideways collisions
@@ -1109,6 +1225,8 @@ bool Game::move_player(Vec3 v)
 	else
 	{
 		//TODO: we collided! handle death
+		//FIXME: remove this next line:
+		player_colliding = true;
 	}
 
 	//Don't do collision detection in z-axis (we let PLAYER_STATE_FALLING logic handle that)
@@ -1741,7 +1859,7 @@ void Game::render()
 		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
-	//draw_floor_collision_voxels(vp);
+	draw_floor_collision_voxels(vp);
 	//draw_floor_maneuvers(vp);
 	draw_player_bbox(vp);
 }

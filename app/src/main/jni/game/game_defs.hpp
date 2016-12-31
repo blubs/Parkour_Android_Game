@@ -44,6 +44,24 @@
 //Solid area is the area above the line y=-x+0.35 and under the line y=-x+0.65
 #define CLIP_SHAPE_IN_WALL_NEG 8
 
+#define CLIP_SHAPE_COUNT 9
+
+//The following arrays are lists of vertices of the voxel clip shapes
+//Array of vertex count of the voxel clip shapes
+extern float CLIP_SHAPE_VERT_COUNTS[CLIP_SHAPE_COUNT];
+
+//These arrays hold the 2D vertices that make up the voxel clip shapes
+extern float CLIP_SHAPE_VERTS_BOX[];
+extern float CLIP_SHAPE_VERTS_LT_POS[];
+extern float CLIP_SHAPE_VERTS_GT_POS[];
+extern float CLIP_SHAPE_VERTS_LT_NEG[];
+extern float CLIP_SHAPE_VERTS_GT_NEG[];
+extern float CLIP_SHAPE_VERTS_GT_ABS[];
+extern float CLIP_SHAPE_VERTS_LT_ABS[];
+extern float CLIP_SHAPE_VERTS_IN_WALL_POS[];
+extern float CLIP_SHAPE_VERTSI_IN_WALL_NEG[];
+//List of all shapes.
+extern float* CLIP_SHAPE_SHAPES[CLIP_SHAPE_COUNT];
 
 //Branching path def
 #define BRANCH_TYPE_NONE 		0

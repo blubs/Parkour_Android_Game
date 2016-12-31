@@ -6,6 +6,44 @@
 
 //This file holds non-preprocessor variable definitions
 
+
+//Array of vertex shapes of voxel shapes.
+float CLIP_SHAPE_VERT_COUNTS[CLIP_SHAPE_COUNT] = {4,3,3,3,3,3,3,6,6};
+
+//These arrays hold the 2D vertices that make up the voxel shapes
+float CLIP_SHAPE_VERTS_BOX[] = 	{0,0,		0,GRID_SIZE,			GRID_SIZE,0,		GRID_SIZE,GRID_SIZE};
+float CLIP_SHAPE_VERTS_LT_POS[] = 	{0,0,		GRID_SIZE,0,			GRID_SIZE,GRID_SIZE};
+float CLIP_SHAPE_VERTS_GT_POS[] = 	{0,0,		0,GRID_SIZE,			GRID_SIZE,GRID_SIZE};
+float CLIP_SHAPE_VERTS_LT_NEG[] = 	{0,0,		0,GRID_SIZE,			GRID_SIZE,0};
+float CLIP_SHAPE_VERTS_GT_NEG[] = 	{0,GRID_SIZE,	GRID_SIZE,0,			GRID_SIZE,GRID_SIZE};
+float CLIP_SHAPE_VERTS_LT_ABS[] = 	{0,0,		GRID_SIZE,0,			0.5f*GRID_SIZE,0.5f*GRID_SIZE};
+float CLIP_SHAPE_VERTS_GT_ABS[] = 	{0,GRID_SIZE,	GRID_SIZE,GRID_SIZE,	0.5f*GRID_SIZE,0.5f*GRID_SIZE};;
+float CLIP_SHAPE_VERTS_IN_WALL_POS[] =
+{
+	0,0,					0,0.15f,					0.15f,0,
+	GRID_SIZE,GRID_SIZE,	GRID_SIZE-0.15f,GRID_SIZE,	GRID_SIZE,GRID_SIZE-0.15f
+};
+float CLIP_SHAPE_VERTSI_IN_WALL_NEG[] =
+{
+	0,GRID_SIZE,			0,GRID_SIZE-0.15f,			0.15f,GRID_SIZE,
+	GRID_SIZE,0,			GRID_SIZE-0.15f,0,			GRID_SIZE,0.15f
+};
+
+float* CLIP_SHAPE_SHAPES[CLIP_SHAPE_COUNT] =
+{
+	CLIP_SHAPE_VERTS_BOX,
+	CLIP_SHAPE_VERTS_LT_POS,
+	CLIP_SHAPE_VERTS_GT_POS,
+	CLIP_SHAPE_VERTS_LT_NEG,
+	CLIP_SHAPE_VERTS_GT_NEG,
+	CLIP_SHAPE_VERTS_GT_ABS,
+	CLIP_SHAPE_VERTS_LT_ABS,
+	CLIP_SHAPE_VERTS_IN_WALL_POS,
+	CLIP_SHAPE_VERTSI_IN_WALL_NEG
+};
+
+
+
 //Value is the index of the building that precedes the building whose index we are accessing
 int PREV_BLDG[3] = {2,0,1};
 //Value is the index of the building that follows the building whose index we are accessing

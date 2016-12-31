@@ -170,10 +170,12 @@ public:
 
 	//FIXME: remove this
 	//===================
-	int viewbob_menu_state = 0.0f;
+	int viewbob_menu_state = 0;
 	float viewbob_pitch = 16.0f;
 	float viewbob_yaw = 15.0f;
 	float viewbob_roll = 8.0f;
+
+	bool player_colliding = false;
 	//===================
 
 	float player_bbox_tri_slope = 0.0f;
