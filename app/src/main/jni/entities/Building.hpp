@@ -138,9 +138,10 @@ public:
 
 		floors = 20;
 
-		//Range from [10 -> 20]
-		float size_x = 10 + floorf(Random::rand() * 11);
-		float size_y = 10 + floorf(Random::rand() * 11);
+		//Range from [6 -> 14] in width
+		float size_x = Random::rand_int_in_range(6,BUILDING_MAX_WIDTH+1);
+		//Range from [10 -> 20] in length
+		float size_y = Random::rand_int_in_range(10,BUILDING_MAX_LENGTH+1);
 
 		dimensions = Vec3(size_x,size_y,floors);
 
@@ -184,7 +185,12 @@ public:
 		generated = false;
 	}
 
-	//Returns if the floor has a solid voxel at the point p
+	//Returns the floor's voxel at point p
+	Voxel get_voxel_at(Vec3 p)
+	{
+		return active_floor->get_voxel_at(p);
+	}
+	//Returns if the floor has a voxel that is solid at the point p
 	char is_solid_at(Vec3 p)
 	{
 		return active_floor->is_solid_at(p);

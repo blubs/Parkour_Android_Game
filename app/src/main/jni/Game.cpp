@@ -217,6 +217,8 @@ void Game::unload_textures()
 
 int Game::load_models()
 {
+	floor_dynamic_model = new Dynamic_Model();
+
 	test_arms = new Skel_Model("models/test_arms.skmf");
 	test_torso = new Skel_Model("models/test_torso.skmf");
 	test_legs = new Skel_Model("models/test_legs.skmf");
@@ -241,6 +243,7 @@ int Game::load_models()
 }
 void Game::unload_models()
 {
+	delete floor_dynamic_model;
 	delete test_arms;
 	delete test_torso;
 	delete test_legs;
@@ -317,6 +320,7 @@ int Game::init_gl()
 	test_legs->init_gl();
 	model_prim_cube->init_gl();
 	model_prim_quad->init_gl();
+	floor_dynamic_model->init_gl();
 
 	test_model_int_empty->init_gl();
 
@@ -345,6 +349,7 @@ void Game::term_gl()
 	test_legs->term_gl();
 	model_prim_cube->term_gl();
 	model_prim_quad->term_gl();
+	floor_dynamic_model->term_gl();
 
 	test_model_int_empty->term_gl();
 
@@ -593,6 +598,9 @@ void Game::start()
 	buildings[0]->generate(NULL,Vec3::ZERO());
 	//FIXME remove this:
 	buildings[0]->active_floor->debug_branch_mat = solid_mat;
+	//TEMP FIXME:
+	buildings[0]->active_floor->dynamic_floor_model = floor_dynamic_model;
+
 
 	//Distance between buildings
 	Vec3 bldg_offset = Vec3(0,15,0);
@@ -844,17 +852,17 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 	0,GRID_SIZE,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
 	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
 	};
-	const float vshape_lt_abs[] =
-	{
-	0,0,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
-	GRID_SIZE,0,GRID_SIZE,		GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
-	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
-	};
 	const float vshape_gt_abs[] =
 	{
 	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
 	GRID_SIZE,GRID_SIZE,GRID_SIZE,	GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
 	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	};
+	const float vshape_lt_abs[] =
+	{
+	0,0,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,		GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
 	};
 
 	float wall_ofs = 0.15;
@@ -895,6 +903,8 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 	solid_mat->bind_material();
 	Mat4 vox_trans;
 
+	Voxel vox;
+
 	for(int i = 0; i < current_building->active_floor->width; i++)
 	{
 		for(int j = 0; j < current_building->active_floor->length; j++)
@@ -904,8 +914,10 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 			{
 				for(int l = 0; l < TILE_VOXEL_DIMS; l++)
 				{
-					voxel_rank = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
-					voxel_shape = current_building->active_floor->tile_coll_map[i][j]->get_vox_shape_at(k,l);
+
+					vox = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
+					voxel_rank = vox.clip_type;
+					voxel_shape = vox.clip_shape;
 
 					solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_shapes[voxel_shape]);
 
@@ -1108,79 +1120,203 @@ void Game::reached_mnvr_keyframe ()
 	}
 }
 
+//Returns true if all points (2d coords) in pts are on the left side of line l1->l2
+//(left is defined from standing at l1, looking at l2)
+bool Game::clip_all_on_left_side(Vec3 l1, Vec3 l2,float *pts, int pt_count)
+{
+	float pt_x;
+	float pt_y;
+
+	for(int i = 0; i < pt_count; i++)
+	{
+		pt_x = pts[2*i];
+		pt_y = pts[2*i + 1];
+
+		//Calculating what side the point (pt_x,pt_y) is on
+		float temp = (l2.x-l1.x)*(pt_y-l1.y) - (l2.y-l1.y)*(pt_x-l1.x);
+
+		//If temp is > 0, (pt_x,pt_y) is to the left of the line
+		//If temp is < 0, (pt_x,pt_y) is to the right of the line
+		//If temp is == 0, (pt_x,pt_y) is on the line
+		if(temp <= 0)
+			return false;
+	}
+	return true;
+}
+
+//Given portion of bbox outlined by (la,lb), check if vox is outside of the bbox line
+char Game::voxel_not_in_line(Vec3 la, Vec3 lb, Voxel vox)
+{
+	bool not_touching = clip_all_on_left_side(la,lb,CLIP_SHAPE_SHAPES[vox.clip_shape],CLIP_SHAPE_VERT_COUNTS[vox.clip_shape]);
+
+	if(!not_touching)
+		return vox.clip_type;
+	return CLIP_EMPTY;
+}
+
+//Given portion of bbox outlined by both (l1a,l1b) and (l2a,l2b), , check if vox is outside of both bbox lines
+char Game::voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox)
+{
+	bool not_touching1 = clip_all_on_left_side(l1a,l1b,CLIP_SHAPE_SHAPES[vox.clip_shape],CLIP_SHAPE_VERT_COUNTS[vox.clip_shape]);
+	bool not_touching2 = clip_all_on_left_side(l2a,l2b,CLIP_SHAPE_SHAPES[vox.clip_shape],CLIP_SHAPE_VERT_COUNTS[vox.clip_shape]);
+
+	if(!not_touching1 && !not_touching2)
+	{
+		return vox.clip_type;
+	}
+
+	return CLIP_EMPTY;
+}
+
 //TODO: handle precedence of collisions
 //Returns type of collision player bbox encounters
 char Game::clip_player_bbox(Vec3 p)
 {
 	//check for collisions at certain points
-	//We need global positions for certain coords
-
-	Vec3 pos = p;
-
+	Vec3 floor_pos = p - current_building->active_floor->global_mins;
 	char result;
+	Voxel vox;
+	char vox_type;
+	char vox_shape;
 
 	//Front of triangle
-	float rcorner_cmpr = -player_bbox_tri_slope * (efmodf(pos.x,GRID_SIZE)) + GRID_SIZE;
-	float lcorner_cmpr = player_bbox_tri_slope * (efmodf(pos.x,GRID_SIZE) - GRID_SIZE) + GRID_SIZE;
+	float mod_x = efmodf(floor_pos.x,GRID_SIZE);
+	float mod_y = efmodf(floor_pos.y,GRID_SIZE);
 
-	float mod_y = efmodf(pos.y,GRID_SIZE);
+	float rcorner_cmpr = -player_bbox_tri_slope * (mod_x) + GRID_SIZE;
+	float lcorner_cmpr = player_bbox_tri_slope * (mod_x - GRID_SIZE) + GRID_SIZE;
+
+	//The points that make up the player collision prediction triangle (relative to the left point)
+	Vec3 col_tri_tip = Vec3(PLAYER_SIZE,player_bbox_tri_height,0);
+
+	//Points making up bbox, relative to top left (to match triangle reference point that we just outlined)
+	Vec3 bbox_tl = Vec3(0.0f,0.0f,0.0f);
+	Vec3 bbox_tr = Vec3(2.0f*PLAYER_SIZE,0.0f,0.0f);
+	Vec3 bbox_bl = Vec3(0.0f,-2.0f*PLAYER_SIZE,0.0f);
+	Vec3 bbox_br = Vec3(2.0f*PLAYER_SIZE,-2.0f*PLAYER_SIZE,0.0f);
+	//ofs will be defined per-voxel as the position of top left corner of the bbox relative to the voxel position (when mod_x and mod_y are both zero)
+	Vec3 ofs;
+
+	Vec3 mod_ofs = Vec3(mod_x,mod_y,0.0f);
+
+	//If our prediction triangle is intersecting the front left voxel: consider it
 	if(mod_y >= lcorner_cmpr)
 	{
 		//Check front left voxel
-		result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
-		//TODO: get voxel shape and clip type at this position.
-		//Do checks to see if all points are on the same side
-		if(result != 0)
-			return result;
-
+		vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
+		if(vox.clip_type != CLIP_EMPTY)
+		{
+			ofs = Vec3(0,-0.5f,0.0f) + mod_ofs;
+			result = voxel_not_in_line(bbox_tl + ofs, col_tri_tip + ofs, vox);
+			if(result != CLIP_EMPTY)
+				return result;
+		}
 	}
+	//If our prediction triangle is intersecting the front right voxel: consider it
 	if(mod_y >= rcorner_cmpr)
 	{
 		//Check front right voxel
-		result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
-		if(result != 0)
+		vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
+
+		//If the voxel is not empty
+		if(vox.clip_type != CLIP_EMPTY)
+		{
+			ofs = Vec3(-1.0f,-0.5f,0.0f) + mod_ofs;
+			result = voxel_not_in_line(col_tri_tip + ofs, bbox_tr + ofs, vox);
+			if(result != CLIP_EMPTY)
+				return result;
+		}
+	}
+
+	//Triangle tip
+	vox = current_building->get_voxel_at(floor_pos + Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(-0.5f,-0.5f,0) + mod_ofs;
+		result = voxel_not_in_lines(bbox_tl + ofs, col_tri_tip + ofs, col_tri_tip + ofs, bbox_tr + ofs,vox);
+		if(result != CLIP_EMPTY)
 			return result;
 	}
 
-	result = current_building->is_solid_at(pos + Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0));
-	if(result != 0)
-		return result;
-
 	//Front right
-	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,PLAYER_SIZE,0));
-	if(result != 0)
-		return result;
+	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(-1.0f,0,0) + mod_ofs;
+		result = voxel_not_in_lines(col_tri_tip + ofs, bbox_tr + ofs, bbox_tr + ofs, bbox_br + ofs,vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
 
 	//Front left
-	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE,0));
-	if(result != 0)
-		return result;
+	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(0,0,0) + mod_ofs;
+		result = voxel_not_in_lines(bbox_bl + ofs, bbox_tl + ofs, bbox_tl + ofs, col_tri_tip + ofs,vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
+
+//If the player bbox is sufficiently small enough, we don't need to check these midpoints:
+//(sufficiently small enough means: 2*PLAYER_SIZE < GRID_SIZE, meaning the player bbox cannot cover more than 2 voxels)
+#ifndef SMALL_PLAYER_BBOX
 
 	//Mid right
-	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,0,0));
-	if(result != 0)
-		return result;
+	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,0,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(-1.0f,0.5f,0) + mod_ofs;
+		result = voxel_not_in_line(bbox_tr + ofs, bbox_br + ofs,vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
+
 	//Mid left
-	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,0,0));
-	if(result != 0)
-		return result;
-
-	//back right
-	result = current_building->is_solid_at(pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
-	if(result != 0)
-		return result;
-
-	//back left
-	result = current_building->is_solid_at(pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0));
-	if(result != 0)
-		return result;
+	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,0,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(0,0.5f,0) + mod_ofs;
+		result = voxel_not_in_line(bbox_bl + ofs, bbox_tl + ofs,vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
 
 	//Back center
-	result = current_building->is_solid_at(pos + Vec3(0,-PLAYER_SIZE,0));
-	if(result != 0)
-		return result;
+	vox = current_building->get_voxel_at(floor_pos + Vec3(0,-PLAYER_SIZE,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(-0.5f,1.0f,0) + mod_ofs;
+		result = voxel_not_in_line(bbox_br + ofs, bbox_bl + ofs,vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
+#endif
 
-	return 0;
+	//back right
+	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(-1.0f,1.0f,0) + mod_ofs;
+		result = voxel_not_in_lines(bbox_tr + ofs, bbox_br + ofs, bbox_br + ofs, bbox_bl + ofs,vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
+	//result = current_building->is_solid_at(floor_pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
+	//if(result != CLIP_EMPTY)
+	//	return result;
+
+	//back left
+	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0));
+	if(vox.clip_type != CLIP_EMPTY)
+	{
+		ofs = Vec3(0,1.0f,0) + mod_ofs;
+		result = voxel_not_in_lines(bbox_br + ofs, bbox_bl + ofs, bbox_bl + ofs, bbox_tl + ofs, vox);
+		if(result != CLIP_EMPTY)
+			return result;
+	}
+
+	return CLIP_EMPTY;
 	//TODO: make precedence array for which collision type takes higher precedence, we only return the clip type that has the highest precedence
 }
 
@@ -1410,6 +1546,9 @@ void Game::update()
 					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
 					//float delta_x = -1.0f * fmaxf(fminf((x - 0.75f) / 0.25f,1.0f),-1.0f);//measured from area center
 					float delta_x = -1.0f * fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
+					//Making the controls be cubic in acceleration
+					delta_x *= delta_x * delta_x;
+					delta_y *= delta_y * delta_y;
 					delta_x *= cam_ang_vel;
 					delta_y *= cam_ang_vel;
 					move_ent->angles.x += delta_y * Time::udelta_time;
@@ -1426,6 +1565,9 @@ void Game::update()
 					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
 					//float delta_x = fmaxf(fminf((x - 0.25f) / 0.25f,1.0f),-1.0f);//measured from area center
 					float delta_x = fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
+					//Making movement be cubic
+					delta_x *= delta_x * delta_x;
+					delta_y *= delta_y * delta_y;
 					delta_x *= cam_vel;
 					delta_y *= cam_vel;
 					Vec3 forward, right, up;
@@ -1442,6 +1584,8 @@ void Game::update()
 				{
 					//float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);//measured from area center
 					float delta_y = fminf((y - sy) / 0.17f,1.0f);//measured from touch start pos
+					//Making movement be cubic
+					delta_y *= delta_y * delta_y;
 					delta_y *= cam_vel;
 					Vec3 forward, right, up;
 					move_ent->angles.angles_to_dirs(&forward,&right,&up);
@@ -1464,7 +1608,6 @@ void Game::update()
 				}
 			}
 		}
-
 		return;
 	}
 
@@ -1859,7 +2002,7 @@ void Game::render()
 		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
-	draw_floor_collision_voxels(vp);
+	//draw_floor_collision_voxels(vp);
 	//draw_floor_maneuvers(vp);
 	draw_player_bbox(vp);
 }

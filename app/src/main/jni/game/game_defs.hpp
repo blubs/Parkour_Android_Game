@@ -48,7 +48,7 @@
 
 //The following arrays are lists of vertices of the voxel clip shapes
 //Array of vertex count of the voxel clip shapes
-extern float CLIP_SHAPE_VERT_COUNTS[CLIP_SHAPE_COUNT];
+extern int CLIP_SHAPE_VERT_COUNTS[CLIP_SHAPE_COUNT];
 
 //These arrays hold the 2D vertices that make up the voxel clip shapes
 extern float CLIP_SHAPE_VERTS_BOX[];
@@ -59,7 +59,7 @@ extern float CLIP_SHAPE_VERTS_GT_NEG[];
 extern float CLIP_SHAPE_VERTS_GT_ABS[];
 extern float CLIP_SHAPE_VERTS_LT_ABS[];
 extern float CLIP_SHAPE_VERTS_IN_WALL_POS[];
-extern float CLIP_SHAPE_VERTSI_IN_WALL_NEG[];
+extern float CLIP_SHAPE_VERTS_IN_WALL_NEG[];
 //List of all shapes.
 extern float* CLIP_SHAPE_SHAPES[CLIP_SHAPE_COUNT];
 
@@ -142,8 +142,8 @@ extern bool RAIL_TYPE_IS_VALID[RAIL_TYPE_COUNT];
 #define WINDOW_TILE_SIZE 7.0f
 #define GRID_SIZE 0.5f
 
-#define BUILDING_MAX_WIDTH 60
-#define BUILDING_MAX_LENGTH 120
+#define BUILDING_MAX_WIDTH 14
+#define BUILDING_MAX_LENGTH 20
 #define BUILDING_MAX_HEIGHT 40
 #define BUILDING_MAX_EXTERIOR_MODELS 200
 #define BUILDING_MAX_INTERIOR_MODELS 40
@@ -228,6 +228,11 @@ extern int PREV_BLDG[3];
 
 //Player Data
 #define PLAYER_SIZE 0.5f
+//For collision detection, if PLAYER_SIZE * 2 < GRID_SIZE, we can omit certain collision checks
+//Basically, the player bbox will cover less voxels, requiring fewer checks.
+//#define SMALL_PLAYER_BBOX
+
+
 #define PLAYER_MAX_TURN_ANGLE 60.0f
 #define PLAYER_RUN_SPEED 6.0f
 

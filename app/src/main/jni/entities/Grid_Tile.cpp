@@ -31,57 +31,16 @@ Collision_Map::~Collision_Map()
 {
 }
 
-char Collision_Map::get_vox_at(int x, int y)
+Voxel Collision_Map::get_vox_at(int x, int y)
 {
-	return voxel[x][y];
+	return Voxel(voxel[x][y],voxel_shape[x][y]);
 }
 
-char Collision_Map::get_vox_shape_at(int x, int y)
+//Returns voxel[x][y] if the point (vpos_x,vpos_y) intersects with the voxel shape voxel_shape[x][y]
+//the point (vpos_x,vpos_y) is assumed to be within the voxel bounds
+Voxel Collision_Map::is_solid_at(int x, int y, float vpos_x, float vpos_y)
 {
-	return voxel_shape[x][y];
-}
-
-
-char Collision_Map::get_vox_at(int x, int y, float vpos_x, float vpos_y)
-{
-	switch(voxel_shape[x][y])
-	{
-		default:
-		case CLIP_SHAPE_BOX:
-			return voxel[x][y];
-
-		//Solid area is the area under the line y=x
-		case CLIP_SHAPE_LT_POS:
-			return (y <= x) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area above the line y=x
-		case CLIP_SHAPE_GT_POS:
-			return (y >= x) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area under the line y=0.5 - x
-		case CLIP_SHAPE_LT_NEG:
-			return (y <= (0.5f - x)) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area above the line y=(x-0.25) + 0.25
-		case CLIP_SHAPE_GT_NEG:
-			return (y >= (0.5f - x)) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area under the line y=abs(x-0.25) + 0.25
-		case CLIP_SHAPE_GT_ABS:
-			return (y <= (fabsf(x-0.25f) + 0.25f)) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area above the line y=-abs(x-0.25) + 0.25
-		case CLIP_SHAPE_LT_ABS:
-			return (y >= (-fabsf(x-0.25f) + 0.25f)) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area above the line y=x-0.15 and under the line y=x+0.15
-		case CLIP_SHAPE_IN_WALL_POS:
-			return ( (y >= x - 0.15f) && (y <= x + 0.15f) ) ? voxel[x][y] : (char)CLIP_EMPTY;
-
-		//Solid area is the area above the line y=-x+0.35 and under the line y=-x+0.65
-		case CLIP_SHAPE_IN_WALL_NEG:
-			return ( (y >= -x + 0.35f) && (y <= -x + 0.65f) ) ? voxel[x][y] : (char)CLIP_EMPTY;
-	}
+	return Voxel(voxel[x][y],voxel_shape[x][y]).is_solid_at(vpos_x,vpos_y);
 }
 
 

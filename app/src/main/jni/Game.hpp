@@ -14,6 +14,7 @@
 #include "engine/JNI_Interface.hpp"
 #include "entities/Building.hpp"
 #include "game/Global_Tiles.hpp"
+#include "game/Dynamic_Model.hpp"
 
 
 class Game
@@ -100,6 +101,8 @@ public:
 	Building **buildings;
 	Building *current_building = NULL;
 	int cbldg_index = 0;
+
+	Dynamic_Model* floor_dynamic_model;
 
 
 	//======================================================================
@@ -193,6 +196,14 @@ public:
 	bool move_player(Vec3 v);
 	//Handles player bbox hull collision with building->floor->tile voxels
 	char clip_player_bbox(Vec3 p);
+
+	//Returns true if all points (2d coords) in pts are on the left side of line l1->l2
+	//(left is defined from standing at l1, looking at l2)
+	bool clip_all_on_left_side(Vec3 l1, Vec3 l2,float *pts, int pt_count);
+	//Given portion of bbox outlined by (la,lb), check if vox is outside of the bbox line
+	char voxel_not_in_line(Vec3 la, Vec3 lb, Voxel vox);
+	//Given portion of bbox outlined by both (l1a,l1b) and (l2a,l2b), , check if vox is outside of both bbox lines
+	char voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox);
 
 	//Executes code if player is at specific frames in specific animations
 	void player_anim_special_events();

@@ -9,6 +9,7 @@
 #include "../engine/Game_Object.hpp"
 #include "Grid_Tile.hpp"
 #include "../game/Global_Tiles.hpp"
+#include "../game/Dynamic_Model.hpp"
 
 class Floor : Entity
 {
@@ -50,6 +51,8 @@ public:
 	Collision_Map* tile_coll_map[MAX_WIDTH][MAX_LENGTH];
 	Static_Model* tile_model[MAX_WIDTH][MAX_LENGTH];
 	Grid_Tile* tile_object[MAX_WIDTH][MAX_LENGTH];
+
+	Dynamic_Model* dynamic_floor_model;
 
 	//Temporary array of Vec3s to render as lines
 	Vec3 branch_debug_points[3000];
@@ -1524,12 +1527,58 @@ public:
 		recursive_branch_player_path(player_start_column,1,goal_min_column,goal_max_column,BRANCH_TYPE_FORWARD);
 		place_rail_tiles();
 
+		//Place obstacles in xXoo walls that we cross
+		//Go over the tiles in the floor once more, checking if there are any half-walls in our path, and remove them.
+		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				//If we came from forward and branch forward
+				if(tile_branch_type[i][j] & (BRANCH_TYPE_FORWARD | BRANCH_TYPE_FROM_FORWARD))
+				{
+					if(tile_type[i][j] == TILE_TYPE_WALL)
+					{
+						if(tile_subtype[i][j] == WALL_TYPE_xXoo)
+						{
+							tile_type[i][j] = TILE_TYPE_OBST;
+							tile_subtype[i][j] = Random::rand_int_in_range(0,2);
+							continue;
+						}
+						//If we cross a half-wall, remove the half wall
+						if(tile_subtype[i][j] == WALL_TYPE_xooo || tile_subtype[i][j] == WALL_TYPE_oXoo)
+						{
+							tile_type[i][j] = TILE_TYPE_EMPT;
+							tile_subtype[i][j] = 0;
+						}
+					}
+				}
+			}
+		}
+
 		// =========== end Player Route Generation ===========
 
 		populate_floor();
 
-		//Temp iterating through all tiles adding debug branch points to array
+		//TEMP FIXME:
+		//Populating the dynamic floor model:
+		int model_count = length * width;
+		Static_Model* models[model_count];
+		Mat4 transforms[model_count];
+		int index = 0;
 		for(int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < length; j++)
+			{
+				models[index] = tile_model[i][j];
+				transforms[index] = Mat4::TRANSLATE(Vec3(TILE_SIZE*i,TILE_SIZE*j,0));
+				index++;
+			}
+		}
+
+		dynamic_floor_model->populate_model(models,transforms,model_count);
+
+		//Temp iterating through all tiles adding debug branch points to array
+		/*for(int i = 0; i < width; i++)
 		{
 			for(int j = 0; j < length; j++)
 			{
@@ -1585,7 +1634,7 @@ public:
 					}
 				}
 			}
-		}
+		}*/
 
 		generated = true;
 	}
@@ -1607,8 +1656,20 @@ public:
 		Mat4 m;
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
+		dynamic_floor_model->bind_mesh_data(mat);
+
+		mat->bind_value(Shader::PARAM_M_MATRIX, (void*) world_trans.m);
+
+		Mat4 mvp = vp * m;
+		mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+		Mat3 m_it = m.inverted_then_transposed().get_mat3();
+		mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+		dynamic_floor_model->render_without_bind();
+
 		//Quick unoptimized test for rendering
-		for(int i = 0; i < width; i++)
+		/*for(int i = 0; i < width; i++)
 		{
 			for(int j = 0; j < length; j++)
 			{
@@ -1625,10 +1686,10 @@ public:
 
 				tile_model[i][j]->render_without_bind();
 			}
-		}
+		}*/
 
 		//===== Rendering Debug branch lines =======
-		if(!debug_branch_mat)
+		/*if(!debug_branch_mat)
 			return 1;
 
 		float edges[branch_debug_point_count * 3];
@@ -1648,7 +1709,7 @@ public:
 		debug_branch_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
 		debug_branch_mat->bind_value(Shader::PARAM_VERTICES,(void*) edges);
 		int vert_count = branch_debug_point_count - (branch_debug_point_count % 2);
-		glDrawArrays(GL_LINES, 0, vert_count);
+		glDrawArrays(GL_LINES, 0, vert_count);*/
 		//==========================================
 		return 1;
 	}
@@ -1660,22 +1721,21 @@ public:
 		global_mins = Vec3::ZERO();
 		global_maxs = Vec3::ZERO();
 		clear_floor_tiles();
+		if(dynamic_floor_model)
+			dynamic_floor_model->clear_model();
 		generated = false;
 	}
 
-	char is_solid_at(Vec3 p)
+	//Assumes point p is defined relative to global_mins
+	Voxel get_voxel_at(Vec3 p)
 	{
 		//position given is in floor space, 0,0 being near left corner
 		//get tile indices for the position
-		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
+		if(is_local_x_out_of_bounds(p) || is_local_y_out_of_bounds(p))
 		{
 			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
-			return CLIP_SOLID;
+			return Voxel(CLIP_SOLID);
 		}
-
-		//finding player pos relative to left near corner of floor
-		//Our position within the floor
-		p = p - global_mins;
 
 		int tile_x = (int) floorf(p.x/TILE_SIZE);
 		int tile_y = (int) floorf(p.y/TILE_SIZE);
@@ -1683,7 +1743,7 @@ public:
 		if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
 		{
 			LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
-			return CLIP_SOLID;
+			return Voxel(CLIP_SOLID);
 		}
 
 		//Our position within the tile
@@ -1694,32 +1754,57 @@ public:
 		if(vox_x < 0 || vox_y < 0 || vox_x >= TILE_VOXEL_DIMS || vox_y >= TILE_VOXEL_DIMS)
 		{
 			LOGW("Warning: tried reaching out of bounds voxel: (index: (%d x %d))",vox_x,vox_y);
-			return CLIP_SOLID;
+			return Voxel(CLIP_SOLID);
 		}
 
-		//Our position within the voxel
-		Vec3 vox_p = Vec3(efmodf(tile_x,GRID_SIZE),efmodf(tile_y,GRID_SIZE),0.0f);
-
-		char rank = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y,vox_p.x,vox_p.y);
-		if(rank != 0)
-			LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,rank);
-
-		return rank;
+		Voxel v = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
+		//FIXME: remove this
+		if(v.clip_type != CLIP_EMPTY)
+			LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,v.clip_type);
+		return v;
 	}
 
+	//Returns if the floor has a voxel that is solid at the point p
+	//Assumes p is relative to global_mins
+	char is_solid_at(Vec3 p)
+	{
+		Voxel vox = get_voxel_at(p);
+
+		//Our position within the voxel
+		Vec3 vox_p = Vec3(efmodf(p.x,GRID_SIZE),efmodf(p.y,GRID_SIZE),0.0f);
+
+		return vox.is_solid_at(vox_p.x, vox_p.y);
+	}
+
+	//Is the global y coord out of the floor bounds?
 	bool is_y_out_of_bounds(Vec3 p)
 	{
 		if(p.y < global_mins.y || p.y > global_maxs.y)
 			return true;
 		return false;
 	}
-
+	//Is the global x coord out of the floor bounds?
 	bool is_x_out_of_bounds(Vec3 p)
 	{
 		if(p.x < global_mins.x || p.x > global_maxs.x)
 			return true;
 		return false;
 	}
+	//Is the y coord (relative to our min) out of the floor bounds?
+	bool is_local_y_out_of_bounds(Vec3 p)
+	{
+		if(p.y < 0 || p.y > global_maxs.y - global_mins.y)
+			return true;
+		return false;
+	}
+	//Is the x coord (relative to our min) out of the floor bounds?
+	bool is_local_x_out_of_bounds(Vec3 p)
+	{
+		if(p.x < 0 || p.x > global_maxs.x - global_mins.x)
+			return true;
+		return false;
+	}
+
 
 	//	Returns a maneuver if there exists a maneuver in the this floor's tileset such that:
 	//	(the input required to start the maneuver is input_type) AND (the player is within the bounding box required to start the maneuver)
@@ -1733,6 +1818,7 @@ public:
 	//so for a given player position, we must check the tile the player is on and the tile after it (+1 in y direction)
 	//===================================================
 
+	//pos is the global position
 	Maneuver* input_to_maneuver(Vec3 pos, int input_type)
 	{
 		//position given is in floor space, 0,0 being near left corner
