@@ -67,7 +67,7 @@ public:
 	}
 
 
-	//Binds the material
+	//Binds the material and any defined textures
 	int bind_variant()
 	{
 		mat->bind_material();

@@ -41,25 +41,40 @@ int Dynamic_Model::render(Mat4 m,Mat4 vp,Material* mat)
 //Binds all data except MVP matrix
 int Dynamic_Model::bind_mesh_data(Material* mat)
 {
-	if(!gl_initialized)
+//	if(!gl_initialized)
+//	{
+//		LOGW("Warning: dynamic model data not bound, gl not initialized");
+//		return 0;
+//	}
+	if(mat == NULL)
 	{
-		LOGW("Warning: dynamic model data not bound, gl not initialized");
+		LOGW("Warning: tried rendering a static model without a material\n");
 		return 0;
 	}
-	if(!mat)
+
+	//test code:
+	const float test_vertices[] =
 	{
-		LOGW("Warning: tried rendering a static model without assigning material\n");
-		return 0;
-	}
+	-1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, -1.0f,
+	-1.0f, 1.0f, -1.0f,
+	1.0f, -1.0f, 1.0f,
+	-1.0f, -1.0f, 1.0f,
+	-1.0f, -1.0f, -1.0f,
+	1.0f, -1.0f, -1.0f,
+	};
+	mat->bind_value(Shader::PARAM_VERTICES,(void*) test_vertices);
 
-	mat->bind_value(Shader::PARAM_VERTICES, (void*) verts);
 
-	mat->bind_value(Shader::PARAM_VERT_UV1, (void*) uv_coords_1);
-	mat->bind_value(Shader::PARAM_VERT_UV2, (void*) uv_coords_2);
+	//mat->bind_value(Shader::PARAM_VERTICES, (void*) &verts[0]);
 
-	mat->bind_value(Shader::PARAM_VERT_NORMALS, (void*) normals);
-	mat->bind_value(Shader::PARAM_VERT_TANGENTS, (void*) tangents);
-	mat->bind_value(Shader::PARAM_VERT_BINORMALS, (void*) binormals);
+	mat->bind_value(Shader::PARAM_VERT_UV1, (void*) &uv_coords_1[0]);
+	mat->bind_value(Shader::PARAM_VERT_UV2, (void*) &uv_coords_2[0]);
+
+	mat->bind_value(Shader::PARAM_VERT_NORMALS, (void*) &normals[0]);
+	mat->bind_value(Shader::PARAM_VERT_TANGENTS, (void*) &tangents[0]);
+	mat->bind_value(Shader::PARAM_VERT_BINORMALS, (void*) &binormals[0]);
 
 	//Mat4 mvp = vp * m;
 	//mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
@@ -85,7 +100,7 @@ int Dynamic_Model::bind_mesh_data2(Material* mat)
 		return 0;
 	}
 
-	mat->bind_value(Shader::PARAM_VERTICES, (void*) verts);
+	//mat->bind_value(Shader::PARAM_VERTICES, (void*) verts);
 
 	mat->bind_value(Shader::PARAM_VERT_UV1, (void*) uv_coords_1);
 
@@ -105,11 +120,11 @@ int Dynamic_Model::bind_mesh_data2(Material* mat)
 //Assumes all data is already bound
 int Dynamic_Model::render_without_bind()
 {
-	if(!gl_initialized)
-	{
-		LOGW("Warning: dynamic model not drawn without bind, gl not initialized");
-		return 0;
-	}
+//	if(!gl_initialized)
+//	{
+//		LOGW("Warning: dynamic model not drawn without bind, gl not initialized");
+//		return 0;
+//	}
 	glDrawElements(GL_TRIANGLES, tri_vert_count, GL_UNSIGNED_INT, (void *) 0);
 	return 1;
 }
@@ -117,15 +132,39 @@ int Dynamic_Model::render_without_bind()
 int Dynamic_Model::init_gl()
 {
 	LOGE("model init gl: model set: %d, gl initialized: %d",model_set,gl_initialized);
-	if(gl_initialized || !model_set)
-	{
-		LOGE("Abort model init gl because model was not set or gl was already on");
-		return 1;
-	}
+	LOGE("Vert count: %d, tri vert count: %d",vertex_count,tri_vert_count);
+	//if(gl_initialized || !model_set)
+	//{
+	//	LOGE("Abort model init gl because model was not set or gl was already on");
+	//	return 1;
+	//}
+
+	//test code:
+	tri_vert_count = 36;
+
 	gl_initialized = true;
 	glGenBuffers(1, &tri_verts_buffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tri_verts_buffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(tri_vert_count * sizeof(unsigned int)), tri_verts, GL_STATIC_DRAW);
+
+	unsigned int test_tri_verts[] =
+	{
+	//Front quad
+	0, 2, 1, 2, 0, 3,
+	//Back quad
+	4, 6, 5, 6, 4, 7,
+	//Right quad
+	1, 7, 4, 7, 1, 2,
+	//Left quad
+	0, 6, 3, 6, 0, 5,
+	//Top quad
+	4, 0, 1, 0, 4, 5,
+	//Bottom quad
+	6, 2, 3, 2, 6, 7,
+	};
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(tri_vert_count * sizeof(unsigned int)), test_tri_verts, GL_STATIC_DRAW);
+
+
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(tri_vert_count * sizeof(unsigned int)), &tri_verts[0], GL_STATIC_DRAW);
 	LOGE("finished gl initializing the model");
 	return 1;
 }
@@ -133,12 +172,12 @@ int Dynamic_Model::init_gl()
 void Dynamic_Model::term_gl()
 {
 	LOGE("model term gl: model set: %d, gl initialized: %d",model_set,gl_initialized);
-	if(!gl_initialized)
-	{
-		LOGE("Abort model term gl because gl was not on");
-		return;
-	}
-	gl_initialized = false;
+//	if(!gl_initialized)
+//	{
+//		LOGE("Abort model term gl because gl was not on");
+//		return;
+//	}
+//	gl_initialized = false;
 	glDeleteBuffers(1,&tri_verts_buffer);
 	LOGE("finished gl terminating the model");
 }
@@ -146,6 +185,16 @@ void Dynamic_Model::term_gl()
 //Adds a list of models together using model transforms (returns false if we ran out of room)
 bool Dynamic_Model::populate_model (Static_Model **models, Mat4 *transforms, int model_count)
 {
+	//test code
+	model_set = true;
+	return true;
+
+
+
+
+
+	//end test code
+
 	LOGE("population of model began");
 	if(gl_initialized)
 	{
@@ -168,6 +217,7 @@ bool Dynamic_Model::populate_model (Static_Model **models, Mat4 *transforms, int
 	int model_tri_verts = 0;
 	for(int i = 0; i < model_count; i++)
 	{
+		LOGE("--- copying model: %d",i);
 		if(models[i] == NULL)
 		{
 			LOGW("Warning: null model in dynamic model list");
@@ -191,9 +241,10 @@ bool Dynamic_Model::populate_model (Static_Model **models, Mat4 *transforms, int
 		}
 
 		int ofs_vert_index = vertex_count;
-
+		LOGE("Iterating through model vertices:");
 		for(int j = 0; j < model_verts; j++)
 		{
+			LOGE("Copying vertex: %d / %d",j,model_verts);
 			//Copying vertex positions
 			vert = Vec3(models[i]->verts[3*j],models[i]->verts[3*j+1],models[i]->verts[3*j+2]);
 			vert = transforms[i] * vert;
@@ -225,13 +276,31 @@ bool Dynamic_Model::populate_model (Static_Model **models, Mat4 *transforms, int
 
 			vertex_count++;
 		}
+		LOGE("Copying tri verts");
 		for(int j = 0; j < model_tri_verts; j++)
 		{
 			tri_verts[tri_vert_count] = models[i]->tri_verts[j] + ofs_vert_index;
+			LOGE("Copying triangle vert: %d / %d, val = %d + %d = %d",j,model_tri_verts,models[i]->tri_verts[j],ofs_vert_index,tri_verts[tri_vert_count]);
 			tri_vert_count++;
 		}
+		LOGE("Finished copying model");
 	}
-	LOGE("population of model ended, verts buffer: %d",tri_verts_buffer);
+	LOGE("printing model:");
+	for(int i = 0; i < vertex_count; i++)
+	{
+		LOGE("Vert[%d]: (%.2f, %.2f, %.2f), uv1: (%.2f, %.2f), uv2: (%.2f, %.2f), normal: (%.2f, %.2f, %.2f), tagent: (%.2f, %.2f, %.2f), binormal: (%.2f, %.2f, %.2f)",i,
+		verts[3*i],verts[3*i+1],verts[3*i+2],
+		uv_coords_1[2*i], uv_coords_1[2*i + 1],
+		uv_coords_2[2*i], uv_coords_2[2*i + 1],
+		normals[3*i], normals[3*i+1], normals[3*i + 2],
+		tangents[3*i], tangents[3*i+1], tangents[3*i + 2],
+		binormals[3*i], binormals[3*i+1], binormals[3*i + 2]);
+	}
+	for(int i = 0; i < tri_vert_count; i++)
+	{
+		LOGE("Tri Vert[%d] = %d)",i,tri_verts[i]);
+	}
+	LOGE("population of model ended, verts buffer: %d, vert count: %d, tri vert count: %d",tri_verts_buffer,vertex_count,tri_vert_count);
 	//==============================================================================================================
 	init_gl();
 	LOGE("post init gl, verts buffer: %d",tri_verts_buffer);
@@ -239,6 +308,11 @@ bool Dynamic_Model::populate_model (Static_Model **models, Mat4 *transforms, int
 }
 void Dynamic_Model::clear_model()
 {
+	return;
+
+
+
+
 	LOGE("model being cleared");
 	if(gl_initialized)
 	{

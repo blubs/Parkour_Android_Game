@@ -1575,7 +1575,8 @@ public:
 			}
 		}
 
-		dynamic_floor_model->populate_model(models,transforms,model_count);
+		//dynamic_floor_model->populate_model(models,transforms,model_count);
+		dynamic_floor_model->populate_model(models,transforms,1);
 
 		//Temp iterating through all tiles adding debug branch points to array
 		/*for(int i = 0; i < width; i++)
@@ -1642,38 +1643,48 @@ public:
 
 	int render(Mat4 vp)
 	{
+		LOGE("Render called");
 		if(!generated)
 			return 1;
+		LOGE("Render called: generated");
 		//how do we get the material?
 		//Need to iterate through all tiles in this floor and draw them
 		//Starting from frontmost tile, render it and all other tiles that use the same model
 		//Then move onto the next unrendered tile
 		//TODO: how will we store tile type in the floors?
 		Global_Tiles::instance->style[0]->variants[0]->bind_variant();
+		LOGE("variant bound");
 
 		Material* mat = Global_Tiles::instance->style[0]->variants[0]->mat;
+		LOGE("material bound");
 
 		Mat4 m;
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
-		dynamic_floor_model->bind_mesh_data(mat);
+		//LOGE("pre-dynamic mesh bind");
 
-		mat->bind_value(Shader::PARAM_M_MATRIX, (void*) world_trans.m);
+		//dynamic_floor_model->bind_mesh_data(mat);
+		//LOGE("post dynamic mesh bind");
 
-		Mat4 mvp = vp * m;
-		mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+		//mat->bind_value(Shader::PARAM_M_MATRIX, (void*) world_trans.m);
 
-		Mat3 m_it = m.inverted_then_transposed().get_mat3();
-		mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+		//Mat4 mvp = vp * m;
+		//mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
 
-		dynamic_floor_model->render_without_bind();
+		//Mat3 m_it = m.inverted_then_transposed().get_mat3();
+		//mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+		LOGE("dynamic mesh render without bind");
+		//dynamic_floor_model->render_without_bind();
+		LOGE("post dynamic mesh render without bind");
 
 		//Quick unoptimized test for rendering
-		/*for(int i = 0; i < width; i++)
+		for(int i = 0; i < width; i++)
 		{
 			for(int j = 0; j < length; j++)
 			{
-				tile_model[i][j]->bind_mesh_data(mat);
+				//tile_model[i][j]->bind_mesh_data(mat);
+				dynamic_floor_model->bind_mesh_data(mat);
 
 				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,j*TILE_SIZE,0));
 				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
@@ -1684,9 +1695,10 @@ public:
 				Mat3 m_it = m.inverted_then_transposed().get_mat3();
 				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
-				tile_model[i][j]->render_without_bind();
+				//tile_model[i][j]->render_without_bind();
+				dynamic_floor_model->render_without_bind();
 			}
-		}*/
+		}
 
 		//===== Rendering Debug branch lines =======
 		/*if(!debug_branch_mat)
