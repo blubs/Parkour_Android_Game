@@ -60,6 +60,15 @@ public:
 		return active_floor->input_to_maneuver(pos,input_type);
 	}
 
+	//Dispatches to floor's input_to_traversal
+	//	ultimately returns a traversal if we are at the last tile of the building and:
+	//	(input_type is the input required to start the traversal) AND (the player is within the bounding box required to start the traversal)
+	//	returns NULL if no such traversal exists
+	Traversal* input_to_traversal(Vec3 pos, int input_type)
+	{
+		return active_floor->input_to_traversal(pos,input_type);
+	}
+
 
 	Vec3 get_tile_ofs_at_pos(Vec3 p)
 	{

@@ -182,6 +182,8 @@ extern bool RAIL_TYPE_IS_VALID[RAIL_TYPE_COUNT];
 
 //Special flags
 #define FRAME_SPECFLAG_NONE 0
+#define FRAME_SPECFLAG_BREAKWINDOW_OUT 1
+#define FRAME_SPECFLAG_BREAKWINDOW_IN 4
 //TODO: actual special flags...
 
 
@@ -214,6 +216,8 @@ extern char INPUT_CHAR_FILTER[128];
 #define MAX_BUILDINGS 3
 extern int NEXT_BLDG[3];
 extern int PREV_BLDG[3];
+
+#define BUILDING_GAP 15
 
 //Player States
 #define PLAYER_STATE_MENU 0

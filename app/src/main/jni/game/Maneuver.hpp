@@ -136,7 +136,7 @@ public:
 	}
 };
 
-class Traversal : Maneuver
+class Traversal : public Maneuver
 {
 public:
 	//TODO: what misc data is required for traversal?

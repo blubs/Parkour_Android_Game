@@ -603,7 +603,7 @@ void Game::start()
 
 
 	//Distance between buildings
-	Vec3 bldg_offset = Vec3(0,15,0);
+	Vec3 bldg_offset = Vec3(0,BUILDING_GAP,0);
 
 	for(int i = 1; i < MAX_BUILDINGS; i++)
 	{
@@ -1003,8 +1003,15 @@ void Game::mnvr_movement()
 	if(mnvr_frame->orient == FRAME_ORIENT_CONSTANT)
 		mnvr_goal_yaw_rot = get_keyframe_goal_yaw(mnvr_frame),player->angles.y;
 
+
+
+	//Slight camera roll rotation when turning
+	float tilt_angle = (player->angles.y - mnvr_goal_yaw_rot) * 0.8f;
+	tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
+	camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
+
 	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * mnvr_frame->orient_speed;
-	//TODO tile camera for turning
+
 
 	if(player->pos.y > mnvr_goal_pos.y)
 	{
@@ -1029,7 +1036,15 @@ float Game::get_keyframe_goal_yaw(Keyframe* key)
 
 void Game::reached_mnvr_keyframe ()
 {
-	//TODO: handle traversing logic
+	//If we are traversing: handle special flags
+	if(player_state == PLAYER_STATE_TRAVERSING)
+	{
+		switch(mnvr_frame->spec_flag)
+		{
+			default:
+				break;
+		}
+	}
 	//Setting up movement for keyframe:
 	mnvr_frame_number = mnvr_next_frame_number;
 	mnvr_next_frame_number++;
@@ -1704,6 +1719,16 @@ void Game::update()
 		}
 	}
 
+	if(player_state == PLAYER_STATE_TRAVERSING)
+	{
+		camera->set_viewbob(mnvr_frame->viewbob_type);
+		camera->update_viewbob();
+		player_anim_special_events();
+		mnvr_movement();
+		//TODO: where do we check for traversal keyframe special flags?
+		return;
+	}
+
 	if(player_state == PLAYER_STATE_MANEUVERING)
 	{
 		camera->set_viewbob(mnvr_frame->viewbob_type);
@@ -1715,9 +1740,23 @@ void Game::update()
 
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
-		//Get Maneuvers that require no input
-
 		//TODO: check for traversals as well
+
+		//Checking for traversals
+		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe);
+
+		if(trav)
+		{
+			player_state = PLAYER_STATE_TRAVERSING;
+			trav_current = trav;
+			mnvr_current = trav;
+			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_next_frame_number = 0;
+			mnvr_next_frame = trav->keyframes[0];
+			reached_mnvr_keyframe();
+			return;
+		}
+
 		//Check for maneuvers that require no input or whatever input we have sent (input_swipe)
 		Maneuver* man = current_building->input_to_maneuver(player->pos, INPUT_SWIPE_NONE | input_swipe);
 

@@ -120,7 +120,7 @@ Global_Tiles::Global_Tiles()
 	style[0]->floor_vent->model = new Static_Model("models/tiles/style0/test_vent.stmf");
 
 
-	style[0]->wall_vent = new Grid_Tile(0,0);
+	style[0]->wall_vent = new Grid_Tile(1,0);
 	style[0]->wall_vent->model = new Static_Model("models/tiles/style0/test_vent2.stmf");
 
 	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
@@ -328,15 +328,15 @@ Global_Tiles::Global_Tiles()
 	//========= Setting up Maneuvers ===============
 
 	//Setting up test maneuver
-	style[0]->floor_vent->maneuvers[0] = new Maneuver(6);//6 keyframes
+	style[0]->floor_vent->maneuvers[0] = new Maneuver(2);//2 keyframes
 	style[0]->floor_vent->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 
-	//Test obstacle: has activate area from (1,0) to (2,2), then moves up way high, then moves back down, then releases at regular height.
+	//Test obstacle: has activate area from (1,0) to (2,2),
 	//4 frames.
 	Keyframe** frames = style[0]->floor_vent->maneuvers[0]->keyframes;
 
 	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,2,0));
-	frames[0]->set_speed(0.5f,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
 	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
 	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.1);//redundant (this is default)
 	frames[0]->set_anim(FRAME_ANIM_NOOP,0,ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
@@ -344,11 +344,14 @@ Global_Tiles::Global_Tiles()
 	frames[0]->set_specflag(0);//redundant (this is default)
 
 	//Now for the next frames, omitting redundant calls
-	frames[1]->set_bounds(Vec3(1.75f,4,0));
-	frames[1]->set_speed(0.5f,0,0);
-	frames[1]->set_anim(FRAME_ANIM_PAUSE);
+	frames[1]->set_bounds(Vec3(1.75f,2.5,0));
 
-	frames[2]->set_bounds(Vec3(1.75f,6,0));
+	//For now just copying this maneuver to the other vent:
+	style[0]->wall_vent->maneuvers[0] = style[0]->floor_vent->maneuvers[0];
+	//frames[1]->set_speed(0.5f,0,0);
+	//frames[1]->set_anim(FRAME_ANIM_PAUSE);
+
+	/*frames[2]->set_bounds(Vec3(1.75f,6,0));
 	frames[2]->set_speed(0.5f,0,0);
 	frames[2]->set_anim(FRAME_ANIM_RESUME);
 
@@ -360,11 +363,14 @@ Global_Tiles::Global_Tiles()
 	frames[4]->set_speed(0.5f,0,0);
 	frames[4]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
 
-	frames[5]->set_bounds(Vec3(1.75f,12,0));
+	frames[5]->set_bounds(Vec3(1.75f,12,0));*/
 
 	//TODO: continue the rest of the frames
 	//window_model = new Static_Model("models/windows/style0.stmf");
 	//window_int_model = new Static_Model("models/windows/style0_int.stmf");
+
+
+
 
 	window_models = new Window_Model_Holder("models/windows/style0.stmf");
 
@@ -437,7 +443,6 @@ Global_Tiles::Global_Tiles()
 		"tex_misc",
 		"cube_map"
 	};
-	LOGE("Global Tiles 5");
 	/*"vert_pos",
 		"vert_uv_1",
 		"vert_uv_2",==== excluded
@@ -457,6 +462,50 @@ Global_Tiles::Global_Tiles()
 	window_int_mat->set_shader(window_int_shad);
 	window_int_tex0 = new Texture("textures/windows/variant0.pkm",512,512);
 	window_int_misc_tex0 = new Texture("textures/windows/variant0_int_misc.pkm",512,512);
+
+	//============= Setting up building to building traversals ==================
+	bldg_trav_1 = new Traversal(6);//5 frames
+	bldg_trav_1->set_input(INPUT_SWIPE_UP);
+
+	frames = bldg_trav_1->keyframes;
+
+	//Distance between buildings: 20 m
+	//This animation takes player 1 floor down
+
+	//Player is running to window
+	frames[0]->set_bounds(Vec3(0.75,0,0),Vec3(2.75,2,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),1);//redundant (this is default)
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_RUN,ANIM_END_TYPE_FREEZE);//redundant (this is default)
+	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);//redundant (this is default)
+	frames[0]->set_specflag(0);//redundant (this is default)
+
+	//Player is jumping through window
+	frames[1]->set_bounds(Vec3(1.75f,3.0f,0));
+	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_FREEZE);
+	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[1]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
+	frames[1]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
+
+	//Player is at vertex of parabolic path (8 m to next building)
+	frames[2]->set_bounds(Vec3(1.75f,9.5f,2.0f));
+	frames[2]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[2]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
+
+	//Player is breaking through the next window:
+	frames[3]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
+	frames[3]->set_bounds(Vec3(1.75f,18.5f,-WINDOW_TILE_SIZE + 1.0f));
+	frames[3]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[3]->set_lerp(FRAME_LERP_LINEAR,0);
+
+	//Player has broken through next window and is landing
+	frames[4]->set_bounds(Vec3(1.75f,19.0f,-WINDOW_TILE_SIZE + 1.0f));
+	frames[4]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[4]->set_lerp(FRAME_LERP_LINEAR,0);
+
+	//Player has landed -> ready to run
+	frames[5]->set_bounds(Vec3(1.75f,19.5f,-WINDOW_TILE_SIZE));
 }
 Global_Tiles::~Global_Tiles()
 {
@@ -503,6 +552,9 @@ Global_Tiles::~Global_Tiles()
 	delete window_int_shad;
 	delete window_int_tex0;
 	delete window_int_misc_tex0;
+
+	//Delete global traversals
+	delete bldg_trav_1;
 }
 
 void Global_Tiles::init_gl()

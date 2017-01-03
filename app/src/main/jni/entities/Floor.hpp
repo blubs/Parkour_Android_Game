@@ -54,6 +54,9 @@ public:
 
 	Dynamic_Model* dynamic_floor_model;
 
+	int goal_min_column = 0;
+	int goal_max_column = 0;
+
 	//Temporary array of Vec3s to render as lines
 	Vec3 branch_debug_points[3000];
 	//Every 2 points (Vec3) is a line
@@ -486,7 +489,7 @@ public:
 	}
 
 	//Branches left from tile[tile_x][tile_y]
-	void recursive_branch_left(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	void recursive_branch_left(int tile_x, int tile_y)
 	{
 		tile_branch_type[tile_x][tile_y] |= BRANCH_TYPE_LEFT;
 		tile_branch_type[tile_x-1][tile_y] |= (BRANCH_TYPE_FROM_RIGHT | BRANCH_TYPE_FORWARD);
@@ -506,11 +509,11 @@ public:
 				tile_type[tile_x-1][tile_y] = TILE_TYPE_EMPT;
 		}
 
-		recursive_branch_player_path(tile_x-1,tile_y+1,gmin_x,gmax_x,BRANCH_TYPE_LEFT);
+		recursive_branch_player_path(tile_x-1,tile_y+1,BRANCH_TYPE_LEFT);
 	}
 
 	//Branches right from tile[tile_x][tile_y]
-	void recursive_branch_right(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	void recursive_branch_right(int tile_x, int tile_y)
 	{
 		tile_branch_type[tile_x][tile_y] |= BRANCH_TYPE_RIGHT;
 		tile_branch_type[tile_x+1][tile_y] |= (BRANCH_TYPE_FROM_LEFT | BRANCH_TYPE_FORWARD);
@@ -530,15 +533,15 @@ public:
 				tile_type[tile_x+1][tile_y] = TILE_TYPE_EMPT;
 		}
 
-		recursive_branch_player_path(tile_x+1,tile_y+1,gmin_x,gmax_x,BRANCH_TYPE_RIGHT);
+		recursive_branch_player_path(tile_x+1,tile_y+1,BRANCH_TYPE_RIGHT);
 	}
 
 	//Branches forward from tile[tile_x][tile_y]
-	void recursive_branch_forward(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	void recursive_branch_forward(int tile_x, int tile_y)
 	{
 		tile_branch_type[tile_x][tile_y] |= BRANCH_TYPE_FORWARD;
 		tile_branch_type[tile_x][tile_y + 1] |= BRANCH_TYPE_FROM_FORWARD;
-		recursive_branch_player_path(tile_x,tile_y + 1,gmin_x,gmax_x,BRANCH_TYPE_FORWARD);
+		recursive_branch_player_path(tile_x,tile_y + 1,BRANCH_TYPE_FORWARD);
 	}
 
 	float prob_of_branch_left = 0.2f;
@@ -552,9 +555,9 @@ public:
 
 	//Returns probability that we need to branch towards goal_column
 	//Returns 0.0f - 1.0f, or any value > 1.0f if it's impossible to get to the goal tile
-	float prob_of_branch_to_goal(int tile_x, int tile_y, int gmin_x, int gmax_x)
+	float prob_of_branch_to_goal(int tile_x, int tile_y)
 	{
-		int goal_column = clamp(tile_x, gmin_x, gmax_x);
+		int goal_column = clamp(tile_x, goal_min_column, goal_max_column);
 		//If the tile is already in the goal range:
 		if(tile_x == goal_column)
 			return 0.0f;
@@ -594,7 +597,7 @@ public:
 		//============
 		//6: if we cannot branch, modify the wall layout in order to pass one of the failed tests from section 3
 		//============
-	void recursive_branch_player_path(int tile_x, int tile_y, int gmin_x, int gmax_x, int prev_branch)
+	void recursive_branch_player_path(int tile_x, int tile_y, int prev_branch)
 	{
 #ifdef DEBUG_BRANCH_LOGIC
 		LOGE("Gen Branch on tile: [%d][%d]. Wall: %d, walltype: (%d,%d,%d,%d)",
@@ -667,7 +670,7 @@ public:
 		}
 
 		//Checking if the end tile of a left branch can still get us to our goal range
-		if(prob_of_branch_to_goal(tile_x-1,tile_y+1,gmin_x,gmax_x) > 1.0f)
+		if(prob_of_branch_to_goal(tile_x-1,tile_y+1) > 1.0f)
 		{
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch left at tile[%d][%d] (could not get to goal_column from branch)",tile_x,tile_y);
@@ -675,7 +678,7 @@ public:
 			can_branch &= ~BRANCH_TYPE_LEFT;
 		}
 		//Checking if the end tile of a right branch can still get us to our goal range
-		if(prob_of_branch_to_goal(tile_x+1,tile_y+1,gmin_x,gmax_x) > 1.0f)
+		if(prob_of_branch_to_goal(tile_x+1,tile_y+1) > 1.0f)
 		{
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Cannot branch right at tile[%d][%d] (could not get to goal_column from branch)",tile_x,tile_y);
@@ -798,12 +801,12 @@ public:
 		//Therefore, the player needs to end up on these tiles to be able to jump to the next building
 		float prob_of_force_branch = 0.0f;
 		//Getting the nearest column to the one we're on that is in the goal range [gmin_x,gmax_x]
-		int goal_column = clamp(tile_x,gmin_x,gmax_x);
+		int goal_column = clamp(tile_x,goal_min_column,goal_max_column);
 
 		//We are to the left of the goal column (branch is right)
 		if(tile_x < goal_column)
 		{
-			prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y,gmin_x,gmax_x);
+			prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y);
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Prob of branching to column %d is %.2f",goal_column,prob_of_force_branch);
 #endif
@@ -820,7 +823,7 @@ public:
 					LOGE("Branched right from force prob at tile[%d][%d]!",tile_x,tile_y);
 #endif
 					//do the branch & return
-					recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+					recursive_branch_right(tile_x,tile_y);
 					return;
 				}
 				//If we could not branch, try to force the branch
@@ -843,7 +846,7 @@ public:
 		//We are to the right of the goal column (branch is left)
 		if(tile_x > goal_column)
 		{
-			prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y,gmin_x,gmax_x);
+			prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y);
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Prob of branching to column %d is %.2f",goal_column,prob_of_force_branch);
 #endif
@@ -860,7 +863,7 @@ public:
 					LOGE("Branched left from force prob at tile[%d][%d]!",tile_x,tile_y);
 #endif
 					//do the branch & return
-					recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+					recursive_branch_left(tile_x,tile_y);
 					return;
 				}
 				//If we could not branch, try to force the branch
@@ -926,21 +929,21 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branched left at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_left(tile_x,tile_y);
 			}
 			if(branch_r)
 			{
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branched right at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_right(tile_x,tile_y);
 			}
 			if(branch_f)
 			{
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branched forward at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_forward(tile_x,tile_y);
 			}
 
 		}
@@ -952,7 +955,7 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch forward at tile[%d][%d]",tile_x,tile_y);
 #endif
-			recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+			recursive_branch_forward(tile_x,tile_y);
 		}
 		//====================================================================================================================
 		//We can only branch left -> must branch left
@@ -962,7 +965,7 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch left at tile[%d][%d]",tile_x,tile_y);
 #endif
-			recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+			recursive_branch_left(tile_x,tile_y);
 		}
 		//====================================================================================================================
 		//We can only branch right -> must branch right
@@ -972,7 +975,7 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 			LOGE("Must branch right at tile[%d][%d]",tile_x,tile_y);
 #endif
-			recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+			recursive_branch_right(tile_x,tile_y);
 		}
 		//====================================================================================================================
 		//We can only branch left or right -> choose one or both randomly
@@ -1009,14 +1012,14 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching left at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_left(tile_x,tile_y);
 			}
 			if(branch_right)
 			{
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching right at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_right(tile_x,tile_y);
 			}
 		}
 		//====================================================================================================================
@@ -1052,14 +1055,14 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching left at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_left(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_left(tile_x,tile_y);
 			}
 			if(branch_forward)
 			{
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching forward at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_forward(tile_x,tile_y);
 			}
 		}
 		//====================================================================================================================
@@ -1095,14 +1098,14 @@ public:
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching right at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_right(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_right(tile_x,tile_y);
 			}
 			if(branch_forward)
 			{
 #ifdef DEBUG_BRANCH_LOGIC
 				LOGE("branching forward at tile[%d][%d]",tile_x,tile_y);
 #endif
-				recursive_branch_forward(tile_x,tile_y,gmin_x,gmax_x);
+				recursive_branch_forward(tile_x,tile_y);
 			}
 		}
 		//====================================================================================================================
@@ -1292,7 +1295,7 @@ public:
 					break;
 			}
 			//Now that we've broken the test that failed, retry branch player_path
-			recursive_branch_player_path(tile_x,tile_y,gmin_x,gmax_x,prev_branch);
+			recursive_branch_player_path(tile_x,tile_y,prev_branch);
 		}
 		//====================================================================================================================
 	}
@@ -1437,7 +1440,7 @@ public:
 
 	}
 
-	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos, int goal_min_column, int goal_max_column)
+	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos, int _goal_min_column, int _goal_max_column)
 	{
 		if(generated)
 			return;
@@ -1512,6 +1515,8 @@ public:
 
 		// ============ Player Route Generation =============
 		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
+		goal_min_column = _goal_min_column;
+		goal_max_column = _goal_max_column;
 
 		// ==================================================
 		//TODO:	floor obstacles that would look okay with walls attached to left/right/both sides
@@ -1524,7 +1529,8 @@ public:
 		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;
 		tile_branch_type[player_start_column][1] = BRANCH_TYPE_FROM_FORWARD;
 
-		recursive_branch_player_path(player_start_column,1,goal_min_column,goal_max_column,BRANCH_TYPE_FORWARD);
+
+		recursive_branch_player_path(player_start_column,1,BRANCH_TYPE_FORWARD);
 		place_rail_tiles();
 
 		//Place obstacles in xXoo walls that we cross
@@ -1576,7 +1582,7 @@ public:
 		}
 
 		//dynamic_floor_model->populate_model(models,transforms,model_count);
-		dynamic_floor_model->populate_model(models,transforms,1);
+		dynamic_floor_model->populate_model(models,transforms,model_count);
 
 		//Temp iterating through all tiles adding debug branch points to array
 		/*for(int i = 0; i < width; i++)
@@ -1643,48 +1649,35 @@ public:
 
 	int render(Mat4 vp)
 	{
-		LOGE("Render called");
+
 		if(!generated)
 			return 1;
-		LOGE("Render called: generated");
 		//how do we get the material?
 		//Need to iterate through all tiles in this floor and draw them
 		//Starting from frontmost tile, render it and all other tiles that use the same model
 		//Then move onto the next unrendered tile
 		//TODO: how will we store tile type in the floors?
 		Global_Tiles::instance->style[0]->variants[0]->bind_variant();
-		LOGE("variant bound");
-
 		Material* mat = Global_Tiles::instance->style[0]->variants[0]->mat;
-		LOGE("material bound");
-
 		Mat4 m;
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
-		//LOGE("pre-dynamic mesh bind");
-
-		//dynamic_floor_model->bind_mesh_data(mat);
-		//LOGE("post dynamic mesh bind");
-
-		//mat->bind_value(Shader::PARAM_M_MATRIX, (void*) world_trans.m);
-
-		//Mat4 mvp = vp * m;
-		//mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-		//Mat3 m_it = m.inverted_then_transposed().get_mat3();
-		//mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-		LOGE("dynamic mesh render without bind");
-		//dynamic_floor_model->render_without_bind();
-		LOGE("post dynamic mesh render without bind");
+		dynamic_floor_model->bind_mesh_data(mat);
+		m = world_trans;
+		mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+		Mat4 mvp = vp * m;
+		mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+		Mat3 m_it = m.inverted_then_transposed().get_mat3();
+		mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+		dynamic_floor_model->render_without_bind();
 
 		//Quick unoptimized test for rendering
-		for(int i = 0; i < width; i++)
+		/*for(int i = 0; i < width; i++)
 		{
 			for(int j = 0; j < length; j++)
 			{
 				//tile_model[i][j]->bind_mesh_data(mat);
-				dynamic_floor_model->bind_mesh_data(mat);
+				//dynamic_floor_model->bind_mesh_data(mat);
 
 				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,j*TILE_SIZE,0));
 				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
@@ -1696,9 +1689,9 @@ public:
 				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 
 				//tile_model[i][j]->render_without_bind();
-				dynamic_floor_model->render_without_bind();
+				//dynamic_floor_model->render_without_bind();
 			}
-		}
+		}*/
 
 		//===== Rendering Debug branch lines =======
 		/*if(!debug_branch_mat)
@@ -1833,7 +1826,6 @@ public:
 	//pos is the global position
 	Maneuver* input_to_maneuver(Vec3 pos, int input_type)
 	{
-		//position given is in floor space, 0,0 being near left corner
 		//get tile indices for the position
 		if(is_x_out_of_bounds(pos) || is_y_out_of_bounds(pos))
 		{
@@ -1895,7 +1887,7 @@ public:
 		{
 			man = tile->maneuvers[i];
 			//If we have the correct input
-			if(input_type | man->input_required)
+			if(input_type & man->input_required)
 			{
 				//If we are in the correct area
 				mins = man->keyframes[0]->mins;
@@ -1906,6 +1898,61 @@ public:
 				}
 			}
 		}
+		return NULL;
+	}
+
+
+	//	Returns a traversal if there exists a traversal if pos is within the last tile, and if:
+	//	(the input required to start the traversal is input_type) AND (the player is within the bounding box required to start the traversal)
+	//	returns NULL otherwise
+	Traversal* input_to_traversal(Vec3 pos, int input_type)
+	{
+		if(is_x_out_of_bounds(pos) || is_y_out_of_bounds(pos))
+		{
+			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",pos.x,pos.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+			return NULL;
+		}
+
+		//finding player pos relative to left near corner of floor
+		Vec3 floor_pos = pos - global_mins;
+
+		//get tile indices for the position
+		int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
+		int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
+
+		//Checking if we aren't on the last row of tiles:
+		LOGE("We are in tile:X: %d / [%d,%d]. Y: %d / %d",tile_x,goal_min_column,goal_max_column,tile_y,length-1);
+		if(tile_y != length - 1)
+			return NULL;
+		//Checking if we are within goal columns:
+		if(tile_x < goal_min_column || tile_x > goal_max_column)
+			return NULL;
+
+		LOGE("We are in the right tile!");
+
+
+		Vec3 mins;
+		Vec3 maxs;
+		Traversal* trav = NULL;
+
+		//Getting player pos relative to the tile
+		Vec3 p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
+
+		//TODO: iterate through the 3 traversals.
+		trav = Global_Tiles::instance->bldg_trav_1;
+
+		if(input_type & trav->input_required)
+		{
+			LOGE("Input type is matched");
+			mins = trav->keyframes[0]->mins;
+			maxs = trav->keyframes[0]->maxs;
+
+			if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
+			{
+				return trav;
+			}
+		}
+
 		return NULL;
 	}
 	//Returns the global tile position that p lies on
