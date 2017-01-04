@@ -217,7 +217,10 @@ void Game::unload_textures()
 
 int Game::load_models()
 {
-	floor_dynamic_model = new Dynamic_Model();
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		dynamic_floor_models[i] = new Dynamic_Model();
+	}
 
 	test_arms = new Skel_Model("models/test_arms.skmf");
 	test_torso = new Skel_Model("models/test_torso.skmf");
@@ -236,6 +239,9 @@ int Game::load_models()
 	player_skel->load_animation("animations/run_jump.skaf");
 	player_skel->load_animation("animations/slide.skaf");
 	player_skel->load_animation("animations/slide_end.skaf");
+	player_skel->load_animation("animations/traversal_a.skaf");
+	player_skel->load_animation("animations/traversal_b.skaf");
+	player_skel->load_animation("animations/traversal_c.skaf");
 	player_skel->load_animation("animations/showcase_hands.skaf");
 	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
 	skybox = new Skybox();
@@ -243,7 +249,10 @@ int Game::load_models()
 }
 void Game::unload_models()
 {
-	delete floor_dynamic_model;
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		delete dynamic_floor_models[i];
+	}
 	delete test_arms;
 	delete test_torso;
 	delete test_legs;
@@ -320,7 +329,10 @@ int Game::init_gl()
 	test_legs->init_gl();
 	model_prim_cube->init_gl();
 	model_prim_quad->init_gl();
-	floor_dynamic_model->init_gl();
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		dynamic_floor_models[i]->init_gl();
+	}
 
 	test_model_int_empty->init_gl();
 
@@ -349,7 +361,10 @@ void Game::term_gl()
 	test_legs->term_gl();
 	model_prim_cube->term_gl();
 	model_prim_quad->term_gl();
-	floor_dynamic_model->term_gl();
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		dynamic_floor_models[i]->term_gl();
+	}
 
 	test_model_int_empty->term_gl();
 
@@ -593,14 +608,12 @@ void Game::start()
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i] = new Building();
+		buildings[i]->active_floor->dynamic_floor_model = dynamic_floor_models[i];
 	}
 
 	buildings[0]->generate(NULL,Vec3::ZERO());
 	//FIXME remove this:
 	buildings[0]->active_floor->debug_branch_mat = solid_mat;
-	//TEMP FIXME:
-	buildings[0]->active_floor->dynamic_floor_model = floor_dynamic_model;
-
 
 	//Distance between buildings
 	Vec3 bldg_offset = Vec3(0,BUILDING_GAP,0);
@@ -1191,8 +1204,6 @@ char Game::clip_player_bbox(Vec3 p)
 	Vec3 floor_pos = p - current_building->active_floor->global_mins;
 	char result;
 	Voxel vox;
-	char vox_type;
-	char vox_shape;
 
 	//Front of triangle
 	float mod_x = efmodf(floor_pos.x,GRID_SIZE);
@@ -1628,7 +1639,6 @@ void Game::update()
 
 	//FIXME: remove this
 	//TODO: handle input here
-	//TODO: check for maneuvers and traversals
 	//Checking touch button interactions
 	//Checking input from all fingers:
 	for(int i = 0; i < MAX_INPUT_TOUCHES; i++)

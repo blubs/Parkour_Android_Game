@@ -120,7 +120,6 @@ void Dynamic_Model::term_gl()
 {
 	if(!gl_initialized)
 	{
-		LOGE("Abort model term gl because gl was not on");
 		return;
 	}
 	gl_initialized = false;

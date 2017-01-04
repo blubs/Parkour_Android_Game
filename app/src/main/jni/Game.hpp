@@ -102,8 +102,7 @@ public:
 	Building *current_building = NULL;
 	int cbldg_index = 0;
 
-	Dynamic_Model* floor_dynamic_model;
-
+	Dynamic_Model *dynamic_floor_models[MAX_BUILDINGS];
 
 	//======================================================================
 

@@ -217,7 +217,7 @@ extern char INPUT_CHAR_FILTER[128];
 extern int NEXT_BLDG[3];
 extern int PREV_BLDG[3];
 
-#define BUILDING_GAP 15
+#define BUILDING_GAP 16
 
 //Player States
 #define PLAYER_STATE_MENU 0
@@ -260,7 +260,10 @@ extern int PREV_BLDG[3];
 #define PLAYER_ANIM_RUN_JUMP 2
 #define PLAYER_ANIM_SLIDE 3
 #define PLAYER_ANIM_SLIDE_END 4
-#define PLAYER_ANIM_SHOWCASE_HANDS 5
+#define PLAYER_ANIM_TRAV_A 5
+#define PLAYER_ANIM_TRAV_B 6
+#define PLAYER_ANIM_TRAV_C 7
+#define PLAYER_ANIM_SHOWCASE_HANDS 8
 
 
 
