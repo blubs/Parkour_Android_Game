@@ -34,9 +34,6 @@ public:
 	//Number of floors this building has
 	int floors = 0;
 
-	//TODO: this array will hold variant index of a tile
-	char tiles[MAX_WIDTH][MAX_LENGTH];
-
 	//Index of the window broken out of the building
 	int broken_owindow_index_x = 0;
 	int broken_owindow_index_y = 0;
@@ -105,7 +102,7 @@ public:
 		if(prev_bldg != NULL)
 		{
 			prev_bldg_ofs = Vec3(prev_bldg->pos.x,prev_bldg->global_maxs.y,0);
-			//TODO: calculate building offset based on size and previous building's position and size
+			//TODO: calculate building horizontal offset based on size and previous building's position and size
 		}
 		pos = prev_bldg_ofs + bldg_ofs + Vec3(0,0,GROUNDLEVEL);
 
@@ -116,7 +113,6 @@ public:
 		generated = true;
 	}
 
-	//TODO: pass in the next building from which to get the goal range for the floor
 	void generate_floor(Vec3 player_pos, Building* next_bldg)
 	{
 		if(!generated)

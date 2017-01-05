@@ -1424,6 +1424,224 @@ void Game::player_anim_special_events()
 	}
 }
 
+void Game::player_state_logic()
+{
+	float t = Time::time();
+
+	if(player_state == PLAYER_STATE_TRAVERSING)
+	{
+		camera->set_viewbob(mnvr_frame->viewbob_type);
+		camera->update_viewbob();
+		player_anim_special_events();
+		mnvr_movement();
+		return;
+	}
+
+	if(player_state == PLAYER_STATE_MANEUVERING)
+	{
+		camera->set_viewbob(mnvr_frame->viewbob_type);
+		camera->update_viewbob();
+		player_anim_special_events();
+		mnvr_movement();
+		return;
+	}
+
+	if(player_state == PLAYER_STATE_RUNNING)
+	{
+		//TODO: check for traversals as well
+
+		//Checking for traversals
+		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe);
+
+		if(trav)
+		{
+			player_state = PLAYER_STATE_TRAVERSING;
+			trav_current = trav;
+			mnvr_current = trav;
+			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_next_frame_number = 0;
+			mnvr_next_frame = trav->keyframes[0];
+			reached_mnvr_keyframe();
+			return;
+		}
+
+		//Check for maneuvers that require no input or whatever input we have sent (input_swipe)
+		Maneuver* man = current_building->input_to_maneuver(player->pos, INPUT_SWIPE_NONE | input_swipe);
+
+		if(man)
+		{
+			player_state = PLAYER_STATE_MANEUVERING;
+			mnvr_current = man;
+			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_next_frame_number = 0;
+			mnvr_next_frame = man->keyframes[0];
+			reached_mnvr_keyframe();
+			return;
+		}
+		else if(input_swipe)
+			{
+				//There was a swipe, but we are not in a maneuver area:
+				if(input_swipe == INPUT_SWIPE_UP)
+				{
+					player_state = PLAYER_STATE_FALLING;
+					player_phys_vel.z = PLAYER_JUMP_VEL;
+					player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
+					player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
+					return;
+				}
+				//Get maneuvers that require input down
+				if(input_swipe == INPUT_SWIPE_DOWN)
+				{
+					player_state = PLAYER_STATE_SLIDING;
+					player_slide_speed = PLAYER_SLIDE_SPEED;
+					player_substate = 0.0f;
+					//In this context, subtate_time is the time that the player will slide for
+					player_substate_time = t + PLAYER_SLIDE_TIME;
+					player_skel->play_anim(PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
+					return;
+				}
+			}
+
+		if(!player_skel->playing_anim || player_skel->current_anim != 0)
+		{
+			player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
+		}
+
+		player_anim_special_events();
+		camera->set_viewbob(CAM_VIEWBOB_RUNNING);
+
+		//Testing viewbob code
+		static bool stepped = true;
+
+		if(input_y[1] <= 0.1f && !stepped)
+		{
+			stepped = true;
+			if(input_x[1] > 0.5f)
+			{
+				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
+			}
+			else
+			{
+				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
+			}
+		}
+		else if(input_y[1] > 0.1f)
+				stepped = false;
+		//========================= end test viewbob code
+		camera->update_viewbob();
+
+		if(player->pos.z > current_building->active_floor->altitude)
+		{
+			player_state = PLAYER_STATE_FALLING;
+			return;
+		}
+		//Player turning code:
+		float turn_angle = 0.0f;
+		if(input_turning)
+		{
+			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
+		}
+
+		//Slight camera roll rotation when turning
+		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
+		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
+		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
+		//TODO: if not running, how do we zero this tilt angle?
+
+		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
+
+		//Make the player move forward, if runs outside of building bounds, reset at building start
+		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
+
+		if(!move_player(movement_vel))
+			return;
+
+		//if player is past building edge
+		if(player->pos.y + PLAYER_SIZE >= current_building->global_maxs.y)
+			player->pos.y = current_building->global_mins.y + PLAYER_SIZE + 0.5f;
+
+		//Then check for more general out-of-boundsness in both x and y axes
+		//player->pos = player->pos + Time::delta_time * movement_vel;
+		if(current_building->is_box_out_of_bounds(player->pos,PLAYER_SIZE))//TODO: make 0.5f be the player size
+		{
+			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
+		}
+
+	}
+	if(player_state == PLAYER_STATE_FALLING)
+	{
+		player_phys_vel.z += -9.8 * Time::udelta_time;
+		if(player_phys_vel.z < -40.0f)//terminal vel
+			player_phys_vel.z = -40.0f;
+
+		Vec3 delta_pos = Time::udelta_time * player_phys_vel;
+
+		if(player->pos.z + delta_pos.z < current_building->active_floor->altitude)
+		{
+			player_state = PLAYER_STATE_RUNNING;
+			player->pos.z = current_building->active_floor->altitude;
+			player_phys_vel = Vec3::ZERO();
+			return;
+		}
+		player->pos = player->pos + delta_pos;
+	}
+	if(player_state == PLAYER_STATE_SLIDING)
+	{
+		//TODO: play sliding animation at start, then freeze the anim, then when we end the slide, play get back up animation
+		if(player_substate_time < t)
+		{
+			if(player_substate == 0.0f)
+			{
+				player_substate = 1.0f;
+				player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
+				player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
+			}
+			else if(player_substate == 1.0f)
+				{
+					player_state = PLAYER_STATE_RUNNING;
+					player_slide_speed = 0.0f;
+					player_substate = 0.0f;
+					player_substate_time = 0.0f;
+					player_skel->play_default_anim();
+				}
+		}
+		//In this context, subtate_time is the time that the player will slide for
+
+		player_slide_speed += PLAYER_SLIDE_ACCEL * Time::udelta_time;
+		if(player_slide_speed < PLAYER_SLIDE_MIN_SPEED)
+			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
+
+		//Player turning code:
+		float turn_angle = 0.0f;
+		if(input_turning)
+		{
+			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
+		}
+		//Slight camera roll rotation when turning
+		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
+		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
+		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
+		//TODO: if not running/sliding, how do we zero this tilt angle?
+
+		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
+		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
+
+		player_anim_special_events();
+		camera->set_viewbob(CAM_VIEWBOB_SLIDING);
+		camera->update_viewbob();
+
+		if(!move_player(player_phys_vel))
+		{
+			//End slide
+			//TODO: replace this with sliding death
+			player_substate = 1.0f;
+			player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
+			player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
+			return;
+		}
+	}
+}
+
 void Game::update()
 {
 	//if(state.x > 0.95f && player_skel->playing_anim)
@@ -1729,223 +1947,10 @@ void Game::update()
 		}
 	}
 
-	if(player_state == PLAYER_STATE_TRAVERSING)
-	{
-		camera->set_viewbob(mnvr_frame->viewbob_type);
-		camera->update_viewbob();
-		player_anim_special_events();
-		mnvr_movement();
-		//TODO: where do we check for traversal keyframe special flags?
-		return;
-	}
+	player_state_logic();
 
-	if(player_state == PLAYER_STATE_MANEUVERING)
-	{
-		camera->set_viewbob(mnvr_frame->viewbob_type);
-		camera->update_viewbob();
-		player_anim_special_events();
-		mnvr_movement();
-		return;
-	}
-
-	if(player_state == PLAYER_STATE_RUNNING)
-	{
-		//TODO: check for traversals as well
-
-		//Checking for traversals
-		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe);
-
-		if(trav)
-		{
-			player_state = PLAYER_STATE_TRAVERSING;
-			trav_current = trav;
-			mnvr_current = trav;
-			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
-			mnvr_next_frame_number = 0;
-			mnvr_next_frame = trav->keyframes[0];
-			reached_mnvr_keyframe();
-			return;
-		}
-
-		//Check for maneuvers that require no input or whatever input we have sent (input_swipe)
-		Maneuver* man = current_building->input_to_maneuver(player->pos, INPUT_SWIPE_NONE | input_swipe);
-
-		if(man)
-		{
-			player_state = PLAYER_STATE_MANEUVERING;
-			mnvr_current = man;
-			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
-			mnvr_next_frame_number = 0;
-			mnvr_next_frame = man->keyframes[0];
-			reached_mnvr_keyframe();
-			return;
-		}
-		else if(input_swipe)
-		{
-			//There was a swipe, but we are not in a maneuver area:
-			if(input_swipe == INPUT_SWIPE_UP)
-			{
-				player_state = PLAYER_STATE_FALLING;
-				player_phys_vel.z = PLAYER_JUMP_VEL;
-				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
-				player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
-				return;
-			}
-			//Get maneuvers that require input down
-			if(input_swipe == INPUT_SWIPE_DOWN)
-			{
-				player_state = PLAYER_STATE_SLIDING;
-				player_slide_speed = PLAYER_SLIDE_SPEED;
-				player_substate = 0.0f;
-				//In this context, subtate_time is the time that the player will slide for
-				player_substate_time = t + PLAYER_SLIDE_TIME;
-				player_skel->play_anim(PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
-				return;
-			}
-		}
-
-		if(!player_skel->playing_anim || player_skel->current_anim != 0)
-		{
-			player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
-		}
-
-		player_anim_special_events();
-		camera->set_viewbob(CAM_VIEWBOB_RUNNING);
-
-		//Testing viewbob code
-		static bool stepped = true;
-
-		if(input_y[1] <= 0.1f && !stepped)
-		{
-			stepped = true;
-			if(input_x[1] > 0.5f)
-			{
-				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
-			}
-			else
-			{
-				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
-			}
-		}
-		else if(input_y[1] > 0.1f)
-				stepped = false;
-		//========================= end test viewbob code
-		camera->update_viewbob();
-
-		if(player->pos.z > current_building->active_floor->altitude)
-		{
-			player_state = PLAYER_STATE_FALLING;
-			return;
-		}
-		//Player turning code:
-		float turn_angle = 0.0f;
-		if(input_turning)
-		{
-			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
-		}
-
-		//Slight camera roll rotation when turning
-		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
-		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
-		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
-		//TODO: if not running, how do we zero this tilt angle?
-
-		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-
-		//Make the player move forward, if runs outside of building bounds, reset at building start
-		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
-
-		if(!move_player(movement_vel))
-			return;
-
-		//if player is past building edge
-		if(player->pos.y + PLAYER_SIZE >= current_building->global_maxs.y)
-			player->pos.y = current_building->global_mins.y + PLAYER_SIZE + 0.5f;
-
-		//Then check for more general out-of-boundsness in both x and y axes
-		//player->pos = player->pos + Time::delta_time * movement_vel;
-		if(current_building->is_box_out_of_bounds(player->pos,PLAYER_SIZE))//TODO: make 0.5f be the player size
-		{
-			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
-		}
-
-	}
-	if(player_state == PLAYER_STATE_FALLING)
-	{
-		player_phys_vel.z += -9.8 * Time::udelta_time;
-		if(player_phys_vel.z < -40.0f)//terminal vel
-			player_phys_vel.z = -40.0f;
-
-		Vec3 delta_pos = Time::udelta_time * player_phys_vel;
-
-		if(player->pos.z + delta_pos.z < current_building->active_floor->altitude)
-		{
-			player_state = PLAYER_STATE_RUNNING;
-			player->pos.z = current_building->active_floor->altitude;
-			player_phys_vel = Vec3::ZERO();
-			return;
-		}
-		player->pos = player->pos + delta_pos;
-	}
-	if(player_state == PLAYER_STATE_SLIDING)
-	{
-		//TODO: play sliding animation at start, then freeze the anim, then when we end the slide, play get back up animation
-		if(player_substate_time < t)
-		{
-			if(player_substate == 0.0f)
-			{
-				player_substate = 1.0f;
-				player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
-				player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
-			}
-			else if(player_substate == 1.0f)
-			{
-				player_state = PLAYER_STATE_RUNNING;
-				player_slide_speed = 0.0f;
-				player_substate = 0.0f;
-				player_substate_time = 0.0f;
-				player_skel->play_default_anim();
-			}
-		}
-		//In this context, subtate_time is the time that the player will slide for
-
-		player_slide_speed += PLAYER_SLIDE_ACCEL * Time::udelta_time;
-		if(player_slide_speed < PLAYER_SLIDE_MIN_SPEED)
-			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
-
-		//Player turning code:
-		float turn_angle = 0.0f;
-		if(input_turning)
-		{
-			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
-		}
-		//Slight camera roll rotation when turning
-		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
-		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
-		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
-		//TODO: if not running/sliding, how do we zero this tilt angle?
-
-		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
-
-		player_anim_special_events();
-		camera->set_viewbob(CAM_VIEWBOB_SLIDING);
-		camera->update_viewbob();
-
-		if(!move_player(player_phys_vel))
-		{
-			//End slide
-			//TODO: replace this with sliding death
-			player_substate = 1.0f;
-			player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
-			player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
-			return;
-		}
-	}
-	//TODO: other states
-
-
-	//TODO: make this only execute at 30 times per second
+	//TODO: make this only execute at 60 times per second
+	//FIXME: I don't believe this is playing at 60 fps...
 	player->update();
 }
 
@@ -2053,5 +2058,6 @@ void Game::render()
 
 	//draw_floor_collision_voxels(vp);
 	//draw_floor_maneuvers(vp);
-	draw_player_bbox(vp);
+	if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
+		draw_player_bbox(vp);
 }

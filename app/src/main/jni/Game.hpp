@@ -207,6 +207,9 @@ public:
 	//Executes code if player is at specific frames in specific animations
 	void player_anim_special_events();
 
+	//Holds the player state logic
+	void player_state_logic();
+
 	//Draws player bounding box
 	void draw_player_bbox(Mat4 vp);
 	//Draws active floors collision voxels

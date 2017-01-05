@@ -167,8 +167,11 @@ int Skeleton::update_frame()
 		return 1;
 
 	float ctime = Time::time();
+
+	LOGE("Engine Frame.... (t=%.3f)",ctime);
 	if(ctime > time_for_next_frame)
 	{
+		LOGE("Animation Frame.... (t=%.3f)", ctime);
 		current_frame += 1;
 		dest_frame += 1;
 		time_for_next_frame = ctime + frame_time;

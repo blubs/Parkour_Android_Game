@@ -21,7 +21,7 @@
 #define ANIM_END_TYPE_LOOP 2
 #define ANIM_END_TYPE_DEFAULT_ANIM 3
 
-#define ANIM_FPS_60 1/60.0f
+#define ANIM_FPS_60 (1.0f/60.0f)
 
 //============ Sound Engine Defs ==============
 #define MAX_SOUND_SOURCES 32
