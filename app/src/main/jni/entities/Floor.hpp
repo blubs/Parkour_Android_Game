@@ -1938,20 +1938,23 @@ public:
 		//Getting player pos relative to the tile
 		Vec3 p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
 
-		//TODO: iterate through the 3 traversals.
-		trav = Global_Tiles::instance->bldg_trav_1;
 
-		if(input_type & trav->input_required)
+		for(int i = 0; i < BUILDING_TRAV_COUNT; i++)
 		{
-			LOGE("Input type is matched");
-			mins = trav->keyframes[0]->mins;
-			maxs = trav->keyframes[0]->maxs;
+			trav = Global_Tiles::instance->bldg_travs[i];
 
-			if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
+			if(input_type & trav->input_required)
 			{
-				return trav;
+				mins = trav->keyframes[0]->mins;
+				maxs = trav->keyframes[0]->maxs;
+
+				if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
+				{
+					return trav;
+				}
 			}
 		}
+
 
 		return NULL;
 	}

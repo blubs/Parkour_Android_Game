@@ -114,9 +114,7 @@ public:
 	Cube_Map* sky_cube_map = NULL;
 
 	//Global Building to building traversals (referenced by player)
-	Traversal* bldg_trav_1;
-	Traversal* bldg_trav_2;
-	Traversal* bldg_trav_3;
+	Traversal* bldg_travs[3];
 
 	//temp remove this
 	//Static_Model* window_int_model;

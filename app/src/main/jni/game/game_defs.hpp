@@ -266,6 +266,9 @@ extern int PREV_BLDG[3];
 #define PLAYER_ANIM_SHOWCASE_HANDS 8
 
 
+#define BUILDING_TRAV_COUNT 3
+
+
 
 #define PARKOUR_GAME_DEFS_HPP
 
