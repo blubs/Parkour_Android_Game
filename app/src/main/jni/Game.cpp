@@ -152,6 +152,20 @@ int Game::load_shaders ()
 	};
 	solid_shader= new Shader("shaders/solid_color.vert","shaders/solid_color.frag",pt6,pn6,3);
 
+	//Screen Overlay shader (drawn above the 3d world)
+	//Test shader
+	GLuint pt7[] =
+	{
+	Shader::PARAM_VERTICES,
+	Shader::PARAM_COLOR_MULT
+	};
+	const char *pn7[] =
+	{
+	"vert_pos",
+	"info"
+	};
+	screen_overlay_shader = new Shader("shaders/screen_overlay.vert","shaders/screen_overlay.frag",pt7,pn7,2);
+
 
 	return 1;
 }
@@ -163,6 +177,7 @@ void Game::unload_shaders ()
 	delete text_shader;
 	delete player_skin_shader;
 	delete solid_shader;
+	delete screen_overlay_shader;
 }
 
 int Game::load_materials()
@@ -176,6 +191,7 @@ int Game::load_materials()
 	player_torso_mat = new Material();
 	player_leg_mat = new Material();
 	solid_mat = new Material();
+	screen_overlay_mat = new Material();
 
 	return 1;
 }
@@ -189,6 +205,7 @@ void Game::unload_materials()
 	delete player_torso_mat;
 	delete player_leg_mat;
 	delete solid_mat;
+	delete screen_overlay_mat;
 }
 
 int Game::load_textures()
@@ -313,6 +330,7 @@ int Game::init_gl()
 	player_skin_shader->init_gl();
 	static_color_shader->init_gl();
 	solid_shader->init_gl();
+	screen_overlay_shader->init_gl();
 
 	//==================================== Loading textures =======================================
 	test_texture->init_gl();
@@ -354,6 +372,7 @@ void Game::term_gl()
 	static_color_shader->term_gl();
 	text_shader->term_gl();
 	solid_shader->term_gl();
+	screen_overlay_shader->term_gl();
 
 	//Terminating all loaded models
 	test_arms->term_gl();
@@ -537,6 +556,7 @@ void Game::start()
 	player_torso_mat->set_shader(player_skin_shader);
 	player_leg_mat->set_shader(player_skin_shader);
 	solid_mat->set_shader(solid_shader);
+	screen_overlay_mat->set_shader(screen_overlay_shader);
 
 	player_skin_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_NORMAL,(void*) tex_arm_nor);
 	player_skin_mat->set_fixed_shader_param_ptr(Shader::PARAM_TEXTURE_DIFFUSE,(void*) tex_arm_diff);
@@ -2056,8 +2076,35 @@ void Game::render()
 		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
+
+
 	//draw_floor_collision_voxels(vp);
 	//draw_floor_maneuvers(vp);
 	if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
 		draw_player_bbox(vp);
+
+
+	//Drawing Screen Overlay
+	//TODO: move this to its own method
+	const float quad_verts[] =
+	{
+	-1.0f,1.0f,0.0f,
+	-1.0f,-1.0f,0.0f,
+	1.0f,-1.0f,0.0f,
+	1.0f,-1.0f,0.0f,
+	1.0f,1.0f,0.0f,
+	-1.0f,1.0f,0.0f
+	};
+
+	float black_opacity = fmodf(t,1.0);
+	float white_opacity = fmodf(t,2.0) * 0.5f;
+	float fade_opacity = fmodf(t,3.0) * 0.33f;
+
+	const float info[] = { black_opacity, white_opacity, fade_opacity,0.0f };
+
+	screen_overlay_mat->bind_material();
+	screen_overlay_mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
+	screen_overlay_mat->bind_value(Shader::PARAM_COLOR_MULT, (void *) info);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }

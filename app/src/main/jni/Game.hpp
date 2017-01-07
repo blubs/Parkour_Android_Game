@@ -49,6 +49,7 @@ public:
 	Shader *text_shader = NULL;
 	Shader *player_skin_shader = NULL;
 	Shader *solid_shader = NULL;
+	Shader *screen_overlay_shader = NULL;
 
 	//------------- Materials -----------------
 	Material *mat_red = NULL;
@@ -60,6 +61,7 @@ public:
 	Material *player_torso_mat = NULL;
 	Material *player_leg_mat = NULL;
 	Material *solid_mat = NULL;
+	Material *screen_overlay_mat = NULL;
 
 	//------------ Textures -------------------
 	Texture *test_texture = NULL;
