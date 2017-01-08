@@ -168,10 +168,9 @@ int Skeleton::update_frame()
 
 	float ctime = Time::time();
 
-	LOGE("Engine Frame.... (t=%.3f)",ctime);
-	if(ctime > time_for_next_frame)
+	//We don't want to miss a frame over an extremely small margin, check +/- a few milliseconds
+	if(ctime > time_for_next_frame - 0.005f)
 	{
-		LOGE("Animation Frame.... (t=%.3f)", ctime);
 		current_frame += 1;
 		dest_frame += 1;
 		time_for_next_frame = ctime + frame_time;
@@ -204,8 +203,7 @@ int Skeleton::update_frame()
 					break;
 			}
 		}
-		//next_frame = current_frame + 1;
-		//dest_frame = next_frame + 1;
+
 		//Setting the frame to lerp to
 		if(dest_frame >= anim_lengths[current_anim])
 		{

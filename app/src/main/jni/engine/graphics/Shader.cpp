@@ -364,6 +364,8 @@ const char *Shader::GLOBAL_PARAM_VEC3_CAM_POS_ID = "cam_pos";
 const char *Shader::GLOBAL_PARAM_VEC3_CAM_DIR_ID = "cam_dir";
 const char *Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_DIR_ID = "dirlight_dir";
 const char *Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_COL_ID = "dirlight_col";
+const char *Shader::GLOBAL_PARAM_FLOAT_WIDTH_ID = "view_width";
+const char *Shader::GLOBAL_PARAM_FLOAT_HEIGHT_ID = "view_height";
 
 //List of shader identifiers for the global parameters
 const char *Shader::GLOBAL_PARAM_IDS[] =
@@ -372,7 +374,9 @@ const char *Shader::GLOBAL_PARAM_IDS[] =
 	Shader::GLOBAL_PARAM_VEC3_CAM_POS_ID,
 	Shader::GLOBAL_PARAM_VEC3_CAM_DIR_ID,
 	Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_DIR_ID,
-	Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_COL_ID
+	Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_COL_ID,
+	Shader::GLOBAL_PARAM_FLOAT_WIDTH_ID,
+	Shader::GLOBAL_PARAM_FLOAT_HEIGHT_ID,
 };
 
 //Memory for the static parameters
@@ -381,6 +385,8 @@ float Shader::global_param_vec3_cam_pos[3] = {0,0,0};
 float Shader::global_param_vec3_cam_dir[3] = {0,0,0};
 float Shader::global_param_vec3_dirlight_dir[3] = {0,0,0};
 float Shader::global_param_vec3_dirlight_col[3] = {0,0,0};
+float Shader::global_param_float_width[1] = {0};
+float Shader::global_param_float_height[1] = {0};
 
 //Array holding all global parameter locations
 float *Shader::global_params[] =
@@ -389,7 +395,9 @@ float *Shader::global_params[] =
 	Shader::global_param_vec3_cam_pos,
 	Shader::global_param_vec3_cam_dir,
 	Shader::global_param_vec3_dirlight_dir,
-	Shader::global_param_vec3_dirlight_col
+	Shader::global_param_vec3_dirlight_col,
+	Shader::global_param_float_width,
+	Shader::global_param_float_height
 };
 
 
@@ -430,6 +438,8 @@ void Shader::bind_used_global_params()
 				break;
 				//One float
 			case GLOBAL_PARAM_FLOAT_TIME:
+			case GLOBAL_PARAM_FLOAT_WIDTH:
+			case GLOBAL_PARAM_FLOAT_HEIGHT:
 				glUniform1f(loc,global_params[type][0]);
 				break;
 			default:
@@ -455,6 +465,8 @@ void Shader::set_static_global_param(int type,float *value)
 			//FALLTHROUGH for the first index
 			//One float
 		case GLOBAL_PARAM_FLOAT_TIME:
+		case GLOBAL_PARAM_FLOAT_WIDTH:
+		case GLOBAL_PARAM_FLOAT_HEIGHT:
 			global_params[type][0] = value[0];
 		default:
 			break;

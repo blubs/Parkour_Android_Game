@@ -1,8 +1,9 @@
-uniform mat4 mvp;
-
 attribute vec4 vert_pos;
 
 uniform vec4 info;
+
+uniform float view_width;
+uniform float view_height;
 
 void main()
 {

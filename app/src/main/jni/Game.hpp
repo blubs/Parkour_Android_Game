@@ -212,6 +212,15 @@ public:
 	//Holds the player state logic
 	void player_state_logic();
 
+	//Draws the screen overlay (a slight edge darkening on the screen)
+	//This also handles the black / white overlays on the screen
+	void render_screen_overlay();
+
+	//These are the variables that control the screen overlay effects
+	float edge_darken_opacity = 0.3f;
+	float black_overlay_opacity = 0.0f;
+	float white_overlay_opacity = 0.0f;
+
 	//Draws player bounding box
 	void draw_player_bbox(Mat4 vp);
 	//Draws active floors collision voxels

@@ -127,13 +127,12 @@ public:
 		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt);
 		int goal_max = clamp((int)dimensions.x,other_left_endpnt,other_right_endpnt);
 
-		LOGE("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
-
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
+
 		generate_interior_model_list();
 	}
 
-	//Currently regenerates the building using a different rng numbers
+	//Currently regenerates the building using different rng numbers
 	void regenerate_floor(Vec3 player_pos, Building* next_bldg)
 	{
 		int temp = active_floor_number;
@@ -184,8 +183,22 @@ public:
 		pos = Vec3(0,0,0);
 		global_mins = Vec3(0,0,0);
 		global_maxs = Vec3(0,0,0);
-		exterior_model_count = 0;
-		interior_model_count = 0;
+
+		broken_iwindow_index_x = -1;
+		broken_iwindow_index_y = -1;
+		broken_owindow_index_x = -1;
+		broken_owindow_index_y = -1;
+
+		ext_mdl_fw_count = 0;
+		ext_mdl_bw_count = 0;
+		ext_mdl_lw_count = 0;
+		ext_mdl_rw_count = 0;
+
+		int_mdl_fw_count = 0;
+		int_mdl_bw_count = 0;
+		int_mdl_lw_count = 0;
+		int_mdl_rw_count = 0;
+
 		active_floor->clear();
 		generated = false;
 	}
@@ -225,20 +238,59 @@ public:
 
 
 	//Holds a list of shell models for the building exterior
-	Static_Model* exterior_models[BUILDING_MAX_EXTERIOR_MODELS];
-	Mat4 exterior_model_transforms[BUILDING_MAX_EXTERIOR_MODELS];
-	int exterior_model_count = 0;
+	//Different walls are kept in different lists because there
+	// are times when the front wall and back wall need to be regenerated
+
+	//Front wall models:
+	Static_Model* ext_mdls_fw[BUILDING_MAX_EXTERIOR_MODELS];
+	Mat4 ext_mdl_fw_trans[BUILDING_MAX_EXTERIOR_MODELS];
+	int ext_mdl_fw_count = 0;
+
+	//Back wall models:
+	Static_Model* ext_mdls_bw[BUILDING_MAX_EXTERIOR_MODELS];
+	Mat4 ext_mdl_bw_trans[BUILDING_MAX_EXTERIOR_MODELS];
+	int ext_mdl_bw_count = 0;
+
+	//Left wall models:
+	Static_Model* ext_mdls_lw[BUILDING_MAX_EXTERIOR_MODELS];
+	Mat4 ext_mdl_lw_trans[BUILDING_MAX_EXTERIOR_MODELS];
+	int ext_mdl_lw_count = 0;
+
+	//Right wall models:
+	Static_Model* ext_mdls_rw[BUILDING_MAX_EXTERIOR_MODELS];
+	Mat4 ext_mdl_rw_trans[BUILDING_MAX_EXTERIOR_MODELS];
+	int ext_mdl_rw_count = 0;
+
 
 	//Holds a list of shell models for the building interior
-	Static_Model* interior_models[BUILDING_MAX_INTERIOR_MODELS];
-	Mat4 interior_model_transforms[BUILDING_MAX_INTERIOR_MODELS];
-	int interior_model_count = 0;
+
+	//Front wall models:
+	Static_Model* int_mdls_fw[BUILDING_MAX_INTERIOR_MODELS];
+	Mat4 int_mdl_fw_trans[BUILDING_MAX_INTERIOR_MODELS];
+	int int_mdl_fw_count = 0;
+
+	//Front wall models:
+	Static_Model* int_mdls_bw[BUILDING_MAX_INTERIOR_MODELS];
+	Mat4 int_mdl_bw_trans[BUILDING_MAX_INTERIOR_MODELS];
+	int int_mdl_bw_count = 0;
+
+	//Left wall models:
+	Static_Model* int_mdls_lw[BUILDING_MAX_INTERIOR_MODELS];
+	Mat4 int_mdl_lw_trans[BUILDING_MAX_INTERIOR_MODELS];
+	int int_mdl_lw_count = 0;
+
+	//Right wall models:
+	Static_Model* int_mdls_rw[BUILDING_MAX_INTERIOR_MODELS];
+	Mat4 int_mdl_rw_trans[BUILDING_MAX_INTERIOR_MODELS];
+	int int_mdl_rw_count = 0;
+
+
 
 //#define DEBUG_SUBDIVIDE_WALL
 
 	//Recursively 2d partitions a wall into the largest (nxn) (n being 2^i for all integers i in [0,5]) tiles that fit
 	//Then we draw these tiles, drastically reducing the draw call counts for the buildings
-	void subdivide_wall(Mat4 trans, int wall_width, int wall_height)
+	void subdivide_wall(Mat4 trans, int wall_width, int wall_height, int* mdl_count, Static_Model **mdl_list, Mat4* trans_list)
 	{
 		Static_Model* models[6];
 		models[0] = Global_Tiles::instance->window_models->tile_model;
@@ -279,13 +331,13 @@ public:
 				//Generate 1 by num_y
 				for(int k = 0; k < num_y; k++)
 				{
-					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+					if(*mdl_count >= BUILDING_MAX_EXTERIOR_MODELS)
 					{
-						LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+						LOGW("Warning, exceeded max exterior model count of %d",*mdl_count);
 						return;
 					}
-					exterior_models[exterior_model_count] = model;
-					exterior_model_transforms[exterior_model_count++] = trans * Mat4::TRANSLATE(Vec3(0,0,k*exp*WINDOW_TILE_SIZE));
+					mdl_list[*mdl_count] = model;
+					trans_list[(*mdl_count)++] = trans * Mat4::TRANSLATE(Vec3(0,0,k*exp*WINDOW_TILE_SIZE));
 				}
 
 				//Getting the end point that we filled to:
@@ -297,7 +349,7 @@ public:
 					LOGI("Calling subdivide at top on:  %dx%d area at (0,0,%d)",wall_width, wall_height-(int)ofs.z,(int)ofs.z);
 #endif
 					//Generate from the left all the way to the right
-					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),1, wall_height-(int)ofs.z);
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),1, wall_height-(int)ofs.z,mdl_count,mdl_list,trans_list);
 				}
 				return;
 			}
@@ -311,13 +363,13 @@ public:
 				//Generate num_x by 1 wall
 				for(int j = 0; j < num_x; j++)
 				{
-					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+					if(*mdl_count >= BUILDING_MAX_EXTERIOR_MODELS)
 					{
-						LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+						LOGW("Warning, exceeded max exterior model count of %d",*mdl_count);
 						return;
 					}
-					exterior_models[exterior_model_count] = model;
-					exterior_model_transforms[exterior_model_count++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,0));
+					mdl_list[*mdl_count] = model;
+					trans_list[(*mdl_count)++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,0));
 				}
 
 				//Getting the end point that we filled to:
@@ -329,7 +381,7 @@ public:
 					LOGI("Calling subdivide on right on:  %dx%d area at (%d,0,0)",wall_width-(int)ofs.x, (int)ofs.z,(int)ofs.x);
 #endif
 					//Generate from bottom to the top of the tiles that we placed
-					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x, 1);
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x, 1,mdl_count,mdl_list,trans_list);
 				}
 				return;
 			}
@@ -347,13 +399,13 @@ public:
 				{
 					for(int k = 0; k < num_y; k++)
 					{
-						if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+						if(*mdl_count >= BUILDING_MAX_EXTERIOR_MODELS)
 						{
-							LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+							LOGW("Warning, exceeded max exterior model count of %d",*mdl_count);
 							return;
 						}
-						exterior_models[exterior_model_count] = model;
-						exterior_model_transforms[exterior_model_count++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,k*exp*WINDOW_TILE_SIZE));
+						mdl_list[*mdl_count] = model;
+						trans_list[(*mdl_count)++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,k*exp*WINDOW_TILE_SIZE));
 					}
 				}
 
@@ -368,7 +420,7 @@ public:
 					LOGI("Calling subdivide at top on:  %dx%d area at (0,0,%d)",wall_width, wall_height-(int)ofs.z,(int)ofs.z);
 #endif
 					//Generate from the left all the way to the right
-					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),wall_width, wall_height-(int)ofs.z);
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(0,0,ofs.z * WINDOW_TILE_SIZE)),wall_width, wall_height-(int)ofs.z,mdl_count,mdl_list,trans_list);
 				}
 				//If we did not fill the wall horizontally
 				if(wall_width - (num_x * exp) > 0)
@@ -377,7 +429,7 @@ public:
 					LOGI("Calling subdivide on right on:  %dx%d area at (%d,0,0)",wall_width-(int)ofs.x, (int)ofs.z,(int)ofs.x);
 #endif
 					//Generate from bottom to the top of the tiles that we placed
-					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x, (int)ofs.z);
+					subdivide_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x, (int)ofs.z,mdl_count,mdl_list,trans_list);
 				}
 				return;
 			}
@@ -385,7 +437,7 @@ public:
 	}
 
 	//Subdivide an interior window wall horizontally
-	void subdivide_interior_wall(Mat4 trans, int wall_width)
+	void subdivide_interior_wall(Mat4 trans, int wall_width, int *mdl_count, Static_Model **mdl_list, Mat4 *trans_list)
 	{
 		Static_Model* hor_models[6];
 		//TODO: change these references depending on the style
@@ -409,13 +461,13 @@ public:
 				//Generate a num_x wide interior wall
 				for(int j = 0; j < num_x; j++)
 				{
-					if(exterior_model_count >= BUILDING_MAX_EXTERIOR_MODELS)
+					if(*mdl_count >= BUILDING_MAX_EXTERIOR_MODELS)
 					{
-						LOGW("Warning, exceeded max exterior model count of %d",exterior_model_count);
+						LOGW("Warning, exceeded max exterior model count of %d",*mdl_count);
 						return;
 					}
-					interior_models[interior_model_count] = model;
-					interior_model_transforms[interior_model_count++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,0));
+					mdl_list[*mdl_count] = model;
+					trans_list[(*mdl_count)++] = trans * Mat4::TRANSLATE(Vec3(j*exp*TILE_SIZE,0,0));
 				}
 
 				//Getting the end point that we filled to:
@@ -424,7 +476,7 @@ public:
 				if(wall_width - (num_x * exp) > 0)
 				{
 					//Generate from bottom to the top of the tiles that we placed
-					subdivide_interior_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x);
+					subdivide_interior_wall(trans * Mat4::TRANSLATE(Vec3(ofs.x * TILE_SIZE,0,0)),wall_width-(int)ofs.x,mdl_count,mdl_list,trans_list);
 				}
 				return;
 			}
@@ -436,21 +488,23 @@ public:
 		//TODO: set exterior style model
 		//Generating the front wall of the building
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
-		subdivide_wall(world_trans,(int)dimensions.x,(int)dimensions.z);
+		subdivide_wall(world_trans,(int)dimensions.x,(int)dimensions.z,&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
 
 		//Generating the back wall of the building
-		Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
-		subdivide_wall(wall_orientation,(int)dimensions.x,(int)dimensions.z);
+		Mat4 wall_orient = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+		subdivide_wall(wall_orient,(int)dimensions.x,(int)dimensions.z,&ext_mdl_bw_count,ext_mdls_bw,ext_mdl_bw_trans);
 
 		//Generating the right wall of the building
-		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-		subdivide_wall(wall_orientation,(int)dimensions.y,(int)dimensions.z);
+		wall_orient = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+		subdivide_wall(wall_orient,(int)dimensions.y,(int)dimensions.z,&ext_mdl_rw_count,ext_mdls_rw,ext_mdl_rw_trans);
 
 		//Generating the left wall of the building
-		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-		subdivide_wall(wall_orientation,(int)dimensions.y,(int)dimensions.z);
+		wall_orient = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+		subdivide_wall(wall_orient,(int)dimensions.y,(int)dimensions.z,&ext_mdl_lw_count,ext_mdls_lw,ext_mdl_lw_trans);
 
-		LOGE("Exterior model list generation finished using %d models",exterior_model_count);
+		LOGE("Exterior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
+		ext_mdl_fw_count + ext_mdl_bw_count + ext_mdl_rw_count + ext_mdl_lw_count,
+			ext_mdl_fw_count, ext_mdl_bw_count, ext_mdl_rw_count, ext_mdl_lw_count);
 	}
 
 	void generate_interior_model_list()
@@ -458,21 +512,23 @@ public:
 		//TODO: set exterior style model
 		//Generating the front inside wall of the building
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
-		subdivide_interior_wall(world_trans,(int)dimensions.x);
+		subdivide_interior_wall(world_trans,(int)dimensions.x,&int_mdl_fw_count,int_mdls_fw,int_mdl_fw_trans);
 
 		//Generating the back inside wall of the building
-		Mat4 wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
-		subdivide_interior_wall(wall_orientation,(int)dimensions.x);
+		Mat4 wall_orient = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+		subdivide_interior_wall(wall_orient,(int)dimensions.x,&int_mdl_bw_count,int_mdls_bw,int_mdl_bw_trans);
 
 		//Generating the right inside wall of the building
-		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
-		subdivide_interior_wall(wall_orientation,(int)dimensions.y);
+		wall_orient = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
+		subdivide_interior_wall(wall_orient,(int)dimensions.y,&int_mdl_rw_count,int_mdls_rw,int_mdl_rw_trans);
 
 		//Generating the left inside wall of the building
-		wall_orientation = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
-		subdivide_interior_wall(wall_orientation,(int)dimensions.y);
+		wall_orient = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
+		subdivide_interior_wall(wall_orient,(int)dimensions.y,&int_mdl_lw_count,int_mdls_lw,int_mdl_lw_trans);
 
-		LOGE("Interior model list generation finished using %d models",interior_model_count);
+		LOGE("Interior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
+			int_mdl_fw_count + int_mdl_bw_count + int_mdl_rw_count + int_mdl_lw_count,
+			int_mdl_fw_count, int_mdl_bw_count, int_mdl_rw_count, int_mdl_lw_count);
 	}
 
 
@@ -488,23 +544,41 @@ public:
 		Static_Model* model;
 		Material* mat = Global_Tiles::instance->window_mat;
 
-		for(int i = 0; i < exterior_model_count; i++)
+		//Rendering the all walls:
+		int *mdl_count;
+		Static_Model **mdl_list;
+		Mat4 *trans_list;
+
+		//Iteration arrays
+		int *mdl_counts[4] = {&ext_mdl_fw_count,&ext_mdl_bw_count,&ext_mdl_lw_count,&ext_mdl_rw_count};
+		Static_Model **mdl_lists[4] = {ext_mdls_fw,ext_mdls_bw,ext_mdls_lw,ext_mdls_rw};
+		Mat4 *trans_lists[4] = {ext_mdl_fw_trans,ext_mdl_bw_trans,ext_mdl_lw_trans,ext_mdl_rw_trans};
+
+		for(int i = 0; i < 4; i++)
 		{
-			model = exterior_models[i];
-			if(model != last_model)
-				model->bind_mesh_data2(mat);
-			m = exterior_model_transforms[i];
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+			mdl_count = mdl_counts[i];
+			mdl_list = mdl_lists[i];
+			trans_list = trans_lists[i];
 
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+			for(int j = 0; j < *mdl_count; j++)
+			{
+				model = mdl_list[j];
+				if(model != last_model)
+					model->bind_mesh_data2(mat);
+				m = trans_list[j];
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+				mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
 
-			model->render_without_bind();
-			last_model = model;
+				m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+				last_model = model;
+			}
 		}
+
 		return 1;
 	}
 
@@ -520,22 +594,39 @@ public:
 		Static_Model* model;
 		Material* mat = Global_Tiles::instance->window_int_mat;
 
-		for(int i = 0; i < interior_model_count; i++)
+		//Rendering the all walls:
+		int *mdl_count;
+		Static_Model **mdl_list;
+		Mat4 *trans_list;
+
+		//Iteration arrays
+		int *mdl_counts[4] = {&int_mdl_fw_count,&int_mdl_bw_count,&int_mdl_lw_count,&int_mdl_rw_count};
+		Static_Model **mdl_lists[4] = {int_mdls_fw,int_mdls_bw,int_mdls_lw,int_mdls_rw};
+		Mat4 *trans_lists[4] = {int_mdl_fw_trans,int_mdl_bw_trans,int_mdl_lw_trans,int_mdl_rw_trans};
+
+		for(int i = 0; i < 4; i++)
 		{
-			model = interior_models[i];
-			if(model != last_model)
-				model->bind_mesh_data2(mat);
-			m = interior_model_transforms[i];
-			mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
+			mdl_count = mdl_counts[i];
+			mdl_list = mdl_lists[i];
+			trans_list = trans_lists[i];
 
-			mvp = vp * m;
-			mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+			for(int j = 0; j < *mdl_count; j++)
+			{
+				model = mdl_list[j];
+				if(model != last_model)
+					model->bind_mesh_data2(mat);
+				m = trans_list[j];
+				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
-			m_it = m.inverted_then_transposed().get_mat3();
-			mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+				mvp = vp * m;
+				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
 
-			model->render_without_bind();
-			last_model = model;
+				m_it = m.inverted_then_transposed().get_mat3();
+				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+				model->render_without_bind();
+				last_model = model;
+			}
 		}
 		return 1;
 	}
@@ -597,10 +688,103 @@ public:
 
 			render_int_walls(vp);
 		}
-		//FIXME: if we end up using transparency in tiles, call transparent render for floor
+
+
+		//if we end up using transparency in tiles, call transparent render for floor
 		//if(active_floor)
 		//	active_floor->render(vp);
 		return 1;
+	}
+
+	//Sets the window that pos hits as broken. (direction: true = into the building, false = out of the building)
+	void break_window(Vec3 pos, bool direction)
+	{
+		//Finding pos relative to building global min
+		pos = pos - global_mins;
+
+		int window_x = (int) (pos.x / TILE_SIZE);
+		int window_y = (int) (pos.z / WINDOW_TILE_SIZE);
+
+		//TODO: make sure we use the correct exterior tile model tiles
+
+		bool into_building = true;
+		if(direction == into_building)
+		{
+			broken_iwindow_index_x = window_x;
+			broken_iwindow_index_y = window_y;
+
+			//Resetting the building exterior and interior wall shell:
+			ext_mdl_fw_count = 0;
+			int_mdl_fw_count = 0;
+
+
+			Mat4 trans_ext = Mat4::TRANSLATE(global_mins);
+			Mat4 trans_ext_left = Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
+			Mat4 trans_ext_above = Mat4::TRANSLATE(Vec3(0,0,(window_y+1)*WINDOW_TILE_SIZE)) * trans_ext;
+			Mat4 trans_ext_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
+
+			Mat4 trans_int_left = Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
+			Mat4 trans_int_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
+
+			//Populating wall mesh below the broken window
+			subdivide_wall(trans_ext,(int)dimensions.x,window_y,&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
+			//Populating wall mesh to left of broken window
+			subdivide_wall(trans_ext_left,window_x,1,&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
+			//Populating wall mesh to right of broken window
+			subdivide_wall(trans_ext_right,(int)dimensions.x-(window_x+1),1,&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
+			//Populating wall mesh above the broken window
+			subdivide_wall(trans_ext_above,(int)dimensions.x,(int)dimensions.z-(window_y+1),
+				&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
+			//Populating inside wall to left of broken window
+			subdivide_interior_wall(trans_int_left,window_x,&int_mdl_fw_count,int_mdls_fw,int_mdl_fw_trans);
+			//Populating inside wall to right of broken window
+			subdivide_interior_wall(trans_int_right,(int)dimensions.x-(window_x+1),
+				&int_mdl_fw_count,int_mdls_fw,int_mdl_fw_trans);
+
+			//TODO: render actual broken window and start its animation
+		}
+		//Breaking window out of building
+		else
+		{
+			broken_owindow_index_x = window_x;
+			broken_owindow_index_y = window_y;
+
+			//Because window_x is the index from the our left of the building
+			//we want the index from the right of the back wall (which is index 0):
+			window_x = (int)(dimensions.x - 1 - window_x);
+
+			//Resetting the building exterior and interior wall shell:
+			ext_mdl_bw_count = 0;
+			int_mdl_bw_count = 0;
+
+			Mat4 trans_ext = Mat4::TRANSLATE(global_mins)
+							 * Mat4::TRANSLATE(Vec3(size.x,size.y,0))
+							 * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+
+			Mat4 trans_ext_left = trans_ext * Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE));
+			Mat4 trans_ext_above = trans_ext * Mat4::TRANSLATE(Vec3(0,0,(window_y+1)*WINDOW_TILE_SIZE));
+			Mat4 trans_ext_right = trans_ext * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE));
+
+			Mat4 trans_int_left = trans_ext * Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE));
+			Mat4 trans_int_right = trans_ext * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE));
+
+			//Populating wall mesh below the broken window
+			subdivide_wall(trans_ext,(int)dimensions.x,window_y,&ext_mdl_bw_count,ext_mdls_bw,ext_mdl_bw_trans);
+			//Populating wall mesh to left of broken window
+			subdivide_wall(trans_ext_left,window_x,1,&ext_mdl_bw_count,ext_mdls_bw,ext_mdl_bw_trans);
+			//Populating wall mesh to right of broken window
+			subdivide_wall(trans_ext_right,(int)dimensions.x-(window_x+1),1,&ext_mdl_bw_count,ext_mdls_bw,ext_mdl_bw_trans);
+			//Populating wall mesh above the broken window
+			subdivide_wall(trans_ext_above,(int)dimensions.x,(int)dimensions.z-(window_y+1),
+				&ext_mdl_bw_count,ext_mdls_bw,ext_mdl_bw_trans);
+			//Populating inside wall to left of broken window
+			subdivide_interior_wall(trans_int_left,window_x,&int_mdl_bw_count,int_mdls_bw,int_mdl_bw_trans);
+			//Populating inside wall to right of broken window
+			subdivide_interior_wall(trans_int_right,(int)dimensions.x-(window_x+1),
+				&int_mdl_bw_count,int_mdls_bw,int_mdl_bw_trans);
+
+			//TODO: render actual broken window and start its animation
+		}
 	}
 };
 #endif //PARKOUR_BUILDING_HPP

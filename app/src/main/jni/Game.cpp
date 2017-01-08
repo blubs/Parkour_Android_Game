@@ -629,11 +629,12 @@ void Game::start()
 	{
 		buildings[i] = new Building();
 		buildings[i]->active_floor->dynamic_floor_model = dynamic_floor_models[i];
+		//FIXME remove this:
+		buildings[i]->active_floor->debug_branch_mat = solid_mat;
+
 	}
 
 	buildings[0]->generate(NULL,Vec3::ZERO());
-	//FIXME remove this:
-	buildings[0]->active_floor->debug_branch_mat = solid_mat;
 
 	//Distance between buildings
 	Vec3 bldg_offset = Vec3(0,BUILDING_GAP,0);
@@ -651,6 +652,12 @@ void Game::start()
 
 	player->pos.y = 1;
 	player_state = PLAYER_STATE_NOCLIP;
+
+	//Setting up one-time global parameters
+	float width = (float) screen_width;
+	float height = (float)screen_height;
+	Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_WIDTH, &width);
+	Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_HEIGHT, &height);
 }
 
 //Ran on last frame
@@ -739,6 +746,30 @@ void Game::draw_player_bbox(Mat4 vp)
 		solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color_red);
 	glDrawArrays(GL_LINES, 0, 40);
 }
+
+//Draws the screen overlay (a slight edge darkening on the screen)
+//This also handles the black / white overlays on the screen
+void Game::render_screen_overlay()
+{
+	const float quad_verts[] =
+	{
+	-1.0f,1.0f,0.3f,
+	-1.0f,-1.0f,0.3f,
+	1.0f,-1.0f,0.3f,
+	1.0f,-1.0f,0.3f,
+	1.0f,1.0f,0.3f,
+	-1.0f,1.0f,0.3f
+	};
+
+	const float info[] = { black_overlay_opacity, white_overlay_opacity, edge_darken_opacity,0.0f };
+
+	screen_overlay_mat->bind_material();
+	screen_overlay_mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
+	screen_overlay_mat->bind_value(Shader::PARAM_COLOR_MULT, (void *) info);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
 //Draws active floor maneuver keyframes
 void Game::draw_keyframe(Mat4 vp, Keyframe* key, Vec3 ofs)
 {
@@ -1070,11 +1101,17 @@ float Game::get_keyframe_goal_yaw(Keyframe* key)
 void Game::reached_mnvr_keyframe ()
 {
 	//If we are traversing: handle special flags
-	if(player_state == PLAYER_STATE_TRAVERSING)
+	if(player_state == PLAYER_STATE_TRAVERSING && mnvr_frame_number >= 0)
 	{
 		switch(mnvr_frame->spec_flag)
 		{
 			default:
+				break;
+			case FRAME_SPECFLAG_BREAKWINDOW_OUT:
+				current_building->break_window(player->pos,false);
+				break;
+			case FRAME_SPECFLAG_BREAKWINDOW_IN:
+				buildings[NEXT_BLDG[cbldg_index]]->break_window(player->pos,true);
 				break;
 		}
 	}
@@ -1479,6 +1516,7 @@ void Game::player_state_logic()
 			trav_current = trav;
 			mnvr_current = trav;
 			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_frame_number = -1;
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = trav->keyframes[0];
 			reached_mnvr_keyframe();
@@ -1493,6 +1531,7 @@ void Game::player_state_logic()
 			player_state = PLAYER_STATE_MANEUVERING;
 			mnvr_current = man;
 			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_frame_number = -1;
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = man->keyframes[0];
 			reached_mnvr_keyframe();
@@ -1625,7 +1664,7 @@ void Game::player_state_logic()
 					player_skel->play_default_anim();
 				}
 		}
-		//In this context, subtate_time is the time that the player will slide for
+		//In this context, substate_time is the time that the player will slide for
 
 		player_slide_speed += PLAYER_SLIDE_ACCEL * Time::udelta_time;
 		if(player_slide_speed < PLAYER_SLIDE_MIN_SPEED)
@@ -1875,8 +1914,8 @@ void Game::update()
 		return;
 	}
 
-	//FIXME: remove this
 	//TODO: handle input here
+	//FIXME: remove this
 	//Checking touch button interactions
 	//Checking input from all fingers:
 	for(int i = 0; i < MAX_INPUT_TOUCHES; i++)
@@ -1969,8 +2008,6 @@ void Game::update()
 
 	player_state_logic();
 
-	//TODO: make this only execute at 60 times per second
-	//FIXME: I don't believe this is playing at 60 fps...
 	player->update();
 }
 
@@ -2032,6 +2069,8 @@ void Game::render()
 		buildings[i]->render_transparent_meshes(player->pos,vp);
 	}
 
+	render_screen_overlay();
+
 	//Test UI image
 	test_img->render(camera->ortho_proj_m);
 
@@ -2082,29 +2121,4 @@ void Game::render()
 	//draw_floor_maneuvers(vp);
 	if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
 		draw_player_bbox(vp);
-
-
-	//Drawing Screen Overlay
-	//TODO: move this to its own method
-	const float quad_verts[] =
-	{
-	-1.0f,1.0f,0.0f,
-	-1.0f,-1.0f,0.0f,
-	1.0f,-1.0f,0.0f,
-	1.0f,-1.0f,0.0f,
-	1.0f,1.0f,0.0f,
-	-1.0f,1.0f,0.0f
-	};
-
-	float black_opacity = fmodf(t,1.0);
-	float white_opacity = fmodf(t,2.0) * 0.5f;
-	float fade_opacity = fmodf(t,3.0) * 0.33f;
-
-	const float info[] = { black_opacity, white_opacity, fade_opacity,0.0f };
-
-	screen_overlay_mat->bind_material();
-	screen_overlay_mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
-	screen_overlay_mat->bind_value(Shader::PARAM_COLOR_MULT, (void *) info);
-
-	glDrawArrays(GL_TRIANGLES, 0, 6);
 }

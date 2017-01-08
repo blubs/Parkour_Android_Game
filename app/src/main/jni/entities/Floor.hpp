@@ -1921,15 +1921,11 @@ public:
 		int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
 
 		//Checking if we aren't on the last row of tiles:
-		LOGE("We are in tile:X: %d / [%d,%d]. Y: %d / %d",tile_x,goal_min_column,goal_max_column,tile_y,length-1);
 		if(tile_y != length - 1)
 			return NULL;
 		//Checking if we are within goal columns:
 		if(tile_x < goal_min_column || tile_x > goal_max_column)
 			return NULL;
-
-		LOGE("We are in the right tile!");
-
 
 		Vec3 mins;
 		Vec3 maxs;

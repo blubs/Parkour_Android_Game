@@ -465,7 +465,7 @@ void Engine::draw_frame()
 	//Drawing FPS
 	char fps_str[20];
 	snprintf(fps_str,20,"FPS: %.2f",fps);
-	UI_Text::draw_text(fps_str,Vec3(width * 0.1f, height * 0.4f,0.5),Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
+	UI_Text::draw_text(fps_str,Vec3(width * 0.1f, height * 0.4f,0.5f),Vec3::ZERO(),100,Vec3(1,1,1),Vec3::ZERO(),1,false,
 		game->camera->ortho_proj_m);
 	//============================================================================================
 
