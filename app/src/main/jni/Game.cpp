@@ -1111,8 +1111,18 @@ void Game::reached_mnvr_keyframe ()
 				current_building->break_window(player->pos,false);
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_IN:
-				buildings[NEXT_BLDG[cbldg_index]]->break_window(player->pos,true);
+			{
+				int next_bldg_index = NEXT_BLDG[cbldg_index];
+				Building* next_bldg = buildings[next_bldg_index];
+				next_bldg->break_window(player->pos,true);
+				//At this point the next building will be our current building
+				next_bldg
+
+				current_building = next_bldg;
+				cbldg_index = next_bldg_index;
+
 				break;
+			}
 		}
 	}
 	//Setting up movement for keyframe:

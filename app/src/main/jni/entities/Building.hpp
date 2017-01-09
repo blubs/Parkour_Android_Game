@@ -13,13 +13,6 @@ class Building : public Entity
 {
 public:
 	//Pos of the building is going to be defined as (center,smallest(closest to 0),bottom of building)
-	//Where the bottom of the buildings go in world space
-	static const int GROUNDLEVEL = -50;
-
-	static const int MAX_WIDTH = BUILDING_MAX_WIDTH;
-	static const int MAX_LENGTH = BUILDING_MAX_LENGTH;
-	static const int MAX_HEIGHT = BUILDING_MAX_HEIGHT;
-
 	//pos is center near bottom of building
 
 	//Size of the building in meters
@@ -89,8 +82,6 @@ public:
 	{
 		if(generated)
 			return;
-		active_floor_number = 10;
-
 		floors = 20;
 
 		dimensions = Vec3(11,11,floors);
@@ -104,7 +95,7 @@ public:
 			prev_bldg_ofs = Vec3(prev_bldg->pos.x,prev_bldg->global_maxs.y,0);
 			//TODO: calculate building horizontal offset based on size and previous building's position and size
 		}
-		pos = prev_bldg_ofs + bldg_ofs + Vec3(0,0,GROUNDLEVEL);
+		pos = prev_bldg_ofs + bldg_ofs + Vec3(0,0,BUILDING_GROUNDLEVEL);
 
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
@@ -117,6 +108,16 @@ public:
 	{
 		if(!generated)
 			return;
+
+		//Finding which floor number the player is in:
+		active_floor_number = (int) (((player_pos.z - BUILDING_GROUNDLEVEL))/WINDOW_TILE_SIZE);
+		//TODO: when the player goes below the tenth floor:
+		//TODO: 	we want to somehow teleport the player back up, so that we never reach the bottom:
+		//TODO:	maybe teleport this building up all the way so that this active floor is the same as the next building's top floor?
+		//if(active_floor_number < 10)
+		//{
+		//
+		//}
 
 		//Finding our goal column range
 		//(what tiles of this building line up with tiles of next_bldg)
@@ -151,7 +152,7 @@ public:
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
-		pos = Vec3(0,0,GROUNDLEVEL);
+		pos = Vec3(0,0,BUILDING_GROUNDLEVEL);
 
 		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
 		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
