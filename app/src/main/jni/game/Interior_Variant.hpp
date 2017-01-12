@@ -28,6 +28,10 @@ public:
 
 	//Three components to misc map:
 	//R: cubemap reflectiveness
+	//G: unassigned
+	//B: unassigned
+
+	//Previously planned (but scrapped)
 	//G: specularity (try using lightmap value as specularity instead to free this for palette colors)
 	//B: transparency
 	Texture* misc_map = NULL;
@@ -38,9 +42,6 @@ public:
 		if(!shader)
 		{
 			shader = new Shader(vsrc,fsrc,ptypes,pnames,pcount);
-			//Shader(const char *vshader_name, const char *fshader_name, const GLuint* params, const char** pnames, uint pcount);
-
-			//Destroys and unloads shader
 		}
 		return 1;
 	}
@@ -61,8 +62,9 @@ public:
 	{
 		delete diffuse_map;
 		delete normal_map;
-		delete ref_cube_map;
+		delete misc_map;
 		delete light_map;
+		delete ref_cube_map;
 		delete mat;
 	}
 

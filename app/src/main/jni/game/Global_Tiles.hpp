@@ -54,17 +54,12 @@ public:
 	Grid_Tile** tiles[TILE_TYPES];
 
 	//For now, holding explicit references to the tiles
-	Grid_Tile* solid_tile;
 	Grid_Tile* empty_tile;
 	//Wall tiles:
 	Grid_Tile* wall_subtypes[WALL_TYPE_COUNT] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 	//Rail tiles:
 	Grid_Tile* rail_subtypes[RAIL_TYPE_COUNT];
 
-	Grid_Tile* tun_right;
-	Grid_Tile* tun_left;
-	Grid_Tile* tun_r2l;
-	Grid_Tile* tun_l2r;
 
 	/*//Corners
 	Grid_Tile* wall_oXoY;
@@ -87,10 +82,8 @@ public:
 	Grid_Tile* wall_ooyo;
 	Grid_Tile* wall_oooY;*/
 
-
-	//Test collision tiles
-	Grid_Tile* floor_vent;
-	Grid_Tile* wall_vent;
+	//Obstacle Tiles
+	Grid_Tile* obst_tiles[10];
 
 	//Holds the number of variants per type (also the length of each array pointed to by tiles pointer array)
 	int type_variant_counts[TILE_TYPES];

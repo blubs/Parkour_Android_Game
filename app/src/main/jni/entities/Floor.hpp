@@ -121,20 +121,8 @@ public:
 						if(t_subtype && RAIL_TYPE_IS_VALID[t_subtype])
 							obj = Global_Tiles::instance->style[0]->rail_subtypes[t_subtype];
 						break;
-					case TILE_TYPE_SOLD:
-						obj = Global_Tiles::instance->style[0]->solid_tile;
-						break;
 					case TILE_TYPE_OBST:
-						switch(t_subtype)
-						{
-							default:
-							case 0:
-								obj = Global_Tiles::instance->style[0]->floor_vent;
-								break;
-							case 1:
-								obj = Global_Tiles::instance->style[0]->wall_vent;
-								break;
-						}
+						obj = Global_Tiles::instance->style[0]->obst_tiles[t_subtype];
 						break;
 				}
 				tile_object[i][j] = obj;
@@ -1519,10 +1507,6 @@ public:
 		goal_max_column = _goal_max_column;
 
 		// ==================================================
-		//TODO:	floor obstacles that would look okay with walls attached to left/right/both sides
-		//TODO:	slant guide obstacles that force the player to move in a certain direction
-		//TODO:		must not look out of place, and must not look navigable
-		//TODO:			(must not look as though the player can go through/over/under it)
 
 		branch_debug_point_count = 0;
 		//Allowing 1 tile of room before any branching is allowed
@@ -1547,7 +1531,7 @@ public:
 						if(tile_subtype[i][j] == WALL_TYPE_xXoo)
 						{
 							tile_type[i][j] = TILE_TYPE_OBST;
-							tile_subtype[i][j] = Random::rand_int_in_range(0,2);
+							tile_subtype[i][j] = Random::rand_int_in_range(0,10);
 							continue;
 						}
 						//If we cross a half-wall, remove the half wall

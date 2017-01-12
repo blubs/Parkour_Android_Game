@@ -11,12 +11,11 @@ varying mat3 tan_to_world;
 uniform sampler2D tex_nor;
 uniform sampler2D tex_diff;
 uniform sampler2D tex_lm;
+uniform sampler2D tex_misc;
 uniform samplerCube cube_map;
 
 uniform float time;
 
-
-//TODO: misc color map with specular, transparent, and reflective values
 
 void main()
 {
@@ -29,6 +28,9 @@ void main()
 
 	vec3 ref_dir = tan_to_world * reflect(cam_to_vert_tanspace,normal_dir);
 	vec3 ref_color = textureCube(cube_map,ref_dir).xyz;
+
+	//Getting misc texture map data
+	vec3 misc_data = texture2D(tex_misc,v_uv_1).rgb;
 
 	//Light Calculation
 	//(TODO: Should I add a small diffuse contribution for highlighting the normal map?) (todo once I approach final shader results)
@@ -46,12 +48,12 @@ void main()
 	const float ambient_light = 0.1;
 
 	//Lightmaps are currently monochromatic
-	float lightmap_brightness = texture2D(tex_lm,v_uv_2).x;
+	float lightmap_brightness = texture2D(tex_lm,v_uv_2).r;
 	//float light_power = ambient_light + diffuse + specular + rim;
 	//float light_power = ambient_light + 0.7*specular + rim + lightmap_brightness;
 	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
-	float reflectivity = 0.2;//FIXME: use value from misc shader.
+	float reflectivity = misc_data.r;
 	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,reflectivity);
 
 	gl_FragColor = vec4(color*light_power, 1.0);

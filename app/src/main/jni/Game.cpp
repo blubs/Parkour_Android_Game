@@ -1116,11 +1116,9 @@ void Game::reached_mnvr_keyframe ()
 				Building* next_bldg = buildings[next_bldg_index];
 				next_bldg->break_window(player->pos,true);
 				//At this point the next building will be our current building
-				next_bldg
-
 				current_building = next_bldg;
 				cbldg_index = next_bldg_index;
-
+				current_building->generate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
 				break;
 			}
 		}

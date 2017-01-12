@@ -14,12 +14,18 @@ Interior_Style::Interior_Style()
 	tiles[1] = new Grid_Tile*[3];
 	type_variant_counts[1] = 3;
 
-	//Initializing wall_subtypes to null points
+	//Initializing obstacle subtypes to null pointers
+	for(int i = 0; i < TILE_OBSTACLE_COUNT; i++)
+	{
+		obst_tiles[i] = NULL;
+	}
+
+	//Initializing wall_subtypes to null pointers
 	for(int i = 0; i < WALL_TYPE_COUNT; i++)
 	{
 		wall_subtypes[i] = NULL;
 	}
-	//Initializing rail_subtypes to null pointer
+	//Initializing rail_subtypes to null pointers
 	for(int i = 0; i < RAIL_TYPE_COUNT; i++)
 	{
 		rail_subtypes[i] = NULL;
@@ -49,9 +55,9 @@ int Global_Tiles::init_data()
 		Shader::PARAM_M_IT_MATRIX,
 		Shader::PARAM_TEXTURE_DIFFUSE,
 		Shader::PARAM_TEXTURE_NORMAL,
+		Shader::PARAM_TEXTURE_MISC,
 		Shader::PARAM_TEXTURE_LIGHTMAP,
 		Shader::PARAM_CUBE_MAP
-		//,Shader::PARAM_COLOR_MULT
 	};
 	const char *shader_pnames[] =
 	{
@@ -66,13 +72,13 @@ int Global_Tiles::init_data()
 		"m_IT",
 		"tex_diff",
 		"tex_nor",
+		"tex_misc",
 		"tex_lm",
 		"cube_map"
-		//,"color"
 	};
 	//TODO: load cubemap
 
-	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,13);
+	Interior_Variant::init_static_data("shaders/bldg_int.vert","shaders/bldg_int.frag",shader_ptypes,shader_pnames,14);
 
 	instance = new Global_Tiles();
 
@@ -94,6 +100,7 @@ Global_Tiles::Global_Tiles()
 
 	style[0]->variants[0]->diffuse_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
 	style[0]->variants[0]->normal_map = new Texture("textures/tiles/s0v1_nor.pkm",2048,2048);
+	style[0]->variants[0]->misc_map = new Texture("textures/tiles/s0v1_misc.pkm",2048,2048);
 	style[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
 	style[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
 	//style[0]->variants[0]->misc_map = new Texture();
@@ -105,29 +112,32 @@ Global_Tiles::Global_Tiles()
 	//Empty tile
 	style[0]->empty_tile = new Grid_Tile(0,0);
 	style[0]->empty_tile->model = new Static_Model("models/tiles/style0/empt0.stmf");
-	//Solid tile
-	style[0]->solid_tile = new Grid_Tile(0,0);
-	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
+
+	for(int i = 0; i < TILE_OBSTACLE_COUNT; i++)
 	{
-		for(int j = 0; j < TILE_VOXEL_DIMS; j++)
-		{
-			style[0]->solid_tile->coll_map->voxel[i][j] = CLIP_SOLID;
-		}
+		//style[0]->obst_tiles[i] = new Grid_Tile(1,0);
+		style[0]->obst_tiles[i] = new Grid_Tile(0,0);//(temp meanwhile we haven't set up the obstacle maneuvers)
 	}
-	style[0]->solid_tile->model = new Static_Model("models/tiles/style0/sold0.stmf");
-	//Test obstacle tiles
-	style[0]->floor_vent = new Grid_Tile(1,0);
-	style[0]->floor_vent->model = new Static_Model("models/tiles/style0/test_vent.stmf");
+
+	//Loading obstacle tile models:
+	style[0]->obst_tiles[0]->model = new Static_Model("models/tiles/style0/obst_0.stmf");
+	style[0]->obst_tiles[1]->model = new Static_Model("models/tiles/style0/obst_1.stmf");
+	style[0]->obst_tiles[2]->model = new Static_Model("models/tiles/style0/obst_2.stmf");
+	style[0]->obst_tiles[3]->model = new Static_Model("models/tiles/style0/obst_3.stmf");
+	style[0]->obst_tiles[4]->model = new Static_Model("models/tiles/style0/obst_4.stmf");
+	style[0]->obst_tiles[5]->model = new Static_Model("models/tiles/style0/obst_5.stmf");
+	style[0]->obst_tiles[6]->model = new Static_Model("models/tiles/style0/obst_6.stmf");
+	style[0]->obst_tiles[7]->model = new Static_Model("models/tiles/style0/obst_7.stmf");
+	style[0]->obst_tiles[8]->model = new Static_Model("models/tiles/style0/obst_8.stmf");
+	style[0]->obst_tiles[9]->model = new Static_Model("models/tiles/style0/obst_9.stmf");
 
 
-	style[0]->wall_vent = new Grid_Tile(1,0);
-	style[0]->wall_vent->model = new Static_Model("models/tiles/style0/test_vent2.stmf");
-
-	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
+	//TODO: set collision maps for obstacle tiles
+	/*for(int i = 0; i < TILE_VOXEL_DIMS; i++)
 	{
 		style[0]->floor_vent->coll_map->voxel[i][3] = CLIP_SOLID;
 		style[0]->wall_vent->coll_map->voxel[i][3] = CLIP_SOLID;
-	}
+	}*/
 
 	//==================== Loading wall tiles =====================
 
@@ -327,13 +337,15 @@ Global_Tiles::Global_Tiles()
 
 	//========= Setting up Maneuvers ===============
 
+	Keyframe** frames;
+
 	//Setting up test maneuver
-	style[0]->floor_vent->maneuvers[0] = new Maneuver(2);//2 keyframes
+	/*style[0]->floor_vent->maneuvers[0] = new Maneuver(2);//2 keyframes
 	style[0]->floor_vent->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 
 	//Test obstacle: has activate area from (1,0) to (2,2),
 	//4 frames.
-	Keyframe** frames = style[0]->floor_vent->maneuvers[0]->keyframes;
+	frames = style[0]->floor_vent->maneuvers[0]->keyframes;
 
 	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,2,0));
 	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
@@ -347,7 +359,7 @@ Global_Tiles::Global_Tiles()
 	frames[1]->set_bounds(Vec3(1.75f,2.5,0));
 
 	//For now just copying this maneuver to the other vent:
-	style[0]->wall_vent->maneuvers[0] = style[0]->floor_vent->maneuvers[0];
+	style[0]->wall_vent->maneuvers[0] = style[0]->floor_vent->maneuvers[0];*/
 	//frames[1]->set_speed(0.5f,0,0);
 	//frames[1]->set_anim(FRAME_ANIM_PAUSE);
 
@@ -600,8 +612,6 @@ Global_Tiles::~Global_Tiles()
 
 	//============== Deleting Interior Style ============
 
-	delete style[0]->solid_tile->model;
-	delete style[0]->solid_tile;
 	delete style[0]->empty_tile->model;
 	delete style[0]->empty_tile;
 
@@ -620,10 +630,13 @@ Global_Tiles::~Global_Tiles()
 		}
 	}
 
-	delete style[0]->floor_vent->model;
-	delete style[0]->floor_vent;
-	delete style[0]->wall_vent->model;
-	delete style[0]->wall_vent;
+
+
+	for(int i = 0; i < TILE_OBSTACLE_COUNT; i++)
+	{
+		delete style[0]->obst_tiles[i]->model;
+		delete style[0]->obst_tiles[i];
+	}
 
 	//===================================================
 	delete window_models;
@@ -654,7 +667,6 @@ void Global_Tiles::init_gl()
 	instance->style[0]->variants[0]->init_gl();
 
 	//==================== Style 0 models init gl ===================
-	instance->style[0]->solid_tile->model->init_gl();
 	instance->style[0]->empty_tile->model->init_gl();
 
 	for(int i = 1; i < WALL_TYPE_COUNT; i++)
@@ -670,8 +682,11 @@ void Global_Tiles::init_gl()
 		}
 	}
 
-	instance->style[0]->floor_vent->model->init_gl();
-	instance->style[0]->wall_vent->model->init_gl();
+
+	for(int i = 0; i < TILE_OBSTACLE_COUNT; i++)
+	{
+		instance->style[0]->obst_tiles[i]->model->init_gl();
+	}
 	//===============================================================
 
 	instance->window_models->init_gl();
@@ -694,7 +709,6 @@ void Global_Tiles::term_gl()
 	instance->style[0]->variants[0]->term_gl();
 
 	//==================== Style 0 models term gl ===================
-	instance->style[0]->solid_tile->model->term_gl();
 	instance->style[0]->empty_tile->model->term_gl();
 
 	for(int i = 1; i < WALL_TYPE_COUNT; i++)
@@ -710,8 +724,10 @@ void Global_Tiles::term_gl()
 		}
 	}
 
-	instance->style[0]->floor_vent->model->term_gl();
-	instance->style[0]->wall_vent->model->term_gl();
+	for(int i = 0; i < TILE_OBSTACLE_COUNT; i++)
+	{
+		instance->style[0]->obst_tiles[i]->model->init_gl();
+	}
 	//===============================================================
 
 	instance->window_models->term_gl();

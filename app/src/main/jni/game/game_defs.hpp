@@ -12,12 +12,13 @@
 #define TILE_TYPES 2
 
 #define TILE_TYPE_EMPT 0
-#define TILE_TYPE_SOLD 1
-#define TILE_TYPE_WALL 2
-#define TILE_TYPE_RAIL 3
+#define TILE_TYPE_WALL 1
+#define TILE_TYPE_RAIL 2
 //FIXME: this next one is temp
-#define TILE_TYPE_OBST 4
+#define TILE_TYPE_OBST 3
 //TODO: ...more tile type const identifiers
+
+#define TILE_OBSTACLE_COUNT 10
 
 //Collision map Voxel Clip Types
 #define CLIP_EMPTY 0
