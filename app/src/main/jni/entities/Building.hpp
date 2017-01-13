@@ -294,28 +294,28 @@ public:
 	void subdivide_wall(Mat4 trans, int wall_width, int wall_height, int* mdl_count, Static_Model **mdl_list, Mat4* trans_list)
 	{
 		Static_Model* models[6];
-		models[0] = Global_Tiles::instance->window_models->tile_model;
-		models[1] = Global_Tiles::instance->window_models->m2x2_model;
-		models[2] = Global_Tiles::instance->window_models->m4x4_model;
-		models[3] = Global_Tiles::instance->window_models->m8x8_model;
-		models[4] = Global_Tiles::instance->window_models->m16x16_model;
-		models[5] = Global_Tiles::instance->window_models->m32x32_model;
+		models[0] = Global_Tiles::instance->window_styles[0]->window_models->tile_model;
+		models[1] = Global_Tiles::instance->window_styles[0]->window_models->m2x2_model;
+		models[2] = Global_Tiles::instance->window_styles[0]->window_models->m4x4_model;
+		models[3] = Global_Tiles::instance->window_styles[0]->window_models->m8x8_model;
+		models[4] = Global_Tiles::instance->window_styles[0]->window_models->m16x16_model;
+		models[5] = Global_Tiles::instance->window_styles[0]->window_models->m32x32_model;
 
 		Static_Model* hor_models[6];
-		hor_models[0] = Global_Tiles::instance->window_models->tile_model;
-		hor_models[1] = Global_Tiles::instance->window_models->m1x2_model;
-		hor_models[2] = Global_Tiles::instance->window_models->m1x4_model;
-		hor_models[3] = Global_Tiles::instance->window_models->m1x8_model;
-		hor_models[4] = Global_Tiles::instance->window_models->m1x16_model;
-		hor_models[5] = Global_Tiles::instance->window_models->m1x32_model;
+		hor_models[0] = Global_Tiles::instance->window_styles[0]->window_models->tile_model;
+		hor_models[1] = Global_Tiles::instance->window_styles[0]->window_models->m1x2_model;
+		hor_models[2] = Global_Tiles::instance->window_styles[0]->window_models->m1x4_model;
+		hor_models[3] = Global_Tiles::instance->window_styles[0]->window_models->m1x8_model;
+		hor_models[4] = Global_Tiles::instance->window_styles[0]->window_models->m1x16_model;
+		hor_models[5] = Global_Tiles::instance->window_styles[0]->window_models->m1x32_model;
 
 		Static_Model* vert_models[6];
-		vert_models[0] = Global_Tiles::instance->window_models->tile_model;
-		vert_models[1] = Global_Tiles::instance->window_models->m2x1_model;
-		vert_models[2] = Global_Tiles::instance->window_models->m4x1_model;
-		vert_models[3] = Global_Tiles::instance->window_models->m8x1_model;
-		vert_models[4] = Global_Tiles::instance->window_models->m16x1_model;
-		vert_models[5] = Global_Tiles::instance->window_models->m32x1_model;
+		vert_models[0] = Global_Tiles::instance->window_styles[0]->window_models->tile_model;
+		vert_models[1] = Global_Tiles::instance->window_styles[0]->window_models->m2x1_model;
+		vert_models[2] = Global_Tiles::instance->window_styles[0]->window_models->m4x1_model;
+		vert_models[3] = Global_Tiles::instance->window_styles[0]->window_models->m8x1_model;
+		vert_models[4] = Global_Tiles::instance->window_styles[0]->window_models->m16x1_model;
+		vert_models[5] = Global_Tiles::instance->window_styles[0]->window_models->m32x1_model;
 
 		Mat4 m;
 
@@ -442,13 +442,12 @@ public:
 	{
 		Static_Model* hor_models[6];
 		//TODO: change these references depending on the style
-		hor_models[0] = Global_Tiles::instance->int_window_models->tile_model;
-		hor_models[1] = Global_Tiles::instance->int_window_models->m1x2_model;
-		hor_models[2] = Global_Tiles::instance->int_window_models->m1x4_model;
-		hor_models[3] = Global_Tiles::instance->int_window_models->m1x8_model;
-		hor_models[4] = Global_Tiles::instance->int_window_models->m1x16_model;
-		hor_models[5] = Global_Tiles::instance->int_window_models->m1x32_model;
-
+		hor_models[0] = Global_Tiles::instance->window_styles[0]->int_window_models->tile_model;
+		hor_models[1] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x2_model;
+		hor_models[2] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x4_model;
+		hor_models[3] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x8_model;
+		hor_models[4] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x16_model;
+		hor_models[5] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x32_model;
 
 		Mat4 m;
 
@@ -543,7 +542,7 @@ public:
 		// Thus if the last model we rendered is the same as the current model, we can skip binding this model
 		Static_Model* last_model = NULL;
 		Static_Model* model;
-		Material* mat = Global_Tiles::instance->window_mat;
+		Material* mat = Global_Tiles::instance->window_styles[0]->variants[0]->ext_mat;
 
 		//Rendering the all walls:
 		int *mdl_count;
@@ -593,7 +592,7 @@ public:
 		// Thus if the last model we rendered is the same as the current model, we can skip binding this model
 		Static_Model* last_model = NULL;
 		Static_Model* model;
-		Material* mat = Global_Tiles::instance->window_int_mat;
+		Material* mat = Global_Tiles::instance->window_styles[0]->variants[0]->int_mat;
 
 		//Rendering the all walls:
 		int *mdl_count;
@@ -644,11 +643,8 @@ public:
 
 		if(!plyr_in_bldg)
 		{
-			Global_Tiles::instance->window_mat->bind_material();
-
-			Material* mat = Global_Tiles::instance->window_mat;
-			mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_tex0);
-			mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_tex0);
+			Global_Tiles::instance->window_styles[0]->variants[0]->bind_variant_ext();
+			Material* mat = Global_Tiles::instance->window_styles[0]->variants[0]->ext_mat;
 
 			//Using Skybox cubemap
 			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->sky_cube_map);
@@ -676,16 +672,13 @@ public:
 		//Only render the interior windows if we are in the building
 		if(plyr_in_bldg)
 		{
-			Global_Tiles::instance->window_int_mat->bind_material();
 
-			Material* mat = Global_Tiles::instance->window_int_mat;
-			mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) Global_Tiles::instance->window_int_tex0);
-			mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) Global_Tiles::instance->window_int_tex0);
-			mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) Global_Tiles::instance->window_int_misc_tex0);
+			Global_Tiles::instance->window_styles[0]->variants[0]->bind_variant_int();
+			Material* mat = Global_Tiles::instance->window_styles[0]->variants[0]->int_mat;
 
 			//Using Floor interior cubemap
 			//FIXME: make sure we reference the correct style and variant for the floor style and variant
-			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->style[0]->variants[0]->ref_cube_map);
+			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->tile_styles[0]->variants[0]->ref_cube_map);
 
 			render_int_walls(vp);
 		}

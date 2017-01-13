@@ -30,6 +30,9 @@ void main()
 	vec3 ref_color = textureCube(cube_map,ref_dir).xyz;
 
 	//Getting misc texture map data
+	//R: reflectivity
+	//G: not articulated
+	//B: not articulated
 	vec3 misc_data = texture2D(tex_misc,v_uv_1).rgb;
 
 	//Light Calculation
@@ -53,8 +56,7 @@ void main()
 	//float light_power = ambient_light + 0.7*specular + rim + lightmap_brightness;
 	float light_power = ambient_light + 0.7*specular + lightmap_brightness;
 
-	float reflectivity = misc_data.r;
-	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,reflectivity);
+	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,misc_data.r);
 
 	gl_FragColor = vec4(color*light_power, 1.0);
 }

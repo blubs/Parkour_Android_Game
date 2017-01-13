@@ -107,22 +107,22 @@ public:
 				{
 					default:
 					case TILE_TYPE_EMPT:
-						obj = Global_Tiles::instance->style[0]->empty_tile;
+						obj = Global_Tiles::instance->tile_styles[0]->empty_tile;
 						break;
 					case TILE_TYPE_WALL:
 						//Default to empty wall
-						obj = Global_Tiles::instance->style[0]->empty_tile;
+						obj = Global_Tiles::instance->tile_styles[0]->empty_tile;
 						if(t_subtype)
-							obj = Global_Tiles::instance->style[0]->wall_subtypes[t_subtype];
+							obj = Global_Tiles::instance->tile_styles[0]->wall_subtypes[t_subtype];
 						break;
 					case TILE_TYPE_RAIL:
 						//Default to empty wall
-						obj = Global_Tiles::instance->style[0]->empty_tile;
+						obj = Global_Tiles::instance->tile_styles[0]->empty_tile;
 						if(t_subtype && RAIL_TYPE_IS_VALID[t_subtype])
-							obj = Global_Tiles::instance->style[0]->rail_subtypes[t_subtype];
+							obj = Global_Tiles::instance->tile_styles[0]->rail_subtypes[t_subtype];
 						break;
 					case TILE_TYPE_OBST:
-						obj = Global_Tiles::instance->style[0]->obst_tiles[t_subtype];
+						obj = Global_Tiles::instance->tile_styles[0]->obst_tiles[t_subtype];
 						break;
 				}
 				tile_object[i][j] = obj;
@@ -1641,8 +1641,8 @@ public:
 		//Starting from frontmost tile, render it and all other tiles that use the same model
 		//Then move onto the next unrendered tile
 		//TODO: how will we store tile type in the floors?
-		Global_Tiles::instance->style[0]->variants[0]->bind_variant();
-		Material* mat = Global_Tiles::instance->style[0]->variants[0]->mat;
+		Global_Tiles::instance->tile_styles[0]->variants[0]->bind_variant();
+		Material* mat = Global_Tiles::instance->tile_styles[0]->variants[0]->mat;
 		Mat4 m;
 		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 

@@ -46,7 +46,6 @@ public:
 	static const int PARAM_COLOR_ADD = 20;
 	static const int PARAM_CUBE_MAP = 21;
 	static const int PARAM_TEST_FIELD = 22;
-	//TODO: any other parameter types
 
 
 

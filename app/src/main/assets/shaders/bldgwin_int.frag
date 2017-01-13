@@ -46,13 +46,13 @@ void main()
 	//float light_power = ambient_light + diffuse + specular + rim;
 	float light_power = ambient_light + 0.7*specular;
 
-	float reflectivity = 0.5;//FIXME: use value from misc shader.
-	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,reflectivity);
-
 	//red: cubemap reflection
 	//green: transparency
 	//blue: not yet articulated
 	vec3 misc_data = texture2D(tex_misc,v_uv_1).rgb;
+
+	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,misc_data.r);
+
 	float alpha = 1.0 - misc_data.g;
 
 
