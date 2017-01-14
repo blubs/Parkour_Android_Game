@@ -30,15 +30,11 @@ public:
 	const unsigned int* tri_verts;
 
 
-	//arrays of vertex attributes
-	//	uvs
-	//	normals
-	//		do we need tangents?
-	Skeleton* skel;
-
 	GLuint tri_verts_buffer;
 
-	int render(Mat4 m,Mat4 vp,Material* mat);
+	int render(Mat4 m,Mat4 vp,Material* mat, Skeleton* skel);
+
+	int render_sans_weights(Mat4 m,Mat4 vp,Material* mat, Skeleton* skel);
 
 	//We will eventually need methods for combining Meshes, and copying Meshes
 

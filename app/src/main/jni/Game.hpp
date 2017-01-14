@@ -85,6 +85,7 @@ public:
 
 	//---------- Skeletons --------------------
 	Skeleton *player_skel = NULL;
+	Skeleton_Data *player_skel_data = NULL;
 
 
 

@@ -1,28 +1,26 @@
 //
-// Created by F1 on 5/31/2016.
+// Created by F1 on 1/13/2017.
 //
 
-#ifndef ENGINE_SKELETON_H
-#define ENGINE_SKELETON_H
-#include "../common.hpp"
-#include "../File_Utils.hpp"
-#include "../Game_Object.hpp"
-#include "../misc.hpp"
+#ifndef PARKOUR_SKELETON_ENTITY_HPP
+#define PARKOUR_SKELETON_ENTITY_HPP
 
+#include "Skeleton_Data.hpp"
+
+
+//This class is an entity that uses the asset Skeleton
 class Skeleton : public Entity
 {
 public:
+	Skeleton_Data* skel_data;
+
 	unsigned int bone_count = 0;
-	float* rest_pose;
 
 	float* current_pose_mat4s;
 	float* current_pose_mat3s;
 
 	float* rest_pose_ident_mat4s;
 	float* rest_pose_ident_mat3s;
-
-
-	const unsigned int* raw_data = NULL;
 
 	bool lerp_anim = true;
 	float frame_time = ANIM_FPS_60;
@@ -38,15 +36,6 @@ public:
 	int current_anim_end_type = ANIM_END_TYPE_ROOT_POSE;
 	float time_for_next_frame;
 
-	//Arrays of pointers or values for all animations
-	const unsigned int** all_anims_raw_data = NULL;
-	unsigned int* anim_lengths;
-	//Array of transform 4x4 matrices representing all animation frame transformations
-	float** anims;
-	//Array of transform 3x3 rotation matrices representing all inverse-transpose of bone transform
-	float** anims_IT;
-
-	int anim_count = 0;
 
 	bool playing_default_anim = false;
 	int default_anim = -1;
@@ -82,16 +71,8 @@ public:
 	//Returns the rest transform of the ith bone
 	Mat4 get_bone_rest_transform(int i);
 
-	int load_animation(const char* filepath);
-
-	Skeleton(const char* filepath);
+	Skeleton(Skeleton_Data* skeleton_data);
 	~Skeleton();
-
-private:
-	int load(const char* filepath);
-	void unload();
-
-
 };
 
 
@@ -107,4 +88,4 @@ public:
 
 
 
-#endif //ENGINE_SKELETON_H
+#endif //PARKOUR_SKELETON_ENTITY_HPP

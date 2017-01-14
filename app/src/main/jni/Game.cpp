@@ -248,18 +248,18 @@ int Game::load_models()
 
 	test_model_int_empty = new Static_Model("models/tiles/style0/empt0.stmf");
 
-	player_skel = new Skeleton("animations/player_skeleton.sksf");
+	player_skel_data = new Skeleton_Data("animations/player_skeleton.sksf");
 
 	//The order of loading these animations must match the animation identifiers
-	player_skel->load_animation("animations/run.skaf");
-	player_skel->load_animation("animations/speed_vault.skaf");
-	player_skel->load_animation("animations/run_jump.skaf");
-	player_skel->load_animation("animations/slide.skaf");
-	player_skel->load_animation("animations/slide_end.skaf");
-	player_skel->load_animation("animations/traversal_a.skaf");
-	player_skel->load_animation("animations/traversal_b.skaf");
-	player_skel->load_animation("animations/traversal_c.skaf");
-	player_skel->load_animation("animations/showcase_hands.skaf");
+	player_skel_data->load_animation("animations/run.skaf");
+	player_skel_data->load_animation("animations/speed_vault.skaf");
+	player_skel_data->load_animation("animations/run_jump.skaf");
+	player_skel_data->load_animation("animations/slide.skaf");
+	player_skel_data->load_animation("animations/slide_end.skaf");
+	player_skel_data->load_animation("animations/traversal_a.skaf");
+	player_skel_data->load_animation("animations/traversal_b.skaf");
+	player_skel_data->load_animation("animations/traversal_c.skaf");
+	player_skel_data->load_animation("animations/showcase_hands.skaf");
 	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
 	skybox = new Skybox();
 	return 1;
@@ -278,8 +278,8 @@ void Game::unload_models()
 	delete model_prim_quad;
 
 	delete test_model_int_empty;
-
 	delete player_skel;
+	delete player_skel_data;
 
 	delete skybox;
 }
@@ -537,14 +537,13 @@ void Game::start()
 	audio_listener = camera;
 
 	//Setting run anim as default anim
-	player_skel->set_default_anim(0,ANIM_END_TYPE_LOOP);
 	player->mat1 = player_skin_mat;
 	player->mat2 = player_torso_mat;
 	player->mat3 = player_leg_mat;
 
-	test_arms->skel = player_skel;
-	test_torso->skel = player_skel;
-	test_legs->skel = player_skel;
+	player_skel = new Skeleton(player_skel_data);
+	player_skel->set_default_anim(0,ANIM_END_TYPE_LOOP);
+
 
 	//============================= Setting up materials ================================
 	mat_red->set_shader(test_shader);
@@ -632,6 +631,8 @@ void Game::start()
 		//FIXME remove this:
 		buildings[i]->active_floor->debug_branch_mat = solid_mat;
 
+		buildings[i]->broken_iwindow_skel = new Skeleton(Global_Tiles::instance->window_styles[0]->broken_in_window_skel_data);
+		buildings[i]->broken_owindow_skel = new Skeleton(Global_Tiles::instance->window_styles[0]->broken_out_window_skel_data);
 	}
 
 	buildings[0]->generate(NULL,Vec3::ZERO());
@@ -667,6 +668,8 @@ void Game::finish()
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->clear();
+		delete buildings[i]->broken_owindow_skel;
+		delete buildings[i]->broken_iwindow_skel;
 		delete buildings[i];
 	}
 
@@ -677,6 +680,7 @@ void Game::finish()
 	delete test_img;
 
 	delete player;
+	delete player_skel;
 	delete test_sound_source;
 	delete camera;
 	delete cam_to_bone;
@@ -1112,13 +1116,13 @@ void Game::reached_mnvr_keyframe ()
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_IN:
 			{
+				//At this point the next building will be our current building
 				int next_bldg_index = NEXT_BLDG[cbldg_index];
 				Building* next_bldg = buildings[next_bldg_index];
-				next_bldg->break_window(player->pos,true);
-				//At this point the next building will be our current building
 				current_building = next_bldg;
 				cbldg_index = next_bldg_index;
 				current_building->generate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
+				current_building->break_window(player->pos,true);
 				break;
 			}
 		}
@@ -1760,6 +1764,11 @@ void Game::update()
 	//player->angles.y = -(input_x-0.5f)*TWO_PI;
 	//player->angles.x = (input_y-0.5f)*PI;
 
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->update();
+	}
+
 	if(player_state == PLAYER_STATE_NOCLIP || player_state == PLAYER_STATE_CAM_FLY)
 	{
 		//zones:
@@ -2028,6 +2037,11 @@ void Game::render()
 	player->transform_calculated = false;
 	test_sound_source->transform_calculated = false;
 	cam_to_bone->transform_calculated = false;
+
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->transform_calculated = false;
+	}
 
 	//glClear(GL_COLOR_BUFFER_BIT);
 

@@ -8,6 +8,7 @@
 #include "../entities/Grid_Tile.hpp"
 #include "Interior_Variant.hpp"
 #include "Window_Model_Holder.hpp"
+#include "../engine/graphics/Skel_Model.hpp"
 
 
 //Tile Terminology
@@ -82,6 +83,12 @@ public:
 	Window_Model_Holder* window_models;
 	Interior_Window_Model_Holder* int_window_models;
 
+	//One Instance of broken windows per style
+	Skel_Model* broken_out_window;
+	Skeleton_Data* broken_out_window_skel_data;
+
+	Skel_Model* broken_in_window;
+	Skeleton_Data* broken_in_window_skel_data;
 
 	Exterior_Style();
 	~Exterior_Style();

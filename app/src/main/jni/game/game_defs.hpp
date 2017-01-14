@@ -268,6 +268,10 @@ extern int PREV_BLDG[3];
 #define PLAYER_ANIM_TRAV_C 7
 #define PLAYER_ANIM_SHOWCASE_HANDS 8
 
+//Window Breaking Anim Defs
+//out and in are the same, since they are the both the first animations of their skeletons
+#define WINDOW_ANIM_BREAK 0
+
 
 #define BUILDING_TRAV_COUNT 3
 

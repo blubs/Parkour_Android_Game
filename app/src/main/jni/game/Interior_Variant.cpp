@@ -15,4 +15,8 @@ Shader* Exterior_Variant::ext_shader = NULL;
 //Shader for inner windows
 Shader* Exterior_Variant::int_shader = NULL;
 bool Exterior_Variant::shader_gl_inited = false;
+//Used for breaking into a building
+Shader* Exterior_Variant::ext_skel_shader = NULL;
+//Used for breaking out of a building
+Shader* Exterior_Variant::int_skel_shader = NULL;
 

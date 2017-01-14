@@ -49,5 +49,4 @@ void main()
 
 	v_uv_1 = vert_uv_1;
 	v_uv_2 = vert_uv_2;
-	gl_Position = mvp * pos;
 }

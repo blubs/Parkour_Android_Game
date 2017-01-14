@@ -35,6 +35,11 @@ public:
 	int broken_iwindow_index_x = 0;
 	int broken_iwindow_index_y = 0;
 
+	bool broken_iwindow_active = false;
+	Skeleton* broken_iwindow_skel = NULL;
+	bool broken_owindow_active = false;
+	Skeleton* broken_owindow_skel = NULL;
+
 	//char tile_types[MAX_WIDTH][MAX_LENGTH];
 
 	bool generated = false;
@@ -190,6 +195,13 @@ public:
 		broken_owindow_index_x = -1;
 		broken_owindow_index_y = -1;
 
+		broken_iwindow_active = false;
+		broken_owindow_active = false;
+		if(broken_iwindow_skel)
+			broken_iwindow_skel->stop_anim();
+		if(broken_owindow_skel)
+			broken_owindow_skel->stop_anim();
+
 		ext_mdl_fw_count = 0;
 		ext_mdl_bw_count = 0;
 		ext_mdl_lw_count = 0;
@@ -224,6 +236,17 @@ public:
 			return true;
 		//Z bounds are not handled here
 		return false;
+	}
+
+	//Returns true if the point p is in the building, or within 5 m of the front of the building
+	bool is_in_bounds_or_near_front(Vec3 p)
+	{
+		if(p.x < global_mins.x || p.x > global_maxs.x)
+			return false;
+		if(p.y < global_mins.y - 5.0f || p.y > global_maxs.y)
+			return false;
+		//Z bounds are not handled here
+		return true;
 	}
 
 	//Returns true if any corner of the bounding box 2*half_width x 2*half_width located at point p is out of bounds
@@ -653,12 +676,15 @@ public:
 			render_ext_walls(vp);
 		}
 
-		if(active_floor && plyr_in_bldg)
+		bool render_floor = (active_floor && is_in_bounds_or_near_front(player_pos));
+		//Don't render the floor unless we are in the building, or the player is within 5 meters of the front of the building
+
+		if(render_floor)
 		{
 			active_floor->render(vp);
 		}
 		return 1;
-	}
+		}
 
 	//Rendering method called at the end to render transparent windows and tiles
 	int render_transparent_meshes(Vec3 player_pos, Mat4 vp)
@@ -668,6 +694,29 @@ public:
 			return 1;
 		}
 		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
+
+		if(broken_owindow_active)
+		{
+			Global_Tiles::instance->window_styles[0]->variants[0]->bind_variant_int_skel();
+			Material* mat = Global_Tiles::instance->window_styles[0]->variants[0]->int_skel_mat;
+
+			//Using the interior reflective cubemap
+			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->tile_styles[0]->variants[0]->ref_cube_map);
+
+			Skel_Model* model = Global_Tiles::instance->window_styles[0]->broken_out_window;
+			model->render_sans_weights(Mat4::IDENTITY(),vp,mat,broken_owindow_skel);
+		}
+		if(broken_iwindow_active)
+		{
+			Global_Tiles::instance->window_styles[0]->variants[0]->bind_variant_ext_skel();
+			Material* mat = Global_Tiles::instance->window_styles[0]->variants[0]->ext_skel_mat;
+
+			//Using Skybox cubemap
+			mat->bind_value(Shader::PARAM_CUBE_MAP,(void*) Global_Tiles::instance->sky_cube_map);
+
+			Skel_Model* model = Global_Tiles::instance->window_styles[0]->broken_in_window;
+			model->render_sans_weights(Mat4::IDENTITY(),vp,mat,broken_iwindow_skel);
+		}
 
 		//Only render the interior windows if we are in the building
 		if(plyr_in_bldg)
@@ -711,14 +760,19 @@ public:
 			ext_mdl_fw_count = 0;
 			int_mdl_fw_count = 0;
 
+			//FIXME: for some reason, the interior front wall is being doubled:
+			//try not regenerating the front interior wall to see if it's still there
+			//still there? --> we don't properly set it up to begin with (setting int_mdl_fw_count has no effect)
+			//not there? --> somehow this code is doubling the wall
 
+			Mat4 window_lev = Mat4::TRANSLATE(global_mins + Vec3(0,0,window_y*WINDOW_TILE_SIZE));
 			Mat4 trans_ext = Mat4::TRANSLATE(global_mins);
-			Mat4 trans_ext_left = Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
-			Mat4 trans_ext_above = Mat4::TRANSLATE(Vec3(0,0,(window_y+1)*WINDOW_TILE_SIZE)) * trans_ext;
-			Mat4 trans_ext_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
+			Mat4 trans_ext_left = Mat4::TRANSLATE(Vec3(0,0,0)) * window_lev;
+			Mat4 trans_ext_above = Mat4::TRANSLATE(Vec3(0,0,WINDOW_TILE_SIZE)) * window_lev;
+			Mat4 trans_ext_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0)) * window_lev;
 
-			Mat4 trans_int_left = Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
-			Mat4 trans_int_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE)) * trans_ext;
+			Mat4 trans_int_left = Mat4::TRANSLATE(Vec3(0,0,0)) * trans_ext;
+			Mat4 trans_int_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0)) * window_lev;
 
 			//Populating wall mesh below the broken window
 			subdivide_wall(trans_ext,(int)dimensions.x,window_y,&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
@@ -735,7 +789,12 @@ public:
 			subdivide_interior_wall(trans_int_right,(int)dimensions.x-(window_x+1),
 				&int_mdl_fw_count,int_mdls_fw,int_mdl_fw_trans);
 
-			//TODO: render actual broken window and start its animation
+
+			//Setting up the broken window tile
+			broken_iwindow_active = true;
+			broken_iwindow_skel->pos = global_mins + Vec3(window_x * TILE_SIZE, 0, window_y * WINDOW_TILE_SIZE);
+			broken_iwindow_skel->angles = Vec3::ZERO();
+			broken_iwindow_skel->play_anim(WINDOW_ANIM_BREAK,ANIM_END_TYPE_LOOP);
 		}
 		//Breaking window out of building
 		else
@@ -751,16 +810,16 @@ public:
 			ext_mdl_bw_count = 0;
 			int_mdl_bw_count = 0;
 
-			Mat4 trans_ext = Mat4::TRANSLATE(global_mins)
-							 * Mat4::TRANSLATE(Vec3(size.x,size.y,0))
-							 * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+			Mat4 window_lev = Mat4::TRANSLATE(global_mins + Vec3(size.x,size.y,window_y*WINDOW_TILE_SIZE))
+						  * Mat4::ROTATE(Quat(PI,Vec3::UP()));
 
-			Mat4 trans_ext_left = trans_ext * Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE));
-			Mat4 trans_ext_above = trans_ext * Mat4::TRANSLATE(Vec3(0,0,(window_y+1)*WINDOW_TILE_SIZE));
-			Mat4 trans_ext_right = trans_ext * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE));
+			Mat4 trans_ext = Mat4::TRANSLATE(global_mins + Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+			Mat4 trans_ext_left = window_lev * Mat4::TRANSLATE(Vec3(0,0,0));
+			Mat4 trans_ext_above = window_lev * Mat4::TRANSLATE(Vec3(0,0,WINDOW_TILE_SIZE));
+			Mat4 trans_ext_right = window_lev * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0));
 
-			Mat4 trans_int_left = trans_ext * Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE));
-			Mat4 trans_int_right = trans_ext * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,window_y*WINDOW_TILE_SIZE));
+			Mat4 trans_int_left = window_lev * Mat4::TRANSLATE(Vec3(0,0,0));
+			Mat4 trans_int_right = window_lev * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0));
 
 			//Populating wall mesh below the broken window
 			subdivide_wall(trans_ext,(int)dimensions.x,window_y,&ext_mdl_bw_count,ext_mdls_bw,ext_mdl_bw_trans);
@@ -777,7 +836,24 @@ public:
 			subdivide_interior_wall(trans_int_right,(int)dimensions.x-(window_x+1),
 				&int_mdl_bw_count,int_mdls_bw,int_mdl_bw_trans);
 
-			//TODO: render actual broken window and start its animation
+			//Setting up the broken window tile
+			broken_owindow_active = true;
+			broken_owindow_skel->pos = global_mins+Vec3(((broken_owindow_index_x+1)*TILE_SIZE),global_maxs.y-global_mins.y,window_y*WINDOW_TILE_SIZE);
+			broken_owindow_skel->angles = Vec3(0,PI,0);
+			broken_owindow_skel->play_anim(WINDOW_ANIM_BREAK,ANIM_END_TYPE_LOOP);
+		}
+	}
+
+	//Updated any game logic that the building may need to handle
+	void update()
+	{
+		if(broken_iwindow_active)
+		{
+			broken_iwindow_skel->update_frame();
+		}
+		if(broken_owindow_active)
+		{
+			broken_owindow_skel->update_frame();
 		}
 	}
 };

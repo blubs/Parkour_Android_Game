@@ -29,7 +29,6 @@ public:
 	int render(Mat4 vp);
 
 	//Update method that is ran every frame
-	//Most of the actual game logic is contained here
 	int update();
 };
 

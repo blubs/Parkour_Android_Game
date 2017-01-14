@@ -12,9 +12,6 @@ uniform sampler2D tex_diff;
 uniform sampler2D tex_misc;
 uniform samplerCube cube_map;
 
-
-//TODO: misc color map with specular, transparent, and reflective values
-
 void main()
 {
 	//Getting fragment normal

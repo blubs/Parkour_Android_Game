@@ -124,9 +124,11 @@ int Global_Tiles::init_data()
 	"cube_map"
 	};
 
-	Exterior_Variant::init_static_ext_shader("shaders/bldg_ext.vert","shaders/bldg_ext.frag",ptypes2,pnames2,12);
+	//Interior and exterior shaders have the same parameters
+	Exterior_Variant::init_static_ext_shader("shaders/bldgwin.vert","shaders/bldgwin_ext.frag",ptypes2,pnames2,12);
+	Exterior_Variant::init_static_int_shader("shaders/bldgwin.vert","shaders/bldgwin_int.frag",ptypes2,pnames2,12);
 
-	//Interior Window Shader parameters
+	//Skeletal versions of the above shaders:
 	GLuint ptypes3[] =
 	{
 	Shader::PARAM_VERTICES,
@@ -140,7 +142,11 @@ int Global_Tiles::init_data()
 	Shader::PARAM_TEXTURE_DIFFUSE,
 	Shader::PARAM_TEXTURE_NORMAL,
 	Shader::PARAM_TEXTURE_MISC,
-	Shader::PARAM_CUBE_MAP
+	Shader::PARAM_CUBE_MAP,
+	Shader::PARAM_BONE_INDICES,
+	//Shader::PARAM_BONE_WEIGHTS,
+	Shader::PARAM_BONE_MATRICES,
+	Shader::PARAM_BONE_IT_MATRICES
 	};
 	const char *pnames3[] =
 	{
@@ -155,9 +161,15 @@ int Global_Tiles::init_data()
 	"tex_diff",
 	"tex_nor",
 	"tex_misc",
-	"cube_map"
+	"cube_map",
+	"bone_index",
+	//"bone_weight",
+	"bone",
+	"bone_IT"
 	};
-	Exterior_Variant::init_static_int_shader("shaders/bldgwin_int.vert","shaders/bldgwin_int.frag",ptypes3,pnames3,12);
+
+	Exterior_Variant::init_static_ext_skel_shader("shaders/bldgwin_skel.vert","shaders/bldgwin_ext.frag",ptypes3,pnames3,15);
+	Exterior_Variant::init_static_int_skel_shader("shaders/bldgwin_skel.vert","shaders/bldgwin_int.frag",ptypes3,pnames3,15);
 
 	instance = new Global_Tiles();
 
@@ -458,17 +470,20 @@ Global_Tiles::Global_Tiles()
 	frames[5]->set_bounds(Vec3(1.75f,12,0));*/
 
 	//TODO: continue the rest of the frames
-	//window_model = new Static_Model("models/windows/style0.stmf");
-	//window_int_model = new Static_Model("models/windows/style0_int.stmf");
-
 
 	//=================== Setting Up Window Models ====================
-
 	window_styles[0] = new Exterior_Style();
-
 	window_styles[0]->window_models = new Window_Model_Holder("models/windows/style0.stmf");
 	window_styles[0]->int_window_models = new Interior_Window_Model_Holder("models/windows/style0_int.stmf");
 
+	//Setting up the broken window models
+	window_styles[0]->broken_in_window = new Skel_Model("models/windows/winbreak/winbreak_in.skmf");
+	window_styles[0]->broken_out_window = new Skel_Model("models/windows/winbreak/winbreak_out.skmf");
+
+	window_styles[0]->broken_in_window_skel_data = new Skeleton_Data("animations/winbreak/winbreak_in_skeleton.sksf");
+	window_styles[0]->broken_out_window_skel_data = new Skeleton_Data("animations/winbreak/winbreak_out_skeleton.sksf");
+	window_styles[0]->broken_in_window_skel_data->load_animation("animations/winbreak/winbreak_in.skaf");
+	window_styles[0]->broken_out_window_skel_data->load_animation("animations/winbreak/winbreak_out.skaf");
 
 	window_styles[0]->variants[0]->ext_diffuse_map = new Texture("textures/windows/variant0_diff.pkm",512,512);
 	window_styles[0]->variants[0]->ext_misc_map = new Texture("textures/windows/variant0_misc.pkm",512,512);
@@ -477,8 +492,6 @@ Global_Tiles::Global_Tiles()
 	window_styles[0]->variants[0]->int_diffuse_map = new Texture("textures/windows/variant0_diff.pkm",512,512);
 	window_styles[0]->variants[0]->int_misc_map = new Texture("textures/windows/variant0_misc.pkm",512,512);
 	window_styles[0]->variants[0]->int_normal_map = new Texture("textures/windows/variant0_nor.pkm",512,512);
-
-
 
 	//============= Setting up building to building traversals ==================
 	//===========================================================================
@@ -649,6 +662,11 @@ Global_Tiles::~Global_Tiles()
 	delete window_styles[0]->window_models;
 	delete window_styles[0]->int_window_models;
 
+	delete window_styles[0]->broken_in_window;
+	delete window_styles[0]->broken_out_window;
+	delete window_styles[0]->broken_in_window_skel_data;
+	delete window_styles[0]->broken_out_window_skel_data;
+
 	delete window_styles[0]->variants[0]->ext_diffuse_map;
 	delete window_styles[0]->variants[0]->ext_misc_map;
 	delete window_styles[0]->variants[0]->ext_normal_map;
@@ -700,6 +718,8 @@ void Global_Tiles::init_gl()
 	instance->window_styles[0]->variants[0]->init_gl();
 	instance->window_styles[0]->window_models->init_gl();
 	instance->window_styles[0]->int_window_models->init_gl();
+	instance->window_styles[0]->broken_in_window->init_gl();
+	instance->window_styles[0]->broken_out_window->init_gl();
 	//===============================================================
 
 }
@@ -736,6 +756,8 @@ void Global_Tiles::term_gl()
 	instance->window_styles[0]->variants[0]->term_gl();
 	instance->window_styles[0]->window_models->term_gl();
 	instance->window_styles[0]->int_window_models->term_gl();
+	instance->window_styles[0]->broken_in_window->term_gl();
+	instance->window_styles[0]->broken_out_window->term_gl();
 	//===============================================================
 }
 

@@ -19,7 +19,6 @@ varying vec3 dirlight_dir_tanspace;
 varying vec3 cam_to_vert_tanspace;
 varying mat3 tan_to_world;
 
-
 void main()
 {
 	vec4 pos;
@@ -47,5 +46,4 @@ void main()
 	cam_to_vert_tanspace = normalize(world_to_tangent * (world_vert - cam_pos));
 
 	v_uv_1 = vert_uv_1;
-	gl_Position = mvp * pos;
 }

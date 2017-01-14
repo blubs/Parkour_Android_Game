@@ -13,8 +13,6 @@ uniform sampler2D tex_misc;
 uniform samplerCube cube_map;
 
 
-//TODO: misc color map with specular, transparent, and reflective values
-
 void main()
 {
 	//Getting fragment normal
@@ -28,9 +26,6 @@ void main()
 
 	//Light Calculation
 	//float diffuse = clamp(dot(normal_dir,dirlight_dir_tanspace),0.0,1.0);
-
-	//const float wrap_amount = 0.7;
-	//float wrapped_diffuse = clamp((dot(normal_dir,dirlight_dir_tanspace) + wrap_amount)/(1.0 + wrap_amount),0.0,1.0);
 
 	//Specular shading
 	const float shininess = 5.0;//ranged 1-20
@@ -50,7 +45,6 @@ void main()
 	//green: transparency
 	//blue: not yet articulated
 	vec3 misc_data = texture2D(tex_misc,v_uv_1).rgb;
-
 	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,misc_data.r);
 
 	float alpha = 1.0 - misc_data.g;

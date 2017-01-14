@@ -150,12 +150,22 @@ public:
 	//Shader for inner windows
 	static Shader* int_shader;
 
+	//Used for breaking into a building
+	static Shader* ext_skel_shader;
+	//Used for breaking out of a building
+	static Shader* int_skel_shader;
+
 	static bool shader_gl_inited;
 
 	//Material for outer windows
 	Material* ext_mat = NULL;
 	//Material for inner windows
 	Material* int_mat = NULL;
+
+	//Material for skeletal outer windows
+	Material* ext_skel_mat = NULL;
+	//Material for skeletal inner windows
+	Material* int_skel_mat = NULL;
 
 	Texture* int_diffuse_map;
 	Texture* int_misc_map;
@@ -191,12 +201,34 @@ public:
 		}
 		return 1;
 	}
+
+	static int init_static_int_skel_shader(const char *vsrc, const char *fsrc,const GLuint *ptypes, const char **pnames, uint pcount)
+	{
+		if(!int_skel_shader)
+		{
+			int_skel_shader = new Shader(vsrc,fsrc,ptypes,pnames,pcount);
+		}
+		return 1;
+	}
+	static int init_static_ext_skel_shader(const char *vsrc, const char *fsrc,const GLuint *ptypes, const char **pnames, uint pcount)
+	{
+		if(!ext_skel_shader)
+		{
+			ext_skel_shader = new Shader(vsrc,fsrc,ptypes,pnames,pcount);
+		}
+		return 1;
+	}
+
 	static void term_static_data()
 	{
 		delete int_shader;
 		delete ext_shader;
+		delete int_skel_shader;
+		delete ext_skel_shader;
 		int_shader = NULL;
 		ext_shader = NULL;
+		int_skel_shader = NULL;
+		ext_skel_shader = NULL;
 	}
 
 
@@ -206,12 +238,18 @@ public:
 		int_mat->set_shader(int_shader);
 		ext_mat = new Material();
 		ext_mat->set_shader(ext_shader);
+		int_skel_mat = new Material();
+		int_skel_mat->set_shader(int_skel_shader);
+		ext_skel_mat = new Material();
+		ext_skel_mat->set_shader(ext_skel_shader);
 	}
 
 	~Exterior_Variant()
 	{
 		delete int_mat;
 		delete ext_mat;
+		delete int_skel_mat;
+		delete ext_skel_mat;
 		delete int_diffuse_map;
 		delete int_normal_map;
 		delete int_misc_map;
@@ -248,6 +286,32 @@ public:
 		return 1;
 	};
 
+	int bind_variant_int_skel()
+	{
+		int_skel_mat->bind_material();
+
+		if(int_diffuse_map)
+			int_skel_mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) int_diffuse_map);
+		if(int_normal_map)
+			int_skel_mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) int_normal_map);
+		if(int_misc_map)
+			int_skel_mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) int_misc_map);
+		return 1;
+	};
+
+	int bind_variant_ext_skel()
+	{
+		ext_skel_mat->bind_material();
+
+		if(ext_diffuse_map)
+			ext_skel_mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) ext_diffuse_map);
+		if(ext_normal_map)
+			ext_skel_mat->bind_value(Shader::PARAM_TEXTURE_NORMAL,(void*) ext_normal_map);
+		if(ext_misc_map)
+			ext_skel_mat->bind_value(Shader::PARAM_TEXTURE_MISC,(void*) ext_misc_map);
+		return 1;
+	};
+
 	int init_gl()
 	{
 		if(!shader_gl_inited)
@@ -256,6 +320,10 @@ public:
 				int_shader->init_gl();
 			if(ext_shader)
 				ext_shader->init_gl();
+			if(int_skel_shader)
+				int_skel_shader->init_gl();
+			if(ext_skel_shader)
+				ext_skel_shader->init_gl();
 			shader_gl_inited = true;
 		}
 
@@ -282,6 +350,10 @@ public:
 				int_shader->term_gl();
 			if(ext_shader)
 				ext_shader->term_gl();
+			if(int_skel_shader)
+				int_skel_shader->term_gl();
+			if(ext_skel_shader)
+				ext_skel_shader->term_gl();
 			shader_gl_inited = false;
 		}
 

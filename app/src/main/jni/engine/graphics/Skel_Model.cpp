@@ -4,7 +4,48 @@
 
 #include "Skel_Model.hpp"
 
-int Skel_Model::render(Mat4 m,Mat4 vp, Material* mat)
+//Renders the model without passing in bone weights (for models whose verts are only affected by one bone each)
+int Skel_Model::render_sans_weights(Mat4 m,Mat4 vp,Material* mat, Skeleton* skel)
+{
+	if(!mat)
+	{
+		LOGW("Warning: tried rendering a skeletal model without passing a material\n");
+		return 0;
+	}
+	if(!skel)
+	{
+		LOGW("Warning: tried rendering a skeletal model without assigning a skeleton\n");
+		return 0;
+	}
+
+	mat->bind_value(Shader::PARAM_VERTICES, (void*) verts);
+	mat->bind_value(Shader::PARAM_VERT_UV1, (void*) uv_coords);
+	mat->bind_value(Shader::PARAM_VERT_NORMALS, (void*) normals);
+	mat->bind_value(Shader::PARAM_VERT_TANGENTS, (void*) tangents);
+	mat->bind_value(Shader::PARAM_VERT_BINORMALS, (void*) binormals);
+
+	Mat4 world_transform = skel->get_world_transform(true) * m;
+	Mat4 mvp = vp * world_transform;
+	mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
+
+	Mat3 m_it = world_transform.inverted_then_transposed().get_mat3();
+	mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
+
+	mat->bind_value(Shader::PARAM_BONE_INDICES, (void*) bone_indices);
+
+	float* pose_data = skel->get_current_pose();
+	mat->bind_values(Shader::PARAM_BONE_MATRICES, (void*) (pose_data),skel->bone_count);
+
+	float* pose_IT_data = skel->get_current_pose_IT();
+	mat->bind_values(Shader::PARAM_BONE_IT_MATRICES, (void*) (pose_IT_data),skel->bone_count);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tri_verts_buffer);
+	glDrawElements(GL_TRIANGLES, tri_vert_count, GL_UNSIGNED_INT, (void *) 0);
+
+	return 1;
+}
+
+int Skel_Model::render(Mat4 m,Mat4 vp, Material* mat, Skeleton* skel)
 {
 	if(!mat)
 	{

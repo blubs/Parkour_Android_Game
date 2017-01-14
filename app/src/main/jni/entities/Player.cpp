@@ -12,11 +12,11 @@ int Player::render(Mat4 vp)
 	//TODO: implement more general player model rendering, not so hard-coded
 	//mat->bind_material();
 	mat1->bind_material();
-	player_model1->render(Mat4::IDENTITY(),vp,mat1);
+	player_model1->render(Mat4::IDENTITY(),vp,mat1,skel);
 	mat2->bind_material();
-	player_model2->render(Mat4::IDENTITY(),vp,mat2);
+	player_model2->render(Mat4::IDENTITY(),vp,mat2,skel);
 	mat3->bind_material();
-	player_model3->render(Mat4::IDENTITY(),vp,mat3);
+	player_model3->render(Mat4::IDENTITY(),vp,mat3,skel);
 	return 1;
 }
 
