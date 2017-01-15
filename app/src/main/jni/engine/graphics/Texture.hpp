@@ -18,6 +18,9 @@ public:
 	int init_gl();
 	void term_gl();
 
+	//Used for constructing an empty texture
+	//This is used as a container to be able to pass along raw gl textures by writing the texture's gl_id
+	Texture(){};
 	Texture(const char* filepath,int w, int h);
 	~Texture();
 private:

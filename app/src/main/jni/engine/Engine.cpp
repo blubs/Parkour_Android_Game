@@ -337,10 +337,46 @@ void Engine::term_display ()
 
 int Engine::init_gl ()
 {
-	LOGI("Init gl");
 	//Init gl state
 	//At this stage, all of the shaders have already been loaded.
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+
+	//Getting the default frame buffer
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING,&default_frame_buffer);
+
+
+#ifdef RENDER_AT_LOWER_RES
+	glGenFramebuffers(1,&frame_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER,frame_buffer);
+
+	glGenTextures(1,&render_texture);
+	glBindTexture(GL_TEXTURE_2D,render_texture);
+	//GLint texture_filtering = GL_LINEAR;
+	GLint texture_filtering = GL_NEAREST;
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,texture_filtering);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,texture_filtering);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,render_texture,0);
+
+	glGenRenderbuffers(1,&depth_render_buffer);
+	glBindRenderbuffer(GL_RENDERBUFFER,depth_render_buffer);
+	glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT16,width,height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,depth_render_buffer);
+
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		LOGE("ERROR: Frame buffer status is not complete");
+	}
+
+	render_to_screen_shader->init_gl();
+
+	//Restore the default frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER,(GLuint)default_frame_buffer);
+#endif
+
 	glEnable(GL_CULL_FACE);
 	//glDisable(GL_DEPTH_TEST);
 
@@ -358,20 +394,49 @@ int Engine::init_gl ()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_TRUE);
-	LOGI("Init gl finished");
 
 	gl_initialized = true;
+
 	return 1;
 }
 
 void Engine::term_gl ()
 {
+
+#ifdef RENDER_AT_LOWER_RES
+	glDeleteTextures(1,&render_texture);
+	glDeleteRenderbuffers(1,&depth_render_buffer);
+	glDeleteFramebuffers(1,&frame_buffer);
+
+	render_to_screen_shader->term_gl();
+#endif
+
 	game->term_gl();
 	gl_initialized = false;
 }
 
 int Engine::init_data ()
 {
+
+#ifdef RENDER_AT_LOWER_RES
+	//Initializing the Engine's shader
+	GLuint shader_ptypes[] =
+	{
+	Shader::PARAM_VERTICES,
+	Shader::PARAM_VERT_UV1,
+	Shader::PARAM_TEXTURE_DIFFUSE
+	};
+	const char *shader_pnames[] =
+	{
+	"vert_pos",
+	"vert_uv",
+	"tex_diff"
+	};
+	render_to_screen_shader = new Shader("shaders/render_to_screen.vert","shaders/render_to_screen.frag",shader_ptypes,shader_pnames,3);
+	render_to_screen_mat = new Material();
+	render_to_screen_mat->set_shader(render_to_screen_shader);
+#endif
+
 	LOGI("init_data...\n");
 	if(!game->load_assets())
 		return 0;
@@ -381,6 +446,10 @@ int Engine::init_data ()
 
 void Engine::term_data ()
 {
+#ifdef RENDER_AT_LOWER_RES
+	delete render_to_screen_shader;
+	delete render_to_screen_mat;
+#endif
 	game->unload_assets();
 	data_initialized = false;
 }
@@ -445,6 +514,14 @@ void Engine::draw_frame()
 		Time::fdelta_time = 0.0f;//(setting delta time to 0 may cause issues)
 	Time::last_frame_time = t;
 
+
+#ifdef RENDER_AT_LOWER_RES
+	float resolution_scale = game->engine_render_resolution_scale;
+	glBindFramebuffer(GL_FRAMEBUFFER,frame_buffer);
+	glViewport(0,0,(int)(width * resolution_scale),(int)(height * resolution_scale));
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+#endif
+
 	game->render();
 
 	frame_count++;
@@ -469,7 +546,46 @@ void Engine::draw_frame()
 		game->camera->ortho_proj_m);
 	//============================================================================================
 
+	//============================= Rendering the smaller res texture at full rez =============================
+
+#ifdef RENDER_AT_LOWER_RES
+	glBindFramebuffer(GL_FRAMEBUFFER,default_frame_buffer);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glViewport(0,0,width,height);
+
+	const float quad_verts[] =
+	{
+	-1.0f,1.0f,0.3f,
+	-1.0f,-1.0f,0.3f,
+	1.0f,-1.0f,0.3f,
+	1.0f,-1.0f,0.3f,
+	1.0f,1.0f,0.3f,
+	-1.0f,1.0f,0.3f
+	};
+
+	const float quad_uvs[] =
+	{
+		0, resolution_scale,
+		0,0,
+		resolution_scale,0,
+		resolution_scale,0,
+		resolution_scale,resolution_scale,
+		0,resolution_scale
+	};
+
+	render_to_screen_mat->bind_material();
+	render_to_screen_mat->bind_value(Shader::PARAM_VERTICES,(void*) quad_verts);
+	render_to_screen_mat->bind_value(Shader::PARAM_VERT_UV1,(void*) quad_uvs);
+	//Constructing a null texture whose texture gl_id is render_texture
+	Texture tex;
+	tex.gl_id = render_texture;
+	render_to_screen_mat->bind_value(Shader::PARAM_TEXTURE_DIFFUSE,(void*) &tex);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+#endif
+
+
 	eglSwapBuffers(egl_display, egl_surface);
+
 }
 
 void Engine::update()

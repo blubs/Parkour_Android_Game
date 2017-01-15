@@ -632,7 +632,9 @@ void Game::start()
 		buildings[i]->active_floor->debug_branch_mat = solid_mat;
 
 		buildings[i]->broken_iwindow_skel = new Skeleton(Global_Tiles::instance->window_styles[0]->broken_in_window_skel_data);
+		buildings[i]->broken_iwindow_skel->parent = buildings[i];
 		buildings[i]->broken_owindow_skel = new Skeleton(Global_Tiles::instance->window_styles[0]->broken_out_window_skel_data);
+		buildings[i]->broken_owindow_skel->parent = buildings[i];
 	}
 
 	buildings[0]->generate(NULL,Vec3::ZERO());
@@ -1112,7 +1114,32 @@ void Game::reached_mnvr_keyframe ()
 			default:
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_OUT:
+				LOGE("Specflag is break out");
 				current_building->break_window(player->pos,false);
+				//If we are leaving the middle building, recycle a building
+				if(bldgs_jumped >= MAX_BUILDINGS/2 || recycle_every_time)
+				{
+					recycle_every_time = true;
+					//Getting the building that we are recycling
+					int bldg_index = NEXT_BLDG[last_recycled_bldg_index];
+					buildings[bldg_index]->clear();
+					buildings[bldg_index]->generate(buildings[last_recycled_bldg_index],Vec3(0,BUILDING_GAP,0));
+					last_recycled_bldg_index = bldg_index;
+
+
+					//Reset everything at origin
+					Vec3 ofs = Vec3(-player->pos.x,-player->pos.y,0);
+					for(int i = 0; i < MAX_BUILDINGS; i++)
+					{
+						buildings[i]->offset_building(ofs);
+					}
+					player->pos += ofs;
+					mnvr_tile_ofs += ofs;
+					mnvr_goal_pos += ofs;
+					mnvr_start_pos += ofs;
+				}
+				bldgs_jumped++;
+
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_IN:
 			{
@@ -1121,8 +1148,21 @@ void Game::reached_mnvr_keyframe ()
 				Building* next_bldg = buildings[next_bldg_index];
 				current_building = next_bldg;
 				cbldg_index = next_bldg_index;
+
+				int floor = current_building->get_floor_num_at_pos(player->pos);
+				if(floor < LOWEST_FLOOR_ALLOWED)
+				{
+					//Reset player at 4 floors below top floor
+					Vec3 ofs = Vec3(0,0,(current_building->dimensions.z - 4 - floor) * WINDOW_TILE_SIZE);
+					player->pos += ofs;
+					mnvr_tile_ofs += ofs;
+					mnvr_goal_pos += ofs;
+					mnvr_start_pos += ofs;
+				}
+
 				current_building->generate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
 				current_building->break_window(player->pos,true);
+
 				break;
 			}
 		}
@@ -2041,6 +2081,8 @@ void Game::render()
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->transform_calculated = false;
+		buildings[i]->broken_owindow_skel->transform_calculated = false;
+		buildings[i]->broken_iwindow_skel->transform_calculated = false;
 	}
 
 	//glClear(GL_COLOR_BUFFER_BIT);

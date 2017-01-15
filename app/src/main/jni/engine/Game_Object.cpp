@@ -22,15 +22,15 @@ Mat4 Entity::get_world_transform(bool modify_trans)
 	{
 		return world_transform;
 	}
-		if(use_quaternion)
+	if(use_quaternion)
 		transform = Mat4::ROT_TRANS(rot,pos);
 	else
 		transform = Mat4::ROT_TRANS(angles,pos);
-		if(parent)
+	if(parent)
 		world_transform = parent->get_world_transform(modify_trans) * transform;
 	else
 		world_transform = transform;
-		if(modify_trans)
+	if(modify_trans)
 		transform_calculated = true;
 	return world_transform;
 }

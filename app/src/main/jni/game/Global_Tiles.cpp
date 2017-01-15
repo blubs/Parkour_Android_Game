@@ -506,7 +506,7 @@ Global_Tiles::Global_Tiles()
 	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
 	//Test bounds: FIXME
 	frames[0]->set_bounds(Vec3(0.0f,0,0),Vec3(1.166f,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED + 0.25f,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_A,ANIM_END_TYPE_DEFAULT_ANIM);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
@@ -518,17 +518,17 @@ Global_Tiles::Global_Tiles()
 
 	//Player jumps
 	frames[2]->set_bounds(Vec3(1.75f,4.0f,0));
-	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.0f,0,0);
+	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[2]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
 
 	//Player is at apex of parabolic path
 	frames[3]->set_bounds(Vec3(1.75f,8.5f,2.0f));
-	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.0f,0,0);
+	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[3]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
 
 	//Player is breaking through the next window:
 	frames[4]->set_bounds(Vec3(1.75f,18.5f,-WINDOW_TILE_SIZE + 1.0f));
-	frames[4]->set_speed(PLAYER_RUN_SPEED + 2.0f,0,0);
+	frames[4]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[4]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
 
 	//Player lands
@@ -536,7 +536,7 @@ Global_Tiles::Global_Tiles()
 	frames[5]->set_speed(0.8f,0,0);
 
 	//Player player has finished landing, ready to run again
-	frames[6]->set_bounds(Vec3(1.75f,21.3f,-WINDOW_TILE_SIZE));
+	frames[6]->set_bounds(Vec3(1.75f,20.3f,-WINDOW_TILE_SIZE));
 
 	//===========================================================================
 	//This animation takes player down 2 floors
@@ -550,26 +550,26 @@ Global_Tiles::Global_Tiles()
 	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
 	//Test bounds: FIXME
 	frames[0]->set_bounds(Vec3(1.166,0,0),Vec3(2.33,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED + 0.85f,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_B,ANIM_END_TYPE_DEFAULT_ANIM);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 
 	//Player breaks glass
 	frames[1]->set_bounds(Vec3(1.75f,3.0f,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.85f,0,0);
+	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.25f,0,0);
 	frames[1]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
 
 	//Player jumps
 	frames[2]->set_bounds(Vec3(1.75f,4.0f,0));
-	frames[2]->set_speed(PLAYER_RUN_SPEED + 1.85f,0,0);
+	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[2]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
 
 	//This path has no parabolic vertex
 
 	//Player is breaking through the next window:
 	frames[3]->set_bounds(Vec3(1.75f,18.5f,-2*WINDOW_TILE_SIZE + 1.0f));
-	frames[3]->set_speed(PLAYER_RUN_SPEED + 1.85f,0,0);
+	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[3]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
 
 	//Player lands
@@ -577,7 +577,7 @@ Global_Tiles::Global_Tiles()
 	frames[4]->set_speed(0.8f,0,0);
 
 	//Player player has finished landing, ready to run again
-	frames[5]->set_bounds(Vec3(1.75f,21.3f,-2*WINDOW_TILE_SIZE));
+	frames[5]->set_bounds(Vec3(1.75f,20.3f,-2*WINDOW_TILE_SIZE));
 
 	//===========================================================================
 	//This animation takes player down 3 floors
@@ -590,29 +590,29 @@ Global_Tiles::Global_Tiles()
 	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
 	//Test bounds: FIXME
 	frames[0]->set_bounds(Vec3(2.33,0,0),Vec3(3.5,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED + 0.5f,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_C,ANIM_END_TYPE_DEFAULT_ANIM);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 
 	//Player breaks glass
 	frames[1]->set_bounds(Vec3(1.75f,3.0f,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.5f,0,0);
+	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.25f,0,0);
 	frames[1]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
 
 	//Player jumps
 	frames[2]->set_bounds(Vec3(1.75f,4.0f,0));
-	frames[2]->set_speed(PLAYER_RUN_SPEED + 1.9f,0,0);
+	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[2]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
 
 	//Player is at apex of parabolic path
 	frames[3]->set_bounds(Vec3(1.75f,7.0f,0.8f));
-	frames[3]->set_speed(PLAYER_RUN_SPEED + 1.9f,0,0);
+	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[3]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
 
 	//Player is breaking through the next window:
 	frames[4]->set_bounds(Vec3(1.75f,18.5f,-3*WINDOW_TILE_SIZE + 1.0f));
-	frames[4]->set_speed(PLAYER_RUN_SPEED + 1.9f,0,0);
+	frames[4]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
 	frames[4]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
 
 	//Player lands
@@ -620,7 +620,7 @@ Global_Tiles::Global_Tiles()
 	frames[5]->set_speed(0.8f,0,0);
 
 	//Player player has finished landing, ready to run again
-	frames[6]->set_bounds(Vec3(1.75f,21.3f,-3*WINDOW_TILE_SIZE));
+	frames[6]->set_bounds(Vec3(1.75f,20.3f,-3*WINDOW_TILE_SIZE));
 	//===================================================================================
 }
 Global_Tiles::~Global_Tiles()

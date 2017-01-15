@@ -15,6 +15,10 @@
 #define ASPECT_16_9_LANDSCAPE 1.7778f
 #define ASPECT_16_9_PORTRAIT 0.5625f
 
+
+//Enable this to render the game at a lower resolution and upscale it to the game's res
+#define RENDER_AT_LOWER_RES
+
 //============ Skeletal Animation Defs ==========
 #define ANIM_END_TYPE_ROOT_POSE 0
 #define ANIM_END_TYPE_FREEZE 1

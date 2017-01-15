@@ -36,8 +36,6 @@ struct saved_state
 class Engine
 {
 public:
-	//remove this
-	Engine() {};
 	Engine(struct android_app *app);
 	~Engine();
 
@@ -73,6 +71,16 @@ public:
 	EGLDisplay egl_display = 0;
 	EGLSurface egl_surface = 0;
 	EGLContext egl_context = 0;
+
+	//FBO downscaled rendering member variables
+	GLint default_frame_buffer = 0;
+	GLuint frame_buffer;
+	GLuint depth_render_buffer;
+	GLuint render_texture;
+
+	Shader *render_to_screen_shader = NULL;
+	Material *render_to_screen_mat = NULL;
+
 
 	struct android_app *app;
 

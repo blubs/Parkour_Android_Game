@@ -105,6 +105,11 @@ public:
 	Building *current_building = NULL;
 	int cbldg_index = 0;
 
+	int last_recycled_bldg_index = MAX_BUILDINGS - 1;
+
+	int bldgs_jumped = 0;
+	bool recycle_every_time = false;
+
 	Dynamic_Model *dynamic_floor_models[MAX_BUILDINGS];
 
 	//======================================================================
@@ -186,6 +191,8 @@ public:
 	float player_bbox_tri_slope = 0.0f;
 	float player_bbox_tri_height = 0.0f;
 
+	//If RENDER_AT_LOWER_RES is defined in engine_defs, engine uses the following float for which resolution to render the game at
+	float engine_render_resolution_scale = 0.75f;
 
 	//Updates the game state / logic
 	void update();

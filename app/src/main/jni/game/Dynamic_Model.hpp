@@ -14,8 +14,8 @@
 #include "../engine/File_Utils.hpp"
 #include "../engine/math/math.hpp"
 
-#define DYNAMIC_MODEL_ALLOCED_VERTS 500000
-#define DYNAMIC_MODEL_ALLOCED_TRIS 500000
+#define DYNAMIC_MODEL_ALLOCED_VERTS 800000
+#define DYNAMIC_MODEL_ALLOCED_TRIS 800000
 
 class Dynamic_Model
 {

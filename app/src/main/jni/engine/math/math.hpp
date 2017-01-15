@@ -107,6 +107,7 @@ struct Vec3
 		z = other.z;
 	}
 
+
 	//Dot product
 	friend float operator* (const Vec3& l,const Vec3& r)
 	{
@@ -117,10 +118,25 @@ struct Vec3
 	{
 		return Vec3(l.x + r.x, l.y + r.y, l.z + r.z);
 	}
+
+	void operator +=(const Vec3& other)
+	{
+		x += other.x;
+		y += other.y;
+		z += other.z;
+	}
+
 	//Vector Subtraction
 	friend Vec3 operator-(const Vec3& l,const Vec3& r)
 	{
 		return Vec3(l.x - r.x, l.y - r.y, l.z - r.z);
+	}
+
+	void operator -=(const Vec3& other)
+	{
+		x -= other.x;
+		y -= other.y;
+		z -= other.z;
 	}
 	//Scalar Multiplication
 	friend Vec3 operator*(const float l,const Vec3& r)

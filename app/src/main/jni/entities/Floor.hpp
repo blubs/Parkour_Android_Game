@@ -24,7 +24,7 @@ public:
 	int width;
 	int length;
 
-	//center near bottom of floor
+	//Pos is defined as the global_mins of the floor
 	Vec3 global_pos;
 	Vec3 global_mins;
 	Vec3 global_maxs;
@@ -1722,7 +1722,7 @@ public:
 		//get tile indices for the position
 		if(is_local_x_out_of_bounds(p) || is_local_y_out_of_bounds(p))
 		{
-			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+			//LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
 			return Voxel(CLIP_SOLID);
 		}
 
@@ -1748,8 +1748,8 @@ public:
 
 		Voxel v = tile_coll_map[tile_x][tile_y]->get_vox_at(vox_x,vox_y);
 		//FIXME: remove this
-		if(v.clip_type != CLIP_EMPTY)
-			LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,v.clip_type);
+		//if(v.clip_type != CLIP_EMPTY)
+		//	LOGE("Tile[%d][%d], Voxel[%d][%d] = %d",tile_x,tile_y,vox_x,vox_y,v.clip_type);
 		return v;
 	}
 
@@ -1807,18 +1807,18 @@ public:
 	//so for a given player position, we must check the tile the player is on and the tile after it (+1 in y direction)
 	//===================================================
 
-	//pos is the global position
-	Maneuver* input_to_maneuver(Vec3 pos, int input_type)
+	//p is the global position
+	Maneuver* input_to_maneuver(Vec3 p, int input_type)
 	{
 		//get tile indices for the position
-		if(is_x_out_of_bounds(pos) || is_y_out_of_bounds(pos))
+		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
 		{
-			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",pos.x,pos.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+			//LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
 			return NULL;
 		}
 
 		//finding player pos relative to left near corner of floor
-		Vec3 floor_pos = pos - global_mins;
+		Vec3 floor_pos = p - global_mins;
 
 		int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
 		int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
@@ -1834,7 +1834,7 @@ public:
 		Maneuver* man = NULL;
 
 		//Getting player pos relative to the tile
-		Vec3 p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
+		p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
 		Grid_Tile* tile = tile_object[tile_x][tile_y];
 
 		for(int i = 0; i < tile->maneuver_count; i++)
@@ -1889,16 +1889,16 @@ public:
 	//	Returns a traversal if there exists a traversal if pos is within the last tile, and if:
 	//	(the input required to start the traversal is input_type) AND (the player is within the bounding box required to start the traversal)
 	//	returns NULL otherwise
-	Traversal* input_to_traversal(Vec3 pos, int input_type)
+	Traversal* input_to_traversal(Vec3 p, int input_type)
 	{
-		if(is_x_out_of_bounds(pos) || is_y_out_of_bounds(pos))
+		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
 		{
-			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",pos.x,pos.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+			LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
 			return NULL;
 		}
 
 		//finding player pos relative to left near corner of floor
-		Vec3 floor_pos = pos - global_mins;
+		Vec3 floor_pos = p - global_mins;
 
 		//get tile indices for the position
 		int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
@@ -1916,7 +1916,7 @@ public:
 		Traversal* trav = NULL;
 
 		//Getting player pos relative to the tile
-		Vec3 p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
+		p = floor_pos - Vec3(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0);
 
 
 		for(int i = 0; i < BUILDING_TRAV_COUNT; i++)

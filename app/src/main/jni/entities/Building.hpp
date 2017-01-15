@@ -12,8 +12,8 @@
 class Building : public Entity
 {
 public:
-	//Pos of the building is going to be defined as (center,smallest(closest to 0),bottom of building)
-	//pos is center near bottom of building
+	//Pos of the building is going to be defined as (smallest(closest to 0),smallest(closest to 0),bottom of building)
+	//pos is near left bottom of building
 
 	//Size of the building in meters
 	Vec3 size;
@@ -89,21 +89,33 @@ public:
 			return;
 		floors = 20;
 
-		dimensions = Vec3(11,11,floors);
+		dimensions = Vec3(0,0,floors);
+		dimensions.x = Random::rand_int_in_range(BUILDING_MIN_WIDTH,BUILDING_MAX_WIDTH+1);
+		dimensions.y = Random::rand_int_in_range(BUILDING_MIN_LENGTH,BUILDING_MAX_LENGTH+1);
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
 
 		Vec3 prev_bldg_ofs = Vec3(0,0,0);
+		int lateral_ofs = 0;
 		if(prev_bldg != NULL)
 		{
 			prev_bldg_ofs = Vec3(prev_bldg->pos.x,prev_bldg->global_maxs.y,0);
-			//TODO: calculate building horizontal offset based on size and previous building's position and size
-		}
-		pos = prev_bldg_ofs + bldg_ofs + Vec3(0,0,BUILDING_GROUNDLEVEL);
 
-		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
-		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
+			int ofs_min = (int)-dimensions.x + 1;
+			int ofs_max = (int) (prev_bldg->dimensions.x) - 1;
+
+			lateral_ofs = Random::rand_int_in_range(ofs_min, ofs_max + 1);
+
+			LOGE("Previous building pos:(%.2f,%.2f,%.2f), dims:(%.1f,%.1f,%1.f)",prev_bldg->pos.x,prev_bldg->pos.y,prev_bldg->pos.z,prev_bldg->dimensions.x,prev_bldg->dimensions.y,prev_bldg->dimensions.z);
+			LOGE("Current building dims:(%.1f,%.1f,%1.f)",dimensions.x,dimensions.y,dimensions.z);
+			LOGE("Lateral ofs range: [%d,%d]: res = %d",ofs_min,ofs_max,lateral_ofs);
+
+		}
+		pos = prev_bldg_ofs + bldg_ofs + Vec3(lateral_ofs*TILE_SIZE,0,BUILDING_GROUNDLEVEL);
+
+		global_mins = Vec3(pos.x, pos.y, pos.z);
+		global_maxs = global_mins + size;
 
 		generate_exterior_model_list();
 		generated = true;
@@ -159,8 +171,8 @@ public:
 
 		pos = Vec3(0,0,BUILDING_GROUNDLEVEL);
 
-		global_mins = Vec3(pos.x - 0.5f*size.x, pos.y, pos.z);
-		global_maxs = Vec3(global_mins.x + size.x, pos.y + size.y, pos.z+size.z);
+		global_mins = pos;
+		global_maxs = pos + size;
 
 		generate_exterior_model_list();
 		generated = true;
@@ -510,7 +522,7 @@ public:
 	{
 		//TODO: set exterior style model
 		//Generating the front wall of the building
-		Mat4 world_trans = Mat4::TRANSLATE(global_mins);
+		Mat4 world_trans = Mat4::TRANSLATE(Vec3::ZERO());
 		subdivide_wall(world_trans,(int)dimensions.x,(int)dimensions.z,&ext_mdl_fw_count,ext_mdls_fw,ext_mdl_fw_trans);
 
 		//Generating the back wall of the building
@@ -534,7 +546,7 @@ public:
 	{
 		//TODO: set exterior style model
 		//Generating the front inside wall of the building
-		Mat4 world_trans = Mat4::TRANSLATE(global_mins + Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
+		Mat4 world_trans = Mat4::TRANSLATE(Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
 		subdivide_interior_wall(world_trans,(int)dimensions.x,&int_mdl_fw_count,int_mdls_fw,int_mdl_fw_trans);
 
 		//Generating the back inside wall of the building
@@ -557,6 +569,7 @@ public:
 
 	int render_ext_walls(Mat4 vp)
 	{
+		Mat4 bldg_ofs = Mat4::TRANSLATE(global_mins);
 		Mat4 m;
 		Mat4 mvp;
 		Mat3 m_it;
@@ -588,7 +601,7 @@ public:
 				model = mdl_list[j];
 				if(model != last_model)
 					model->bind_mesh_data2(mat);
-				m = trans_list[j];
+				m = bldg_ofs * trans_list[j];
 				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				mvp = vp * m;
@@ -607,6 +620,7 @@ public:
 
 	int render_int_walls(Mat4 vp)
 	{
+		Mat4 bldg_ofs = Mat4::TRANSLATE(global_mins);
 		Mat4 m;
 		Mat4 mvp;
 		Mat3 m_it;
@@ -638,7 +652,7 @@ public:
 				model = mdl_list[j];
 				if(model != last_model)
 					model->bind_mesh_data2(mat);
-				m = trans_list[j];
+				m = bldg_ofs * trans_list[j];
 				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
 
 				mvp = vp * m;
@@ -661,7 +675,7 @@ public:
 			return 1;
 		}
 		//If we are in the building, only render floor and interior glass
-		//if we are out of the building, only render exterior FIXME: this needs additional checks for broken windows (culling sides of building as well)
+		//if we are out of the building, only render exterior
 		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
 
 		if(!plyr_in_bldg)
@@ -739,14 +753,14 @@ public:
 		return 1;
 	}
 
-	//Sets the window that pos hits as broken. (direction: true = into the building, false = out of the building)
-	void break_window(Vec3 pos, bool direction)
+	//Sets the window that player_pos hits as broken. (direction: true = into the building, false = out of the building)
+	void break_window(Vec3 player_pos, bool direction)
 	{
 		//Finding pos relative to building global min
-		pos = pos - global_mins;
+		player_pos = player_pos - global_mins;
 
-		int window_x = (int) (pos.x / TILE_SIZE);
-		int window_y = (int) (pos.z / WINDOW_TILE_SIZE);
+		int window_x = (int) (player_pos.x / TILE_SIZE);
+		int window_y = (int) (player_pos.z / WINDOW_TILE_SIZE);
 
 		//TODO: make sure we use the correct exterior tile model tiles
 
@@ -760,18 +774,13 @@ public:
 			ext_mdl_fw_count = 0;
 			int_mdl_fw_count = 0;
 
-			//FIXME: for some reason, the interior front wall is being doubled:
-			//try not regenerating the front interior wall to see if it's still there
-			//still there? --> we don't properly set it up to begin with (setting int_mdl_fw_count has no effect)
-			//not there? --> somehow this code is doubling the wall
-
-			Mat4 window_lev = Mat4::TRANSLATE(global_mins + Vec3(0,0,window_y*WINDOW_TILE_SIZE));
-			Mat4 trans_ext = Mat4::TRANSLATE(global_mins);
+			Mat4 window_lev = Mat4::TRANSLATE(Vec3(0,0,window_y*WINDOW_TILE_SIZE));
+			Mat4 trans_ext = Mat4::TRANSLATE(Vec3::ZERO());
 			Mat4 trans_ext_left = Mat4::TRANSLATE(Vec3(0,0,0)) * window_lev;
 			Mat4 trans_ext_above = Mat4::TRANSLATE(Vec3(0,0,WINDOW_TILE_SIZE)) * window_lev;
 			Mat4 trans_ext_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0)) * window_lev;
 
-			Mat4 trans_int_left = Mat4::TRANSLATE(Vec3(0,0,0)) * trans_ext;
+			Mat4 trans_int_left = window_lev;
 			Mat4 trans_int_right = Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0)) * window_lev;
 
 			//Populating wall mesh below the broken window
@@ -792,7 +801,7 @@ public:
 
 			//Setting up the broken window tile
 			broken_iwindow_active = true;
-			broken_iwindow_skel->pos = global_mins + Vec3(window_x * TILE_SIZE, 0, window_y * WINDOW_TILE_SIZE);
+			broken_iwindow_skel->pos = Vec3(window_x * TILE_SIZE, 0, window_y * WINDOW_TILE_SIZE);
 			broken_iwindow_skel->angles = Vec3::ZERO();
 			broken_iwindow_skel->play_anim(WINDOW_ANIM_BREAK,ANIM_END_TYPE_LOOP);
 		}
@@ -810,10 +819,10 @@ public:
 			ext_mdl_bw_count = 0;
 			int_mdl_bw_count = 0;
 
-			Mat4 window_lev = Mat4::TRANSLATE(global_mins + Vec3(size.x,size.y,window_y*WINDOW_TILE_SIZE))
+			Mat4 window_lev = Mat4::TRANSLATE(Vec3(size.x,size.y,window_y*WINDOW_TILE_SIZE))
 						  * Mat4::ROTATE(Quat(PI,Vec3::UP()));
 
-			Mat4 trans_ext = Mat4::TRANSLATE(global_mins + Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
+			Mat4 trans_ext = Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
 			Mat4 trans_ext_left = window_lev * Mat4::TRANSLATE(Vec3(0,0,0));
 			Mat4 trans_ext_above = window_lev * Mat4::TRANSLATE(Vec3(0,0,WINDOW_TILE_SIZE));
 			Mat4 trans_ext_right = window_lev * Mat4::TRANSLATE(Vec3((window_x+1)*TILE_SIZE,0,0));
@@ -838,10 +847,29 @@ public:
 
 			//Setting up the broken window tile
 			broken_owindow_active = true;
-			broken_owindow_skel->pos = global_mins+Vec3(((broken_owindow_index_x+1)*TILE_SIZE),global_maxs.y-global_mins.y,window_y*WINDOW_TILE_SIZE);
+			broken_owindow_skel->pos = Vec3(((broken_owindow_index_x+1)*TILE_SIZE),global_maxs.y-global_mins.y,window_y*WINDOW_TILE_SIZE);
 			broken_owindow_skel->angles = Vec3(0,PI,0);
 			broken_owindow_skel->play_anim(WINDOW_ANIM_BREAK,ANIM_END_TYPE_LOOP);
 		}
+	}
+
+	//Returns the floor number p is in
+	int get_floor_num_at_pos(Vec3 p)
+	{
+		p = p - global_mins;
+		return (int) (p.z / WINDOW_TILE_SIZE);
+	}
+
+	//Offsets the building and all of the building's data
+	void offset_building(Vec3 ofs)
+	{
+		pos += ofs;
+		global_mins += ofs;
+		global_maxs += ofs;
+
+		active_floor->global_pos += ofs;
+		active_floor->global_mins += ofs;
+		active_floor->global_maxs += ofs;
 	}
 
 	//Updated any game logic that the building may need to handle
