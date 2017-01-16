@@ -655,6 +655,7 @@ void Game::start()
 
 	player->pos.y = 1;
 	player_state = PLAYER_STATE_NOCLIP;
+	cplayer_col_precedence_array = running_col_precedence;
 
 	//Setting up one-time global parameters
 	float width = (float) screen_width;
@@ -744,7 +745,7 @@ void Game::draw_player_bbox(Mat4 vp)
 	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
 
 	//Check if player is colliding:
-	move_player(Vec3::ZERO());
+	//move_player(Vec3::ZERO());
 	//player_colliding is updated by this call (which does nothing)
 	if(!player_colliding)
 		solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color_green);
@@ -1284,16 +1285,20 @@ bool Game::clip_all_on_left_side(Vec3 l1, Vec3 l2,float *pts, int pt_count)
 //Given portion of bbox outlined by (la,lb), check if vox is outside of the bbox line
 char Game::voxel_not_in_line(Vec3 la, Vec3 lb, Voxel vox)
 {
+	//Check if every vertex that defines the voxel shape is to the left of the line (la,lb)
 	bool not_touching = clip_all_on_left_side(la,lb,CLIP_SHAPE_SHAPES[vox.clip_shape],CLIP_SHAPE_VERT_COUNTS[vox.clip_shape]);
 
 	if(!not_touching)
+	{
 		return vox.clip_type;
+	}
 	return CLIP_EMPTY;
 }
 
 //Given portion of bbox outlined by both (l1a,l1b) and (l2a,l2b), , check if vox is outside of both bbox lines
 char Game::voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox)
 {
+	//Check if every vertex that defines the voxel shape is to the left of both lines (l1a,l1b) and (l2a,l2b)
 	bool not_touching1 = clip_all_on_left_side(l1a,l1b,CLIP_SHAPE_SHAPES[vox.clip_shape],CLIP_SHAPE_VERT_COUNTS[vox.clip_shape]);
 	bool not_touching2 = clip_all_on_left_side(l2a,l2b,CLIP_SHAPE_SHAPES[vox.clip_shape],CLIP_SHAPE_VERT_COUNTS[vox.clip_shape]);
 
@@ -1305,13 +1310,21 @@ char Game::voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox)
 	return CLIP_EMPTY;
 }
 
-//TODO: handle precedence of collisions
-//Returns type of collision player bbox encounters
-char Game::clip_player_bbox(Vec3 p)
+bool Game::is_out_of_bounds_voxel(Voxel vox)
+{
+	if(vox.clip_type == CLIP_WINDOW)
+	{
+		return true;
+	}
+	return false;
+}
+
+//Returns whether or not the collision player bbox is colliding with something at position p
+//Sets col_dir and col_type to
+bool Game::clip_player_bbox(Vec3 p, char &col_dir, char &col_type)
 {
 	//check for collisions at certain points
 	Vec3 floor_pos = p - current_building->active_floor->global_mins;
-	char result;
 	Voxel vox;
 
 	//Front of triangle
@@ -1334,17 +1347,34 @@ char Game::clip_player_bbox(Vec3 p)
 
 	Vec3 mod_ofs = Vec3(mod_x,mod_y,0.0f);
 
+	//This is a list of what voxels each check hit
+	char front_clip_results[5] = {0,0,0,0,0};
+
+	//======= A bunch of const identifiers for readability =======
+	const int clip_rslt_tri_tip = 0;
+	const int clip_rslt_lcorner = 1;
+	const int clip_rslt_rcorner = 2;
+	const int clip_rslt_fl = 3;
+	const int clip_rslt_fr = 4;
+	//============================================================
+
+	//TODO: handle out of bounds window clip voxel type
+
 	//If our prediction triangle is intersecting the front left voxel: consider it
 	if(mod_y >= lcorner_cmpr)
 	{
 		//Check front left voxel
 		vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
+		if(is_out_of_bounds_voxel(vox))
+		{
+			col_dir = vox.clip_shape;
+			col_type = CLIP_WINDOW;
+			return true;
+		}
 		if(vox.clip_type != CLIP_EMPTY)
 		{
 			ofs = Vec3(0,-0.5f,0.0f) + mod_ofs;
-			result = voxel_not_in_line(bbox_tl + ofs, col_tri_tip + ofs, vox);
-			if(result != CLIP_EMPTY)
-				return result;
+			front_clip_results[clip_rslt_lcorner] = voxel_not_in_line(bbox_tl + ofs, col_tri_tip + ofs, vox);
 		}
 	}
 	//If our prediction triangle is intersecting the front right voxel: consider it
@@ -1352,107 +1382,205 @@ char Game::clip_player_bbox(Vec3 p)
 	{
 		//Check front right voxel
 		vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
-
+		if(is_out_of_bounds_voxel(vox))
+		{
+			col_dir = vox.clip_shape;
+			col_type = CLIP_WINDOW;
+			return true;
+		}
 		//If the voxel is not empty
 		if(vox.clip_type != CLIP_EMPTY)
 		{
 			ofs = Vec3(-1.0f,-0.5f,0.0f) + mod_ofs;
-			result = voxel_not_in_line(col_tri_tip + ofs, bbox_tr + ofs, vox);
-			if(result != CLIP_EMPTY)
-				return result;
+			front_clip_results[clip_rslt_rcorner] = voxel_not_in_line(col_tri_tip + ofs, bbox_tr + ofs, vox);
 		}
 	}
 
 	//Triangle tip
 	vox = current_building->get_voxel_at(floor_pos + Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0));
+	if(is_out_of_bounds_voxel(vox))
+	{
+		col_dir = vox.clip_shape;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(-0.5f,-0.5f,0) + mod_ofs;
-		result = voxel_not_in_lines(bbox_tl + ofs, col_tri_tip + ofs, col_tri_tip + ofs, bbox_tr + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		front_clip_results[clip_rslt_tri_tip] = voxel_not_in_lines(bbox_tl + ofs, col_tri_tip + ofs, col_tri_tip + ofs, bbox_tr + ofs,vox);
 	}
 
 	//Front right
 	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE,0));
+	if(is_out_of_bounds_voxel(vox))
+	{
+		col_dir = vox.clip_shape;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(-1.0f,0,0) + mod_ofs;
-		result = voxel_not_in_lines(col_tri_tip + ofs, bbox_tr + ofs, bbox_tr + ofs, bbox_br + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		front_clip_results[clip_rslt_fr] = voxel_not_in_lines(col_tri_tip + ofs, bbox_tr + ofs, bbox_tr + ofs, bbox_br + ofs,vox);
 	}
 
 	//Front left
 	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE,0));
+	if(is_out_of_bounds_voxel(vox))
+	{
+		col_dir = vox.clip_shape;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(0,0,0) + mod_ofs;
-		result = voxel_not_in_lines(bbox_bl + ofs, bbox_tl + ofs, bbox_tl + ofs, col_tri_tip + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		front_clip_results[clip_rslt_fl] = voxel_not_in_lines(bbox_bl + ofs, bbox_tl + ofs, bbox_tl + ofs, col_tri_tip + ofs,vox);
 	}
 
-//If the player bbox is sufficiently small enough, we don't need to check these midpoints:
-//(sufficiently small enough means: 2*PLAYER_SIZE < GRID_SIZE, meaning the player bbox cannot cover more than 2 voxels)
-#ifndef SMALL_PLAYER_BBOX
+	//Return the highest rank voxel that we collided into on the front.
+	char highest_clip_type = CLIP_EMPTY;
+	char highest_clip_priority = CLIP_EMPTY;
+	for(int i = 0; i < 5; i++)
+	{
+		//Using precedence array to get the priority of the collision clip type
+		if(cplayer_col_precedence_array[front_clip_results[i]] > highest_clip_priority)
+		{
+			highest_clip_priority = cplayer_col_precedence_array[front_clip_results[i]];
+			highest_clip_type = front_clip_results[i];
+		}
+	}
+
+	if(highest_clip_type)
+	{
+		col_dir = COL_DIR_FORWARD;
+		col_type = highest_clip_type;
+		return true;
+	}
 
 	//Mid right
 	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,0,0));
+	if(is_out_of_bounds_voxel(vox))
+	{
+		col_dir = vox.clip_shape;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(-1.0f,0.5f,0) + mod_ofs;
-		result = voxel_not_in_line(bbox_tr + ofs, bbox_br + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		highest_clip_type = voxel_not_in_line(bbox_tr + ofs, bbox_br + ofs,vox);
+		if(highest_clip_type)
+		{
+			col_dir = COL_DIR_RIGHT;
+			col_type = highest_clip_type;
+			return true;
+		}
 	}
 
 	//Mid left
 	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,0,0));
+	if(is_out_of_bounds_voxel(vox))
+	{
+		col_dir = vox.clip_shape;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(0,0.5f,0) + mod_ofs;
-		result = voxel_not_in_line(bbox_bl + ofs, bbox_tl + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		highest_clip_type = voxel_not_in_line(bbox_bl + ofs, bbox_tl + ofs,vox);
+		if(highest_clip_type)
+		{
+			col_dir = COL_DIR_LEFT;
+			col_type = highest_clip_type;
+			return true;
+		}
 	}
 
+	//We're going to skip these collision checks, I feel they are just nitpicking and their removal could make the game easier
 	//Back center
-	vox = current_building->get_voxel_at(floor_pos + Vec3(0,-PLAYER_SIZE,0));
+	/*vox = current_building->get_voxel_at(floor_pos + Vec3(0,-PLAYER_SIZE,0));
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(-0.5f,1.0f,0) + mod_ofs;
-		result = voxel_not_in_line(bbox_br + ofs, bbox_bl + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		clip_results[clip_rslt_bc] = voxel_not_in_line(bbox_br + ofs, bbox_bl + ofs,vox);
 	}
-#endif
-
 	//back right
 	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(-1.0f,1.0f,0) + mod_ofs;
-		result = voxel_not_in_lines(bbox_tr + ofs, bbox_br + ofs, bbox_br + ofs, bbox_bl + ofs,vox);
-		if(result != CLIP_EMPTY)
-			return result;
+		clip_results[clip_rslt_br] = voxel_not_in_lines(bbox_tr + ofs, bbox_br + ofs, bbox_br + ofs, bbox_bl + ofs,vox);
 	}
-	//result = current_building->is_solid_at(floor_pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
-	//if(result != CLIP_EMPTY)
-	//	return result;
-
 	//back left
 	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0));
 	if(vox.clip_type != CLIP_EMPTY)
 	{
 		ofs = Vec3(0,1.0f,0) + mod_ofs;
-		result = voxel_not_in_lines(bbox_br + ofs, bbox_bl + ofs, bbox_bl + ofs, bbox_tl + ofs, vox);
-		if(result != CLIP_EMPTY)
-			return result;
-	}
+		clip_results[clip_rslt_bl] = voxel_not_in_lines(bbox_br + ofs, bbox_bl + ofs, bbox_bl + ofs, bbox_tl + ofs, vox);
+	}*/
 
-	return CLIP_EMPTY;
-	//TODO: make precedence array for which collision type takes higher precedence, we only return the clip type that has the highest precedence
+	return false;
+}
+
+//Plays a player death animation
+//which animation depends on collision direction and collision type
+void Game::start_player_death(char dir, char type)
+{
+	//TODO: if: dir is COL_DIR_FORWARD and type is CLIP_WINDOW
+	//Check if we are in the building traversal start bounds, if so: we are playing window break death animation
+	//and breaking a window
+
+	if(player_state == PLAYER_STATE_RUNNING || player_state == PLAYER_STATE_FALLING)
+	{
+		switch(dir)
+		{
+			default:
+			case COL_DIR_FORWARD:
+			{
+				//TODO: play forward collision animation depending on what we ran into
+				break;
+			}
+			case COL_DIR_LEFT:
+			{
+				//TODO: play left collision animation
+				break;
+			}
+			case COL_DIR_RIGHT:
+			{
+				//TODO: play right collision animation
+				break;
+			}
+		}
+	}
+	else if(player_state == PLAYER_STATE_SLIDING)
+	{
+		switch(dir)
+		{
+			default:
+			case COL_DIR_FORWARD:
+			{
+				//TODO: play sliding forward collision animation depending on what we ran into
+				//FIXME: how to handle transitions while sliding?
+				break;
+			}
+			case COL_DIR_LEFT:
+			{
+				//TODO: play sliding left collision animation
+				break;
+			}
+			case COL_DIR_RIGHT:
+			{
+				//TODO: play sliding right collision animation
+				break;
+			}
+		}
+
+	}
+	//	player_substate = 0.0f;
+	//	player_state = PLAYER_STATE_DEAD;
+	//logic for death update code?
 }
 
 //returns true if move was successful, returns false if we collided with something and set state to DEAD
@@ -1469,35 +1597,37 @@ bool Game::move_player(Vec3 v)
 	//Checking forward collisions
 	Vec3 forward_pos = player->pos + Vec3(0,delta_y,0);
 
-	char clip = clip_player_bbox(forward_pos);
+	char clip_dir;
+	char clip_type;
 
-	if(clip == 0)
+
+	if(clip_player_bbox(forward_pos,clip_dir,clip_type))
 	{
-		player->pos.y = forward_pos.y;
+		LOGE("front clip: dir:%d, type:%d",clip_dir,clip_type);
+		start_player_death(clip_dir,clip_type);
+		player_colliding = true;
+		return false;
 	}
 	else
 	{
-		//TODO: we collided! handle death
-		//FIXME: remove this next line:
-		player_colliding = true;
+		player->pos.y = forward_pos.y;
 	}
+
+
 
 	//Checking sideways collisions
 	Vec3 side_pos = player->pos + Vec3(delta_x,0,0);
 
-
-
-	clip = clip_player_bbox(side_pos);
-
-	if(clip == 0)
+	if(clip_player_bbox(side_pos,clip_dir,clip_type))
 	{
-		player->pos.x = side_pos.x;
+		LOGE("side clip: dir:%d, type:%d",clip_dir,clip_type);
+		start_player_death(clip_dir,clip_type);
+		player_colliding = true;
+		return false;
 	}
 	else
 	{
-		//TODO: we collided! handle death
-		//FIXME: remove this next line:
-		player_colliding = true;
+		player->pos.x = side_pos.x;
 	}
 
 	//Don't do collision detection in z-axis (we let PLAYER_STATE_FALLING logic handle that)
@@ -1533,6 +1663,7 @@ void Game::player_anim_special_events()
 	}
 }
 
+
 void Game::player_state_logic()
 {
 	float t = Time::time();
@@ -1557,8 +1688,6 @@ void Game::player_state_logic()
 
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
-		//TODO: check for traversals as well
-
 		//Checking for traversals
 		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe);
 
@@ -1590,28 +1719,28 @@ void Game::player_state_logic()
 			return;
 		}
 		else if(input_swipe)
+		{
+			//There was a swipe, but we are not in a maneuver area:
+			if(input_swipe == INPUT_SWIPE_UP)
 			{
-				//There was a swipe, but we are not in a maneuver area:
-				if(input_swipe == INPUT_SWIPE_UP)
-				{
-					player_state = PLAYER_STATE_FALLING;
-					player_phys_vel.z = PLAYER_JUMP_VEL;
-					player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
-					player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
-					return;
-				}
-				//Get maneuvers that require input down
-				if(input_swipe == INPUT_SWIPE_DOWN)
-				{
-					player_state = PLAYER_STATE_SLIDING;
-					player_slide_speed = PLAYER_SLIDE_SPEED;
-					player_substate = 0.0f;
-					//In this context, subtate_time is the time that the player will slide for
-					player_substate_time = t + PLAYER_SLIDE_TIME;
-					player_skel->play_anim(PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
-					return;
-				}
+				player_state = PLAYER_STATE_FALLING;
+				player_phys_vel.z = PLAYER_JUMP_VEL;
+				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
+				player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
+				return;
 			}
+			//Get maneuvers that require input down
+			if(input_swipe == INPUT_SWIPE_DOWN)
+			{
+				player_state = PLAYER_STATE_SLIDING;
+				player_slide_speed = PLAYER_SLIDE_SPEED;
+				player_substate = 0.0f;
+				//In this context, subtate_time is the time that the player will slide for
+				player_substate_time = t + PLAYER_SLIDE_TIME;
+				player_skel->play_anim(PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
+				return;
+			}
+		}
 
 		if(!player_skel->playing_anim || player_skel->current_anim != 0)
 		{
@@ -1664,6 +1793,9 @@ void Game::player_state_logic()
 		//Make the player move forward, if runs outside of building bounds, reset at building start
 		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
 
+		//Setting player collision precedence array
+		cplayer_col_precedence_array = running_col_precedence;
+
 		if(!move_player(movement_vel))
 			return;
 
@@ -1673,7 +1805,7 @@ void Game::player_state_logic()
 
 		//Then check for more general out-of-boundsness in both x and y axes
 		//player->pos = player->pos + Time::delta_time * movement_vel;
-		if(current_building->is_box_out_of_bounds(player->pos,PLAYER_SIZE))//TODO: make 0.5f be the player size
+		if(current_building->is_box_out_of_bounds(player->pos,PLAYER_SIZE))
 		{
 			player->pos = current_building->active_floor->global_pos + Vec3(0.0f,1.0f,0.0f);
 		}
@@ -1687,18 +1819,35 @@ void Game::player_state_logic()
 
 		Vec3 delta_pos = Time::udelta_time * player_phys_vel;
 
-		if(player->pos.z + delta_pos.z < current_building->active_floor->altitude)
+		if(player->pos.z + delta_pos.z <= current_building->active_floor->altitude)
 		{
 			player_state = PLAYER_STATE_RUNNING;
 			player->pos.z = current_building->active_floor->altitude;
 			player_phys_vel = Vec3::ZERO();
 			return;
 		}
-		player->pos = player->pos + delta_pos;
+
+		//Setting player collision precedence array
+		//If the player is 0.35m above the floor (doorways are 2.35 m high, player is 2 m tall)
+		//We use jumping col precedence array, else we use the running col precedence array
+		if(player->pos.z + delta_pos.z >= current_building->active_floor->altitude + 0.35f)
+		{
+			cplayer_col_precedence_array = jumping_col_precedence;
+		}
+		else
+		{
+			cplayer_col_precedence_array = running_col_precedence;
+		}
+
+		if(!move_player(player_phys_vel))
+		{
+			//Jumping death (we ran into something)
+			//TODO: jumping death
+			return;
+		}
 	}
 	if(player_state == PLAYER_STATE_SLIDING)
 	{
-		//TODO: play sliding animation at start, then freeze the anim, then when we end the slide, play get back up animation
 		if(player_substate_time < t)
 		{
 			if(player_substate == 0.0f)
@@ -1708,13 +1857,13 @@ void Game::player_state_logic()
 				player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
 			}
 			else if(player_substate == 1.0f)
-				{
-					player_state = PLAYER_STATE_RUNNING;
-					player_slide_speed = 0.0f;
-					player_substate = 0.0f;
-					player_substate_time = 0.0f;
-					player_skel->play_default_anim();
-				}
+			{
+				player_state = PLAYER_STATE_RUNNING;
+				player_slide_speed = 0.0f;
+				player_substate = 0.0f;
+				player_substate_time = 0.0f;
+				player_skel->play_default_anim();
+			}
 		}
 		//In this context, substate_time is the time that the player will slide for
 
@@ -1741,15 +1890,24 @@ void Game::player_state_logic()
 		camera->set_viewbob(CAM_VIEWBOB_SLIDING);
 		camera->update_viewbob();
 
+		//Setting player collision precedence array
+		cplayer_col_precedence_array = sliding_col_precedence;
+
 		if(!move_player(player_phys_vel))
 		{
 			//End slide
 			//TODO: replace this with sliding death
-			player_substate = 1.0f;
-			player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
-			player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
+			//player_substate = 1.0f;
+			//player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
+			//player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
 			return;
 		}
+	}
+	if(player_state == PLAYER_STATE_DEAD)
+	{
+		//TODO: player death logic
+		//FIXME: remove this:(temporary)
+
 	}
 }
 
@@ -1882,11 +2040,9 @@ void Game::update()
 			{
 				if(sy >= 0.85f)
 				{
-					//Test collision
 					if(player_state == PLAYER_STATE_NOCLIP)
 					{
 						input_touching[i] = false;
-						move_player(Vec3::ZERO());
 					}
 					//Reset camera offset
 					if(player_state == PLAYER_STATE_CAM_FLY)

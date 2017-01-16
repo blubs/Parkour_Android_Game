@@ -21,10 +21,20 @@
 #define TILE_OBSTACLE_COUNT 10
 
 //Collision map Voxel Clip Types
+//Not solid
 #define CLIP_EMPTY 0
+//Full wall
 #define CLIP_SOLID 1
-//#define CLIP_DOORWAY 2
-//...etc
+//Obstacle that's empty low to the ground
+#define CLIP_SLIDE 2
+//Obstacle that we can collide with if we're jumping
+#define CLIP_DOORWAY 3
+//Waist-high obstacle
+#define CLIP_MID 4
+
+//Building breakable window (not used for collision, but for death animation type)
+#define CLIP_WINDOW 5
+
 
 //Defining a few different clip shapes
 #define CLIP_SHAPE_BOX 0
@@ -46,6 +56,10 @@
 #define CLIP_SHAPE_IN_WALL_NEG 8
 
 #define CLIP_SHAPE_COUNT 9
+
+#define COL_DIR_FORWARD 1
+#define COL_DIR_LEFT 2
+#define COL_DIR_RIGHT 3
 
 //The following arrays are lists of vertices of the voxel clip shapes
 //Array of vertex count of the voxel clip shapes
@@ -237,8 +251,10 @@ extern int PREV_BLDG[3];
 #define PLAYER_STATE_MANEUVERING 4
 #define PLAYER_STATE_TRAVERSING 5
 
-#define PLAYER_STATE_NOCLIP 6
-#define PLAYER_STATE_CAM_FLY 7
+#define PLAYER_STATE_DEAD 6
+
+#define PLAYER_STATE_NOCLIP 7
+#define PLAYER_STATE_CAM_FLY 8
 
 //Player Data
 #define PLAYER_SIZE 0.5f

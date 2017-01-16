@@ -1716,14 +1716,20 @@ public:
 	}
 
 	//Assumes point p is defined relative to global_mins
+	//Returns the voxel at point p
+	//if the point p is out of bounds, returns voxel clip type CLIP_WINDOW, and clip shape as either COL_DIR_FORWARD or COL_DIR_RIGHT
+	//depending on whether or not the out of bounds occured on the x-axis or y-axis
 	Voxel get_voxel_at(Vec3 p)
 	{
 		//position given is in floor space, 0,0 being near left corner
 		//get tile indices for the position
-		if(is_local_x_out_of_bounds(p) || is_local_y_out_of_bounds(p))
+		if(is_local_y_out_of_bounds(p))
 		{
-			//LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
-			return Voxel(CLIP_SOLID);
+			return Voxel(CLIP_WINDOW,COL_DIR_FORWARD);
+		}
+		if(is_local_x_out_of_bounds(p))
+		{
+			return Voxel(CLIP_WINDOW,COL_DIR_RIGHT);
 		}
 
 		int tile_x = (int) floorf(p.x/TILE_SIZE);

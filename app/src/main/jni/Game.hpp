@@ -204,7 +204,13 @@ public:
 	//Handles player collision detection and player movement
 	bool move_player(Vec3 v);
 	//Handles player bbox hull collision with building->floor->tile voxels
-	char clip_player_bbox(Vec3 p);
+	//Returns whether or not the collision player bbox is colliding with something at position p
+	//Sets col_dir and col_type to
+	bool clip_player_bbox(Vec3 p, char& col_dir, char& col_type);
+
+	//Plays a player death animation
+	//which animation depends on collision direction and collision type
+	void start_player_death(char dir, char type);
 
 	//Returns true if all points (2d coords) in pts are on the left side of line l1->l2
 	//(left is defined from standing at l1, looking at l2)
@@ -213,6 +219,9 @@ public:
 	char voxel_not_in_line(Vec3 la, Vec3 lb, Voxel vox);
 	//Given portion of bbox outlined by both (l1a,l1b) and (l2a,l2b), , check if vox is outside of both bbox lines
 	char voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox);
+
+	//Check if a voxel is an out of bounds voxel (with clip type CLIP_WINDOW and clip shape as out of bounds direction)
+	bool is_out_of_bounds_voxel(Voxel vox);
 
 	//Executes code if player is at specific frames in specific animations
 	void player_anim_special_events();
@@ -228,6 +237,15 @@ public:
 	float edge_darken_opacity = 0.3f;
 	float black_overlay_opacity = 0.0f;
 	float white_overlay_opacity = 0.0f;
+
+
+	//The following 3 arrays hold the priority of each of the following clip types, in their respective indices
+	// (Higher value = higher priority)
+	//{CLIP_EMPTY,CLIP_SOLID,CLIP_SLIDE,CLIP_DOORWAY,CLIP_MID}
+	char running_col_precedence[5] = {0,4,3,0,2};
+	char jumping_col_precedence[5] = {0,4,3,2,1};
+	char sliding_col_precedence[5] = {0,4,2,0,3};
+	char* cplayer_col_precedence_array = NULL;
 
 	//Draws player bounding box
 	void draw_player_bbox(Mat4 vp);

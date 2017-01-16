@@ -224,12 +224,115 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[9]->model = new Static_Model("models/tiles/style0/obst_9.stmf");
 
 
-	//TODO: set collision maps for obstacle tiles
-	/*for(int i = 0; i < TILE_VOXEL_DIMS; i++)
+	//=============== Obstacle Collision Maps =====================
+	//Setting middle row as solid for all collision maps that have the center wall
+	for(int i = 0; i < TILE_VOXEL_DIMS; i++)
 	{
-		tile_styles[0]->floor_vent->coll_map->voxel[i][3] = CLIP_SOLID;
-		tile_styles[0]->wall_vent->coll_map->voxel[i][3] = CLIP_SOLID;
-	}*/
+		tile_styles[0]->obst_tiles[0]->coll_map->voxel[i][3] = CLIP_SOLID;
+		tile_styles[0]->obst_tiles[1]->coll_map->voxel[i][3] = CLIP_SOLID;
+		tile_styles[0]->obst_tiles[5]->coll_map->voxel[i][3] = CLIP_SOLID;
+		tile_styles[0]->obst_tiles[8]->coll_map->voxel[i][3] = CLIP_SOLID;
+		tile_styles[0]->obst_tiles[9]->coll_map->voxel[i][3] = CLIP_SOLID;
+	}
+
+	//Slide through air duct tile [0]
+		//Center wall
+	tile_styles[0]->obst_tiles[0]->coll_map->voxel[3][4] = CLIP_SLIDE;
+	tile_styles[0]->obst_tiles[0]->coll_map->voxel[3][3] = CLIP_SLIDE;
+
+	//Dive through air duct tile [1]
+		//Center wall
+	//Run through doorways [2]
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[0][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[1][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[5][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[6][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[1][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel_shape[1][2] = CLIP_SHAPE_GT_POS;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[5][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel_shape[5][2] = CLIP_SHAPE_GT_NEG;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[2][3] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[3][3] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[2]->coll_map->voxel[4][3] = CLIP_DOORWAY;
+	//Run through elevator [3]
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[0][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[6][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[1][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[5][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[1][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[5][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[1][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel_shape[1][4] = CLIP_SHAPE_GT_POS;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[5][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel_shape[5][4] = CLIP_SHAPE_GT_NEG;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[2][2] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[3][2] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[4][2] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[2][5] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[3][5] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[3]->coll_map->voxel[4][5] = CLIP_DOORWAY;
+	//Vault through wall [4]
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[0][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[6][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[1][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[5][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[1][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel_shape[1][5] = CLIP_SHAPE_GT_POS;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[5][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel_shape[5][5] = CLIP_SHAPE_GT_NEG;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[2][5] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[3][5] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[4][5] = CLIP_DOORWAY;
+	//slide over TV [5]
+		//Center wall
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[2][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[2][4] = CLIP_MID;
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[4][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[4][4] = CLIP_MID;
+	//Kong over desks [6]
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[0][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[6][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[1][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[1][2] = CLIP_SHAPE_GT_NEG;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[1][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[1][5] = CLIP_SHAPE_LT_POS;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[5][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[5][2] = CLIP_SHAPE_GT_POS;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[5][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[5][5] = CLIP_SHAPE_LT_NEG;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[2][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[3][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[4][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[2][5] = CLIP_MID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[3][5] = CLIP_MID;
+	tile_styles[0]->obst_tiles[6]->coll_map->voxel[4][5] = CLIP_MID;
+	//jump into elevator vent [7]
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[0][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[6][3] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[1][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[5][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[1][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[5][5] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[1][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel_shape[1][4] = CLIP_SHAPE_GT_POS;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[5][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel_shape[5][4] = CLIP_SHAPE_GT_NEG;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[2][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[3][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[4][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[2][5] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[3][5] = CLIP_DOORWAY;
+	tile_styles[0]->obst_tiles[7]->coll_map->voxel[4][5] = CLIP_DOORWAY;
+	//dash vault over decor [8]
+		//Center wall
+	tile_styles[0]->obst_tiles[8]->coll_map->voxel[1][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[8]->coll_map->voxel[2][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[8]->coll_map->voxel[3][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[8]->coll_map->voxel[4][4] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[8]->coll_map->voxel[5][4] = CLIP_SOLID;
+	//swing through bookshelf [9]
+		//Center wall
+	//=============================================================
 
 	//==================== Loading wall tiles =====================
 
@@ -397,15 +500,15 @@ Global_Tiles::Global_Tiles()
 			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_GT_NEG;
 		}
 		else if(i == 3)
-			{
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel[i][i] = CLIP_SOLID;
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_GT_ABS;
-			}
-			else
-			{
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel[i][i] = CLIP_SOLID;
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_GT_POS;
-			}
+		{
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel[i][i] = CLIP_SOLID;
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_GT_ABS;
+		}
+		else
+		{
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel[i][i] = CLIP_SOLID;
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_GT_POS;
+		}
 		//Setting the TR2 and TL2 tile
 		if(i < 3)
 		{
@@ -413,15 +516,15 @@ Global_Tiles::Global_Tiles()
 			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_LT_POS;
 		}
 		else if(i == 3)
-			{
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel[i][i] = CLIP_SOLID;
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_LT_ABS;
-			}
-			else
-			{
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel[i][6-i] = CLIP_SOLID;
-				tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_LT_NEG;
-			}
+		{
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel[i][i] = CLIP_SOLID;
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][i] = CLIP_SHAPE_LT_ABS;
+		}
+		else
+		{
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel[i][6-i] = CLIP_SOLID;
+			tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->coll_map->voxel_shape[i][6-i] = CLIP_SHAPE_LT_NEG;
+		}
 	}
 
 
