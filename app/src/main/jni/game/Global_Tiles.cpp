@@ -275,6 +275,9 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[4]->coll_map->voxel[0][3] = CLIP_SOLID;
 	tile_styles[0]->obst_tiles[4]->coll_map->voxel[6][3] = CLIP_SOLID;
 	tile_styles[0]->obst_tiles[4]->coll_map->voxel[1][2] = CLIP_SOLID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[2][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[3][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[4]->coll_map->voxel[4][2] = CLIP_MID;
 	tile_styles[0]->obst_tiles[4]->coll_map->voxel[5][2] = CLIP_SOLID;
 	tile_styles[0]->obst_tiles[4]->coll_map->voxel[1][5] = CLIP_SOLID;
 	tile_styles[0]->obst_tiles[4]->coll_map->voxel_shape[1][5] = CLIP_SHAPE_GT_POS;
@@ -286,20 +289,18 @@ Global_Tiles::Global_Tiles()
 	//slide over TV [5]
 		//Center wall
 	tile_styles[0]->obst_tiles[5]->coll_map->voxel[2][2] = CLIP_MID;
-	tile_styles[0]->obst_tiles[5]->coll_map->voxel[2][4] = CLIP_MID;
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[3][2] = CLIP_MID;
 	tile_styles[0]->obst_tiles[5]->coll_map->voxel[4][2] = CLIP_MID;
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[2][4] = CLIP_MID;
+	tile_styles[0]->obst_tiles[5]->coll_map->voxel[3][4] = CLIP_MID;
 	tile_styles[0]->obst_tiles[5]->coll_map->voxel[4][4] = CLIP_MID;
 	//Kong over desks [6]
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[0][3] = CLIP_SOLID;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[6][3] = CLIP_SOLID;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[1][2] = CLIP_SOLID;
-	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[1][2] = CLIP_SHAPE_GT_NEG;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[1][5] = CLIP_SOLID;
-	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[1][5] = CLIP_SHAPE_LT_POS;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[5][2] = CLIP_SOLID;
-	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[5][2] = CLIP_SHAPE_GT_POS;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[5][5] = CLIP_SOLID;
-	tile_styles[0]->obst_tiles[6]->coll_map->voxel_shape[5][5] = CLIP_SHAPE_LT_NEG;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[2][2] = CLIP_MID;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[3][2] = CLIP_MID;
 	tile_styles[0]->obst_tiles[6]->coll_map->voxel[4][2] = CLIP_MID;
@@ -572,8 +573,6 @@ Global_Tiles::Global_Tiles()
 
 	frames[5]->set_bounds(Vec3(1.75f,12,0));*/
 
-	//TODO: continue the rest of the frames
-
 	//=================== Setting Up Window Models ====================
 	window_styles[0] = new Exterior_Style();
 	window_styles[0]->window_models = new Window_Model_Holder("models/windows/style0.stmf");
@@ -599,7 +598,7 @@ Global_Tiles::Global_Tiles()
 	//============= Setting up building to building traversals ==================
 	//===========================================================================
 	//This animation takes player down 1 floor
-	bldg_travs[0] = new Traversal(7);
+	bldg_travs[0] = new Traversal(8);
 	//bldg_travs[0]->set_input(INPUT_SWIPE_UP);
 	//test input FIXME
 	bldg_travs[0]->set_input(INPUT_SWIPE_NONE);
@@ -608,38 +607,44 @@ Global_Tiles::Global_Tiles()
 	//Player is running to window
 	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
 	//Test bounds: FIXME
-	frames[0]->set_bounds(Vec3(0.0f,0,0),Vec3(1.166f,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
-	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_A,ANIM_END_TYPE_DEFAULT_ANIM);
+	frames[0]->set_bounds(Vec3(0.25,0,0),Vec3(3.25,2,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED + 0.5f,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,4,0),1);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_RUN_PRE_JUMP,ANIM_END_TYPE_FREEZE);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 
+	//Playing traversal animation
+	frames[1]->set_bounds(Vec3(1.75,2.5,0));
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 1.5f,0,0);
+	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_A,ANIM_END_TYPE_DEFAULT_ANIM);
+	frames[1]->set_vbob(CAM_VIEWBOB_RUNNING);
+
 	//Player breaks glass
-	frames[1]->set_bounds(Vec3(1.75f,3.0f,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.25f,0,0);
-	frames[1]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
+	frames[2]->set_bounds(Vec3(1.75f,3.0f,0));
+	frames[2]->set_speed(PLAYER_RUN_SPEED - 1.5f,0,0);
+	frames[2]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
 
 	//Player jumps
-	frames[2]->set_bounds(Vec3(1.75f,4.0f,0));
-	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[2]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
+	frames[3]->set_bounds(Vec3(1.75f,4.0f,0));
+	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.3f,0,0);
+	frames[3]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
 
 	//Player is at apex of parabolic path
-	frames[3]->set_bounds(Vec3(1.75f,8.5f,2.0f));
-	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[3]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
+	frames[4]->set_bounds(Vec3(1.75f,8.5f,2.0f));
+	frames[4]->set_speed(PLAYER_RUN_SPEED + 2.3f,0,0);
+	frames[4]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
 
 	//Player is breaking through the next window:
-	frames[4]->set_bounds(Vec3(1.75f,18.5f,-WINDOW_TILE_SIZE + 1.0f));
-	frames[4]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[4]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
+	frames[5]->set_bounds(Vec3(1.75f,18.0f,-WINDOW_TILE_SIZE + 1.0f));
+	frames[5]->set_speed(PLAYER_RUN_SPEED + 2.3f,0,0);
+	frames[5]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
 
 	//Player lands
-	frames[5]->set_bounds(Vec3(1.75f,19.0f,-WINDOW_TILE_SIZE));
-	frames[5]->set_speed(0.8f,0,0);
+	frames[6]->set_bounds(Vec3(1.75f,20.0f,-WINDOW_TILE_SIZE));
+	frames[6]->set_speed(0.8f,0,0);
 
 	//Player player has finished landing, ready to run again
-	frames[6]->set_bounds(Vec3(1.75f,20.3f,-WINDOW_TILE_SIZE));
+	frames[7]->set_bounds(Vec3(1.75f,21.6f,-WINDOW_TILE_SIZE));
 
 	//===========================================================================
 	//This animation takes player down 2 floors
@@ -652,7 +657,7 @@ Global_Tiles::Global_Tiles()
 	//Player is running to window
 	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
 	//Test bounds: FIXME
-	frames[0]->set_bounds(Vec3(1.166,0,0),Vec3(2.33,2,0));
+	frames[0]->set_bounds(Vec3(0,0,0),Vec3(0,2,0));
 	frames[0]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_B,ANIM_END_TYPE_DEFAULT_ANIM);
@@ -692,7 +697,7 @@ Global_Tiles::Global_Tiles()
 	//Player is running to window
 	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
 	//Test bounds: FIXME
-	frames[0]->set_bounds(Vec3(2.33,0,0),Vec3(3.5,2,0));
+	frames[0]->set_bounds(Vec3(0,0,0),Vec3(0,2,0));
 	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_C,ANIM_END_TYPE_DEFAULT_ANIM);

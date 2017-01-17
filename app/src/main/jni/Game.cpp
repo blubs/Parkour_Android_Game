@@ -254,13 +254,26 @@ int Game::load_models()
 	player_skel_data->load_animation("animations/run.skaf");
 	player_skel_data->load_animation("animations/speed_vault.skaf");
 	player_skel_data->load_animation("animations/run_jump.skaf");
+	player_skel_data->load_animation("animations/run_prejump.skaf");
 	player_skel_data->load_animation("animations/slide.skaf");
 	player_skel_data->load_animation("animations/slide_end.skaf");
 	player_skel_data->load_animation("animations/traversal_a.skaf");
 	player_skel_data->load_animation("animations/traversal_b.skaf");
 	player_skel_data->load_animation("animations/traversal_c.skaf");
+	player_skel_data->load_animation("animations/death_hitwall.skaf");
+	player_skel_data->load_animation("animations/death_hitleft.skaf");
+	player_skel_data->load_animation("animations/death_hitright.skaf");
+	player_skel_data->load_animation("animations/death_hitwaist.skaf");
+	player_skel_data->load_animation("animations/death_hitslide.skaf");
+	player_skel_data->load_animation("animations/death_hitdoorway.skaf");
+	player_skel_data->load_animation("animations/death_hitwindow.skaf");
+	player_skel_data->load_animation("animations/death_slidehitwall.skaf");
+	player_skel_data->load_animation("animations/death_slidehitleft.skaf");
+	player_skel_data->load_animation("animations/death_slidehitright.skaf");
+	player_skel_data->load_animation("animations/death_slidehitwindow.skaf");
 	player_skel_data->load_animation("animations/showcase_hands.skaf");
 	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
+
 	skybox = new Skybox();
 	return 1;
 }
@@ -628,13 +641,29 @@ void Game::start()
 	{
 		buildings[i] = new Building();
 		buildings[i]->active_floor->dynamic_floor_model = dynamic_floor_models[i];
-		//FIXME remove this:
 		buildings[i]->active_floor->debug_branch_mat = solid_mat;
 
 		buildings[i]->broken_iwindow_skel = new Skeleton(Global_Tiles::instance->window_styles[0]->broken_in_window_skel_data);
 		buildings[i]->broken_iwindow_skel->parent = buildings[i];
 		buildings[i]->broken_owindow_skel = new Skeleton(Global_Tiles::instance->window_styles[0]->broken_out_window_skel_data);
 		buildings[i]->broken_owindow_skel->parent = buildings[i];
+	}
+
+	reset();
+
+	//Setting up one-time global parameters
+	float width = (float) screen_width;
+	float height = (float)screen_height;
+	Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_WIDTH, &width);
+	Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_HEIGHT, &height);
+}
+
+//Prepares the game to run again
+void Game::reset()
+{
+	for(int i = 0; i < MAX_BUILDINGS; i++)
+	{
+		buildings[i]->clear();
 	}
 
 	buildings[0]->generate(NULL,Vec3::ZERO());
@@ -647,21 +676,26 @@ void Game::start()
 		buildings[i]->generate(buildings[PREV_BLDG[i]],bldg_offset);
 	}
 
-	//Generate the first building's floor after we generate all of the buildings themselves
-	buildings[0]->generate_floor(player->pos,buildings[1]);
-
 	current_building = buildings[0];
 	cbldg_index = 0;
 
-	player->pos.y = 1;
+	//Place the player in the tile closest to the center of the first building
+	player->pos.x = current_building->global_mins.x;
+	player->pos.x += floorf(current_building->dimensions.x / 2.0f) * TILE_SIZE + (0.5f * TILE_SIZE);
+	player->pos.y = current_building->global_mins.y + 1.0f;
+	player->pos.z = BUILDING_GROUNDLEVEL + 15 * WINDOW_TILE_SIZE;
+
+	//Generate the first building's floor after we generate all of the buildings themselves
+	buildings[0]->generate_floor(player->pos,buildings[1]);
+
 	player_state = PLAYER_STATE_NOCLIP;
+
+	player_phys_vel = Vec3::ZERO();
 	cplayer_col_precedence_array = running_col_precedence;
 
-	//Setting up one-time global parameters
-	float width = (float) screen_width;
-	float height = (float)screen_height;
-	Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_WIDTH, &width);
-	Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_HEIGHT, &height);
+	last_recycled_bldg_index = MAX_BUILDINGS - 1;
+	bldgs_jumped = 0;
+	recycle_every_time = false;
 }
 
 //Ran on last frame
@@ -745,7 +779,7 @@ void Game::draw_player_bbox(Mat4 vp)
 	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) bounding_box);
 
 	//Check if player is colliding:
-	//move_player(Vec3::ZERO());
+	move_player(Vec3::ZERO());
 	//player_colliding is updated by this call (which does nothing)
 	if(!player_colliding)
 		solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color_green);
@@ -865,25 +899,6 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 	char voxel_rank;
 	char voxel_shape;
 
-
-/*#define CLIP_SHAPE_BOX 0
-	//Solid area is the area under the line y=x
-#define CLIP_SHAPE_LT_POS 1
-	//Solid area is the area above the line y=x
-#define CLIP_SHAPE_GT_POS 2
-	//Solid area is the area under the line y=0.5-x
-#define CLIP_SHAPE_LT_NEG 3
-	//Solid area is the area above the line y=0.5-x
-#define CLIP_SHAPE_GT_NEG 4
-	//Solid area is the area under the line y=abs(x-0.25) + 0.25
-#define CLIP_SHAPE_GT_ABS 5
-	//Solid area is the area above the line y=-abs(x-0.25) + 0.25
-#define CLIP_SHAPE_LT_ABS 6
-	//Solid area is the area above the line y=x-0.15 and under the line y=x+0.15
-#define CLIP_SHAPE_IN_WALL_POS 7
-	//Solid area is the area above the line y=-x+0.35 and under the line y=-x+0.65
-#define CLIP_SHAPE_IN_WALL_NEG 8*/
-
 	//=========== Defining the different voxel shapes to render =============
 	const float vshape_box[] =
 	{
@@ -895,45 +910,45 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 
 	//Box x
 	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
-	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE
 	};
 
 	const float vshape_lt_pos[] =
 	{
 	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
 	GRID_SIZE,0,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
-	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE
 	};
 
 	const float vshape_gt_pos[] =
 	{
 	0,0,GRID_SIZE,			0,GRID_SIZE,GRID_SIZE,
 	0,GRID_SIZE,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
-	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE
 	};
 	const float vshape_lt_neg[] =
 	{
 	0,0,GRID_SIZE,			0,GRID_SIZE,GRID_SIZE,
 	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
-	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE
 	};
 	const float vshape_gt_neg[] =
 	{
 	GRID_SIZE,0,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
 	0,GRID_SIZE,GRID_SIZE,	GRID_SIZE,GRID_SIZE,GRID_SIZE,
-	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE,
+	GRID_SIZE,0,GRID_SIZE,	0,GRID_SIZE,GRID_SIZE
 	};
 	const float vshape_gt_abs[] =
 	{
 	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
 	GRID_SIZE,GRID_SIZE,GRID_SIZE,	GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
-	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE,
+	0,GRID_SIZE,GRID_SIZE,			GRID_SIZE,GRID_SIZE,GRID_SIZE
 	};
 	const float vshape_lt_abs[] =
 	{
 	0,0,GRID_SIZE,			GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
 	GRID_SIZE,0,GRID_SIZE,		GRID_SIZE*0.5f,GRID_SIZE*0.5f,GRID_SIZE,
-	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE,
+	0,0,GRID_SIZE,			GRID_SIZE,0,GRID_SIZE
 	};
 
 	float wall_ofs = 0.15;
@@ -959,7 +974,7 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 	const GLsizei vshape_vert_counts[9] = {12,6,6,6,6,6,6,12,12};
 
 	const float* voxel_shapes[9];
-	voxel_shapes[CLIP_SHAPE_BOX] = vshape_box;
+	voxel_shapes[CLIP_SHAPE_BOX] = vshape_gt_pos;//vshape_box;
 	voxel_shapes[CLIP_SHAPE_LT_POS] = vshape_lt_pos;
 	voxel_shapes[CLIP_SHAPE_GT_POS] = vshape_gt_pos;
 	voxel_shapes[CLIP_SHAPE_LT_NEG] = vshape_lt_neg;
@@ -970,6 +985,22 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 	voxel_shapes[CLIP_SHAPE_IN_WALL_NEG] = vshape_in_wall_neg;
 
 	//=======================================================================
+	//Different Voxel Colors
+
+	const float color_red[] = {1.0f,0.0f,0.0f,1.0f};
+	const float color_purple[] = {1.0f,0.0f,1.0f,1.0f};
+	const float color_dark_blue[] = {0.0f,0.0f,0.5f,1.0f};
+	const float color_dark_red[] = {0.5f,0.0f,0.0f,1.0f};
+	const float color_dark_gray[] = {0.2f,0.2f,0.2f,1.0f};
+
+	const float* voxel_types[5];
+
+	voxel_types[CLIP_EMPTY] = color_dark_gray;
+	voxel_types[CLIP_SOLID] = color_purple;
+	voxel_types[CLIP_SLIDE] = color_red;
+	voxel_types[CLIP_DOORWAY] = color_dark_red;
+	voxel_types[CLIP_MID] = color_dark_blue;
+
 
 	solid_mat->bind_material();
 	Mat4 vox_trans;
@@ -985,22 +1016,16 @@ void Game::draw_floor_collision_voxels(Mat4 vp)
 			{
 				for(int l = 0; l < TILE_VOXEL_DIMS; l++)
 				{
-
 					vox = current_building->active_floor->tile_coll_map[i][j]->get_vox_at(k,l);
 					voxel_rank = vox.clip_type;
 					voxel_shape = vox.clip_shape;
 
-					solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_shapes[voxel_shape]);
-
-					if(voxel_rank == 0)
+					if(voxel_rank == CLIP_EMPTY)
 					{
 						continue;
 					}
-					if(voxel_rank == 1)
-					{
-						float color[] = {0.0f,0.75f,1.0f,1.0f};
-						solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
-					}
+					solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) voxel_shapes[voxel_shape]);
+					solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) voxel_types[voxel_rank]);
 					voxel_pos = tile_pos + Vec3(k*GRID_SIZE,l*GRID_SIZE,0.0f);
 					vox_trans = vp * Mat4::TRANSLATE(voxel_pos);
 					solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) vox_trans.m);
@@ -1110,12 +1135,11 @@ void Game::reached_mnvr_keyframe ()
 	//If we are traversing: handle special flags
 	if(player_state == PLAYER_STATE_TRAVERSING && mnvr_frame_number >= 0)
 	{
-		switch(mnvr_frame->spec_flag)
+		switch(mnvr_next_frame->spec_flag)
 		{
 			default:
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_OUT:
-				LOGE("Specflag is break out");
 				current_building->break_window(player->pos,false);
 				//If we are leaving the middle building, recycle a building
 				if(bldgs_jumped >= MAX_BUILDINGS/2 || recycle_every_time)
@@ -1310,14 +1334,6 @@ char Game::voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox)
 	return CLIP_EMPTY;
 }
 
-bool Game::is_out_of_bounds_voxel(Voxel vox)
-{
-	if(vox.clip_type == CLIP_WINDOW)
-	{
-		return true;
-	}
-	return false;
-}
 
 //Returns whether or not the collision player bbox is colliding with something at position p
 //Sets col_dir and col_type to
@@ -1327,25 +1343,59 @@ bool Game::clip_player_bbox(Vec3 p, char &col_dir, char &col_type)
 	Vec3 floor_pos = p - current_building->active_floor->global_mins;
 	Voxel vox;
 
+	//==============================================================================
+	//Checking if any part of the bounding box is out of bounds
+	//Checking if triangle tip is out of bounds in y-axis
+	if(current_building->active_floor->is_y_out_of_bounds(p+Vec3(0,PLAYER_SIZE+player_bbox_tri_height,0)))
+	{
+		col_dir = COL_DIR_FORWARD;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
+	//Checking if bbox back midpoint is out of bounds in y-axis
+	if(current_building->active_floor->is_y_out_of_bounds(p+Vec3(0,PLAYER_SIZE+player_bbox_tri_height,0)))
+	{
+		col_dir = COL_DIR_FORWARD;
+		//We don't care about breaking out of a window towards the back side
+		col_type = CLIP_SOLID;
+		return true;
+	}
+	//Checking if bbox right midpoint is out of bounds in x-axis
+	if(current_building->active_floor->is_x_out_of_bounds(p+Vec3(PLAYER_SIZE,0,0)))
+	{
+		col_dir = COL_DIR_RIGHT;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
+	//Checking if bbox left midpoint is out of bounds in x-axis
+	if(current_building->active_floor->is_x_out_of_bounds(p-Vec3(PLAYER_SIZE,0,0)))
+	{
+		col_dir = COL_DIR_LEFT;
+		col_type = CLIP_WINDOW;
+		return true;
+	}
+	//==============================================================================
+
+
+
 	//Front of triangle
 	float mod_x = efmodf(floor_pos.x,GRID_SIZE);
 	float mod_y = efmodf(floor_pos.y,GRID_SIZE);
 
-	float rcorner_cmpr = -player_bbox_tri_slope * (mod_x) + GRID_SIZE;
-	float lcorner_cmpr = player_bbox_tri_slope * (mod_x - GRID_SIZE) + GRID_SIZE;
+	float rcorner_cmpr = -player_bbox_tri_slope * (mod_x - (GRID_SIZE-PLAYER_SIZE)) + (GRID_SIZE-PLAYER_SIZE);
+	float lcorner_cmpr = player_bbox_tri_slope * (mod_x - PLAYER_SIZE) + (GRID_SIZE-PLAYER_SIZE);
+	float max_cmpr = GRID_SIZE - PLAYER_SIZE;
 
-	//The points that make up the player collision prediction triangle (relative to the left point)
-	Vec3 col_tri_tip = Vec3(PLAYER_SIZE,player_bbox_tri_height,0);
+	//The points that make up the player collision prediction triangle (relative to the player center)
+	Vec3 col_tri_tip = Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0);
 
 	//Points making up bbox, relative to top left (to match triangle reference point that we just outlined)
-	Vec3 bbox_tl = Vec3(0.0f,0.0f,0.0f);
-	Vec3 bbox_tr = Vec3(2.0f*PLAYER_SIZE,0.0f,0.0f);
-	Vec3 bbox_bl = Vec3(0.0f,-2.0f*PLAYER_SIZE,0.0f);
-	Vec3 bbox_br = Vec3(2.0f*PLAYER_SIZE,-2.0f*PLAYER_SIZE,0.0f);
+	Vec3 bbox_tl = Vec3(-PLAYER_SIZE,PLAYER_SIZE,0.0f);
+	Vec3 bbox_tr = Vec3(PLAYER_SIZE,PLAYER_SIZE,0.0f);
+	Vec3 bbox_bl = Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0.0f);
+	Vec3 bbox_br = Vec3(PLAYER_SIZE,-PLAYER_SIZE,0.0f);
 	//ofs will be defined per-voxel as the position of top left corner of the bbox relative to the voxel position (when mod_x and mod_y are both zero)
 	Vec3 ofs;
-
-	Vec3 mod_ofs = Vec3(mod_x,mod_y,0.0f);
 
 	//This is a list of what voxels each check hit
 	char front_clip_results[5] = {0,0,0,0,0};
@@ -1357,84 +1407,65 @@ bool Game::clip_player_bbox(Vec3 p, char &col_dir, char &col_type)
 	const int clip_rslt_fl = 3;
 	const int clip_rslt_fr = 4;
 	//============================================================
-
-	//TODO: handle out of bounds window clip voxel type
+	Vec3 test_point;
+	//Position of the voxel within the floor
+	Vec3 voxel_floor_pos;
 
 	//If our prediction triangle is intersecting the front left voxel: consider it
-	if(mod_y >= lcorner_cmpr)
+	if(mod_y >= lcorner_cmpr && mod_y <= max_cmpr)
 	{
 		//Check front left voxel
-		vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
-		if(is_out_of_bounds_voxel(vox))
-		{
-			col_dir = vox.clip_shape;
-			col_type = CLIP_WINDOW;
-			return true;
-		}
+		test_point = floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0);
+		voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+		vox = current_building->get_voxel_at(test_point);
 		if(vox.clip_type != CLIP_EMPTY)
 		{
-			ofs = Vec3(0,-0.5f,0.0f) + mod_ofs;
+			ofs = floor_pos - voxel_floor_pos;
 			front_clip_results[clip_rslt_lcorner] = voxel_not_in_line(bbox_tl + ofs, col_tri_tip + ofs, vox);
 		}
 	}
 	//If our prediction triangle is intersecting the front right voxel: consider it
-	if(mod_y >= rcorner_cmpr)
+	if(mod_y >= rcorner_cmpr && mod_y <= max_cmpr)
 	{
 		//Check front right voxel
-		vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0));
-		if(is_out_of_bounds_voxel(vox))
-		{
-			col_dir = vox.clip_shape;
-			col_type = CLIP_WINDOW;
-			return true;
-		}
+		test_point = floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE + GRID_SIZE,0);
+		voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+		vox = current_building->get_voxel_at(test_point);
 		//If the voxel is not empty
 		if(vox.clip_type != CLIP_EMPTY)
 		{
-			ofs = Vec3(-1.0f,-0.5f,0.0f) + mod_ofs;
+			ofs = floor_pos - voxel_floor_pos;
 			front_clip_results[clip_rslt_rcorner] = voxel_not_in_line(col_tri_tip + ofs, bbox_tr + ofs, vox);
 		}
 	}
 
 	//Triangle tip
-	vox = current_building->get_voxel_at(floor_pos + Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0));
-	if(is_out_of_bounds_voxel(vox))
-	{
-		col_dir = vox.clip_shape;
-		col_type = CLIP_WINDOW;
-		return true;
-	}
+	test_point = floor_pos + Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(-0.5f,-0.5f,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		front_clip_results[clip_rslt_tri_tip] = voxel_not_in_lines(bbox_tl + ofs, col_tri_tip + ofs, col_tri_tip + ofs, bbox_tr + ofs,vox);
 	}
 
 	//Front right
-	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE,0));
-	if(is_out_of_bounds_voxel(vox))
-	{
-		col_dir = vox.clip_shape;
-		col_type = CLIP_WINDOW;
-		return true;
-	}
+	test_point = floor_pos + Vec3(PLAYER_SIZE,PLAYER_SIZE,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(-1.0f,0,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		front_clip_results[clip_rslt_fr] = voxel_not_in_lines(col_tri_tip + ofs, bbox_tr + ofs, bbox_tr + ofs, bbox_br + ofs,vox);
 	}
 
 	//Front left
-	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE,0));
-	if(is_out_of_bounds_voxel(vox))
-	{
-		col_dir = vox.clip_shape;
-		col_type = CLIP_WINDOW;
-		return true;
-	}
+	test_point = floor_pos + Vec3(-PLAYER_SIZE,PLAYER_SIZE,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(0,0,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		front_clip_results[clip_rslt_fl] = voxel_not_in_lines(bbox_bl + ofs, bbox_tl + ofs, bbox_tl + ofs, col_tri_tip + ofs,vox);
 	}
 
@@ -1459,18 +1490,15 @@ bool Game::clip_player_bbox(Vec3 p, char &col_dir, char &col_type)
 	}
 
 	//Mid right
-	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,0,0));
-	if(is_out_of_bounds_voxel(vox))
-	{
-		col_dir = vox.clip_shape;
-		col_type = CLIP_WINDOW;
-		return true;
-	}
+	test_point = floor_pos + Vec3(PLAYER_SIZE,0,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(-1.0f,0.5f,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		highest_clip_type = voxel_not_in_line(bbox_tr + ofs, bbox_br + ofs,vox);
-		if(highest_clip_type)
+		highest_clip_priority = cplayer_col_precedence_array[highest_clip_type];
+		if(highest_clip_priority)
 		{
 			col_dir = COL_DIR_RIGHT;
 			col_type = highest_clip_type;
@@ -1479,18 +1507,15 @@ bool Game::clip_player_bbox(Vec3 p, char &col_dir, char &col_type)
 	}
 
 	//Mid left
-	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,0,0));
-	if(is_out_of_bounds_voxel(vox))
-	{
-		col_dir = vox.clip_shape;
-		col_type = CLIP_WINDOW;
-		return true;
-	}
+	test_point = floor_pos + Vec3(-PLAYER_SIZE,0,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(0,0.5f,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		highest_clip_type = voxel_not_in_line(bbox_bl + ofs, bbox_tl + ofs,vox);
-		if(highest_clip_type)
+		highest_clip_priority = cplayer_col_precedence_array[highest_clip_type];
+		if(highest_clip_priority)
 		{
 			col_dir = COL_DIR_LEFT;
 			col_type = highest_clip_type;
@@ -1500,95 +1525,205 @@ bool Game::clip_player_bbox(Vec3 p, char &col_dir, char &col_type)
 
 	//We're going to skip these collision checks, I feel they are just nitpicking and their removal could make the game easier
 	//Back center
-	/*vox = current_building->get_voxel_at(floor_pos + Vec3(0,-PLAYER_SIZE,0));
+	/*test_point = floor_pos + Vec3(0,-PLAYER_SIZE,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(-0.5f,1.0f,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		clip_results[clip_rslt_bc] = voxel_not_in_line(bbox_br + ofs, bbox_bl + ofs,vox);
 	}
 	//back right
-	vox = current_building->get_voxel_at(floor_pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0));
+	test_point = floor_pos + Vec3(PLAYER_SIZE,-PLAYER_SIZE,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(-1.0f,1.0f,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		clip_results[clip_rslt_br] = voxel_not_in_lines(bbox_tr + ofs, bbox_br + ofs, bbox_br + ofs, bbox_bl + ofs,vox);
 	}
 	//back left
-	vox = current_building->get_voxel_at(floor_pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0));
+	test_point = floor_pos + Vec3(-PLAYER_SIZE,-PLAYER_SIZE,0);
+	voxel_floor_pos = Vec3(test_point.x - fmodf(test_point.x,GRID_SIZE),test_point.y - fmodf(test_point.y,GRID_SIZE),0);
+	vox = current_building->get_voxel_at(test_point);
 	if(vox.clip_type != CLIP_EMPTY)
 	{
-		ofs = Vec3(0,1.0f,0) + mod_ofs;
+		ofs = floor_pos - voxel_floor_pos;
 		clip_results[clip_rslt_bl] = voxel_not_in_lines(bbox_br + ofs, bbox_bl + ofs, bbox_bl + ofs, bbox_tl + ofs, vox);
 	}*/
 
 	return false;
 }
 
+//Returns if the pos's x coordinate is within the area required to start a building to building traversal
+//This only checks the x-coordinate
+bool Game::is_in_traversal_x_bounds(Vec3 pos)
+{
+	Vec3 tile_pos = Vec3(fmodf(pos.x,TILE_SIZE),fmodf(pos.y,TILE_SIZE),0);
+	Vec3 mins;
+	Vec3 maxs;
+	Traversal* trav;
+	for(int i = 0; i < BUILDING_TRAV_COUNT; i++)
+	{
+		trav = Global_Tiles::instance->bldg_travs[i];
+		mins = trav->keyframes[0]->mins;
+		maxs = trav->keyframes[0]->maxs;
+
+		if(tile_pos.x >= mins.x && tile_pos.x <= maxs.x)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 //Plays a player death animation
 //which animation depends on collision direction and collision type
-void Game::start_player_death(char dir, char type)
+void Game::start_player_death(char col_dir, char col_type)
 {
-	//TODO: if: dir is COL_DIR_FORWARD and type is CLIP_WINDOW
-	//Check if we are in the building traversal start bounds, if so: we are playing window break death animation
-	//and breaking a window
+	player_colliding = true;
 
-	if(player_state == PLAYER_STATE_RUNNING || player_state == PLAYER_STATE_FALLING)
+	if(player_state == PLAYER_STATE_NOCLIP || player_state == PLAYER_STATE_CAM_FLY)
 	{
-		switch(dir)
+		return;
+	}
+
+	//substate 0 = player is transitioning into the slide
+	//if substate is 0 and we are before frame 18, consider state sliding as state run
+
+	bool player_sliding = (player_state == PLAYER_STATE_SLIDING);
+	//When sliding, a small portion (frames 0 - 18) of the transition ( running -> sliding ) animation has the character upright
+	//So we treat this segment as though the player is standing and play standing death animations
+	if(player_sliding)
+	{
+		if(player_substate == 0.0f)
+		{
+			if(player_skel->current_frame <= 18)
+			{
+				player_sliding = false;
+			}
+		}
+	}
+
+	float t = Time::time();
+
+	if(!player_sliding)
+	{
+		switch(col_dir)
 		{
 			default:
 			case COL_DIR_FORWARD:
 			{
-				//TODO: play forward collision animation depending on what we ran into
+				if(col_type == CLIP_WINDOW)
+				{
+					//Check if we are horizontally lined up to break the window
+					//We do this by checking if we are in the area required to start a building to building traversal
+					if(is_in_traversal_x_bounds(player->pos))
+					{
+						current_building->break_window(player->pos,false);
+						player_skel->play_anim(PLAYER_ANIM_DEATH_HITWINDOW,ANIM_END_TYPE_FREEZE);
+						player_substate_time = t + 1.0f;
+						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
+					}
+					else
+					{
+						col_type = CLIP_SOLID;
+					}
+				}
+				if(col_type == CLIP_SOLID)
+				{
+					player_skel->play_anim(PLAYER_ANIM_DEATH_HITWALL,ANIM_END_TYPE_FREEZE);
+					player_substate_time = t + 0.08f;
+					player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
+				}
+				if(col_type == CLIP_DOORWAY)
+				{
+					player_skel->play_anim(PLAYER_ANIM_DEATH_HITDOORWAY,ANIM_END_TYPE_FREEZE);
+					player_substate_time = t + 0.08f;
+					player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
+				}
+				if(col_type == CLIP_MID)
+				{
+					player_skel->play_anim(PLAYER_ANIM_DEATH_HITWAIST,ANIM_END_TYPE_FREEZE);
+					player_substate_time = t + 0.15f;
+					player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
+				}
+				if(col_type == CLIP_SLIDE)
+				{
+					player_skel->play_anim(PLAYER_ANIM_DEATH_HITSLIDE,ANIM_END_TYPE_FREEZE);
+					player_substate_time = t + 0.08f;
+					player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
+				}
+
 				break;
 			}
 			case COL_DIR_LEFT:
 			{
-				//TODO: play left collision animation
+				player_skel->play_anim(PLAYER_ANIM_DEATH_HITLEFT,ANIM_END_TYPE_FREEZE);
+				player_substate_time = t + 0.08f;
+				player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
 				break;
 			}
 			case COL_DIR_RIGHT:
 			{
-				//TODO: play right collision animation
+				player_skel->play_anim(PLAYER_ANIM_DEATH_HITRIGHT,ANIM_END_TYPE_FREEZE);
+				player_substate_time = t + 0.08f;
+				player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
 				break;
 			}
 		}
 	}
-	else if(player_state == PLAYER_STATE_SLIDING)
+	if(player_sliding)
 	{
-		switch(dir)
+		switch(col_dir)
 		{
 			default:
 			case COL_DIR_FORWARD:
 			{
-				//TODO: play sliding forward collision animation depending on what we ran into
-				//FIXME: how to handle transitions while sliding?
+				if(col_type == CLIP_WINDOW)
+				{
+					//Check if we are horizontally lined up to break the window
+					//We do this by checking if we are in the area required to start a building to building traversal
+					if(is_in_traversal_x_bounds(player->pos))
+					{
+						current_building->break_window(player->pos,false);
+						player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITWINDOW,ANIM_END_TYPE_FREEZE);
+						player_substate_time = t + 1.0f;
+						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
+						break;
+					}
+				}
+				player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITWALL,ANIM_END_TYPE_FREEZE);
+				player_substate_time = t + 0.08f;
+				player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
 				break;
 			}
 			case COL_DIR_LEFT:
 			{
-				//TODO: play sliding left collision animation
+				player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITLEFT,ANIM_END_TYPE_FREEZE);
+				player_substate_time = t + 0.08f;
+				player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
 				break;
 			}
 			case COL_DIR_RIGHT:
 			{
-				//TODO: play sliding right collision animation
+				player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITRIGHT,ANIM_END_TYPE_FREEZE);
+				player_substate_time = t + 0.08f;
+				player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FADEIN;
 				break;
 			}
 		}
 
 	}
-	//	player_substate = 0.0f;
-	//	player_state = PLAYER_STATE_DEAD;
-	//logic for death update code?
+	player_substate = 0.0f;
+	player_state = PLAYER_STATE_DEAD;
+	lock_player_rot = true;
 }
 
 //returns true if move was successful, returns false if we collided with something and set state to DEAD
 bool Game::move_player(Vec3 v)
 {
-	//FIXME: remove this next line and variable (just a test)
 	player_colliding = false;
-
 	//Split up movement into forward, sideways, and vertical movement
 	float delta_y = v.y * Time::udelta_time;
 	float delta_x = v.x * Time::udelta_time;
@@ -1603,9 +1738,7 @@ bool Game::move_player(Vec3 v)
 
 	if(clip_player_bbox(forward_pos,clip_dir,clip_type))
 	{
-		LOGE("front clip: dir:%d, type:%d",clip_dir,clip_type);
 		start_player_death(clip_dir,clip_type);
-		player_colliding = true;
 		return false;
 	}
 	else
@@ -1620,9 +1753,7 @@ bool Game::move_player(Vec3 v)
 
 	if(clip_player_bbox(side_pos,clip_dir,clip_type))
 	{
-		LOGE("side clip: dir:%d, type:%d",clip_dir,clip_type);
 		start_player_death(clip_dir,clip_type);
-		player_colliding = true;
 		return false;
 	}
 	else
@@ -1634,6 +1765,54 @@ bool Game::move_player(Vec3 v)
 	player->pos.z += delta_z;
 
 	return true;
+}
+
+void Game::player_run()
+{
+	if(!player_skel->playing_anim || player_skel->current_anim != 0)
+	{
+		player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
+	}
+
+	player_anim_special_events();
+	camera->set_viewbob(CAM_VIEWBOB_RUNNING);
+
+	//Testing viewbob code
+	static bool stepped = true;
+
+	if(input_y[1] <= 0.1f && !stepped)
+	{
+		stepped = true;
+		if(input_x[1] > 0.5f)
+		{
+			//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
+		}
+		else
+		{
+			//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
+		}
+	}
+	else if(input_y[1] > 0.1f)
+			stepped = false;
+	//========================= end test viewbob code
+	camera->update_viewbob();
+
+	if(player->pos.z > current_building->active_floor->altitude)
+	{
+		player_state = PLAYER_STATE_FALLING;
+		return;
+	}
+
+	//Make the player move forward, if runs outside of building bounds, reset at building start
+	Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
+
+	//Setting player collision precedence array
+	cplayer_col_precedence_array = running_col_precedence;
+
+	if(!move_player(movement_vel))
+	{
+		return;
+	}
 }
 
 
@@ -1727,6 +1906,7 @@ void Game::player_state_logic()
 				player_phys_vel.z = PLAYER_JUMP_VEL;
 				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
 				player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
+				input_swipe = INPUT_SWIPE_NONE;
 				return;
 			}
 			//Get maneuvers that require input down
@@ -1738,70 +1918,12 @@ void Game::player_state_logic()
 				//In this context, subtate_time is the time that the player will slide for
 				player_substate_time = t + PLAYER_SLIDE_TIME;
 				player_skel->play_anim(PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
+				input_swipe = INPUT_SWIPE_NONE;
 				return;
 			}
 		}
 
-		if(!player_skel->playing_anim || player_skel->current_anim != 0)
-		{
-			player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
-		}
-
-		player_anim_special_events();
-		camera->set_viewbob(CAM_VIEWBOB_RUNNING);
-
-		//Testing viewbob code
-		static bool stepped = true;
-
-		if(input_y[1] <= 0.1f && !stepped)
-		{
-			stepped = true;
-			if(input_x[1] > 0.5f)
-			{
-				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
-			}
-			else
-			{
-				//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
-			}
-		}
-		else if(input_y[1] > 0.1f)
-				stepped = false;
-		//========================= end test viewbob code
-		camera->update_viewbob();
-
-		if(player->pos.z > current_building->active_floor->altitude)
-		{
-			player_state = PLAYER_STATE_FALLING;
-			return;
-		}
-		//Player turning code:
-		float turn_angle = 0.0f;
-		if(input_turning)
-		{
-			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
-		}
-
-		//Slight camera roll rotation when turning
-		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
-		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
-		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
-		//TODO: if not running, how do we zero this tilt angle?
-
-		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-
-		//Make the player move forward, if runs outside of building bounds, reset at building start
-		Vec3 movement_vel = Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0);
-
-		//Setting player collision precedence array
-		cplayer_col_precedence_array = running_col_precedence;
-
-		if(!move_player(movement_vel))
-			return;
-
-		//if player is past building edge
-		if(player->pos.y + PLAYER_SIZE >= current_building->global_maxs.y)
-			player->pos.y = current_building->global_mins.y + PLAYER_SIZE + 0.5f;
+		player_run();
 
 		//Then check for more general out-of-boundsness in both x and y axes
 		//player->pos = player->pos + Time::delta_time * movement_vel;
@@ -1841,13 +1963,13 @@ void Game::player_state_logic()
 
 		if(!move_player(player_phys_vel))
 		{
-			//Jumping death (we ran into something)
-			//TODO: jumping death
 			return;
 		}
 	}
 	if(player_state == PLAYER_STATE_SLIDING)
 	{
+		//substate 0 = player is transitioning into the slide
+		//subtate 1 = player is on the ground sliding
 		if(player_substate_time < t)
 		{
 			if(player_substate == 0.0f)
@@ -1871,19 +1993,6 @@ void Game::player_state_logic()
 		if(player_slide_speed < PLAYER_SLIDE_MIN_SPEED)
 			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
 
-		//Player turning code:
-		float turn_angle = 0.0f;
-		if(input_turning)
-		{
-			turn_angle = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
-		}
-		//Slight camera roll rotation when turning
-		float tilt_angle = (player->angles.y - turn_angle) * 0.8f;
-		tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
-		camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
-		//TODO: if not running/sliding, how do we zero this tilt angle?
-
-		player->angles.y += (turn_angle - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
 		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
 
 		player_anim_special_events();
@@ -1895,37 +2004,76 @@ void Game::player_state_logic()
 
 		if(!move_player(player_phys_vel))
 		{
-			//End slide
-			//TODO: replace this with sliding death
-			//player_substate = 1.0f;
-			//player_substate_time = t + 0.383f;//animation is 23 frames long, 23 frames @ 60 fps = 0.383 seconds
-			//player_skel->play_anim(PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_FREEZE);
 			return;
 		}
 	}
 	if(player_state == PLAYER_STATE_DEAD)
 	{
-		//TODO: player death logic
-		//FIXME: remove this:(temporary)
+		//Substate 0: black screen fading in
+		//Substate 1: white screen fading in
+		//Substate 2: white screen fading out
 
+		//Black Screen fading in
+		if(player_substate == 0.0f)
+		{
+			if(t > player_substate_time)
+			{
+				black_overlay_opacity = fminf((t - player_substate_time) / (player_substate_time2 - player_substate_time),1.0f);
+				if(t > player_substate_time2 + DEATH_TIME_BLACK_SCREEN)
+				{
+					player_substate_time = t;
+					player_substate_time2 = t + DEATH_TIME_WHITE_SCREEN_FADEIN;
+					player_substate = 1.0f;
+				}
+			}
+		}
+		//White screen fading in
+		if(player_substate == 1.0f)
+		{
+			if(t > player_substate_time)
+			{
+				white_overlay_opacity = fminf((t - player_substate_time) / (player_substate_time2 - player_substate_time),1.0f);
+				if(t > player_substate_time2 + DEATH_TIME_WHITE_SCREEN)
+				{
+					player_substate_time = t;
+					player_substate_time2 = t + DEATH_TIME_WHITE_SCREEN_FADEOUT;
+					player_substate = 2.0f;
+					//Resetting things here
+					reset();
+					player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
+					//Make sure the player stays dead
+					player_state = PLAYER_STATE_DEAD;
+					lock_player_rot = false;
+				}
+			}
+		}
+		//White screen fading out
+		if(player_substate == 2.0f)
+		{
+			if(t > player_substate_time)
+			{
+				//Execute running logic
+				//player_state = PLAYER_STATE_RUNNING;
+				//player_run();
+				//player_state = PLAYER_STATE_DEAD;
+
+				white_overlay_opacity = fmaxf((player_substate_time2 - t) / (player_substate_time2 - player_substate_time),0.0f);
+				black_overlay_opacity = white_overlay_opacity;
+
+				if(t > player_substate_time2)
+				{
+					player_state = PLAYER_STATE_RUNNING;
+					player_substate = 0.0f;
+					player_substate_time = 0.0f;
+					player_substate_time2 = 0.0f;
+				}
+			}
+		}
 	}
 }
 
 void Game::update()
 {
-	//if(state.x > 0.95f && player_skel->playing_anim)
-	//	player_skel->stop_anim();
-
-	//For playing showcase hands anim
-	/*static bool played_anim = false;
-	if(!played_anim)
-	{
-		played_anim = true;
-		//player_skel->play_anim(PLAYER_ANIM_SHOWCASE_HANDS,Skeleton::END_TYPE_DEFAULT_ANIM);
-		player_skel->play_anim(PLAYER_ANIM_RUN,Skeleton::END_TYPE_LOOP);
-	}*/
-
-
 	//====Test show/hide ad calls====
 	static bool ad_visible = false;
 	if(input_x[4] < 0.10f && input_touching[4] && ad_visible)
@@ -1959,9 +2107,6 @@ void Game::update()
 		test_sound_source->play_sound(test_pulse);
 	}
 
-	//player->angles.y = -(input_x-0.5f)*TWO_PI;
-	//player->angles.x = (input_y-0.5f)*PI;
-
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->update();
@@ -1973,7 +2118,6 @@ void Game::update()
 		//look left/right/up/down
 		//move left/right/forward/back
 		//move up/down
-
 
 		//Camera velocity
 		float cam_vel = 60.0f;
@@ -2219,7 +2363,47 @@ void Game::update()
 		}
 	}
 
+	//If modifying viewbob, run forward without checking collisions
+	if(viewbob_menu_state != 0)
+	{
+		player->pos.y += Time::udelta_time * PLAYER_RUN_SPEED;
+
+		if(!player_skel->playing_anim || player_skel->current_anim != 0)
+		{
+			player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
+		}
+		player_anim_special_events();
+		camera->set_viewbob(CAM_VIEWBOB_RUNNING);
+		camera->update_viewbob();
+		player->update();
+
+		if(player->pos.y > current_building->global_maxs.y)
+		{
+			player->pos.y = current_building->global_mins.y + 1.0f;
+		}
+		return;
+	}
+
+	camera_roll_tilt_angle = 0.0f;
+	player_goal_yaw = 0.0f;
+	//Player turning code:
+	if(input_turning && !lock_player_rot && (player_state == PLAYER_STATE_RUNNING || player_state == PLAYER_STATE_SLIDING))
+	{
+		player_goal_yaw = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
+	}
+
+	//Slight camera roll rotation when turning
+	if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
+	{
+		camera_roll_tilt_angle = (player->angles.y - player_goal_yaw) * 0.8f;
+		camera_roll_tilt_angle = efmodf(camera_roll_tilt_angle + PI,TWO_PI) - PI;
+	}
+	camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,camera_roll_tilt_angle,5.0f);
+
+	player->angles.y += (player_goal_yaw - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
+
 	player_state_logic();
+
 
 	player->update();
 }
@@ -2246,7 +2430,6 @@ void Game::render()
 	camera->update_view_matrix();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
 	//Setting up global shader parameters
 	//Time
@@ -2289,8 +2472,13 @@ void Game::render()
 		buildings[i]->render_transparent_meshes(player->pos,vp);
 	}
 
-	render_screen_overlay();
+	//draw_floor_collision_voxels(vp);
+	//draw_floor_maneuvers(vp);
+	//if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
+	//	draw_player_bbox(vp);
 
+	//=============================== Screen UI rendering begins here ===============================
+	render_screen_overlay();
 	//Test UI image
 	test_img->render(camera->ortho_proj_m);
 
@@ -2335,10 +2523,4 @@ void Game::render()
 		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
-
-
-	//draw_floor_collision_voxels(vp);
-	//draw_floor_maneuvers(vp);
-	if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
-		draw_player_bbox(vp);
 }

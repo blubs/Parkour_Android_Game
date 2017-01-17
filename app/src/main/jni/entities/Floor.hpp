@@ -1432,6 +1432,7 @@ public:
 	{
 		if(generated)
 			return;
+		LOGE("Floor generate started");
 		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
 		global_pos = p + Vec3(0,0,floor_num*WINDOW_TILE_SIZE);
 		global_mins = mins;
@@ -1440,19 +1441,11 @@ public:
 		width = (int)((global_maxs.x - global_mins.x)/TILE_SIZE);
 		length = (int)((global_maxs.y - global_mins.y)/TILE_SIZE);
 
-		//temp: explicitly setting some tiles as stuff
-		//tile_type[2][3] = TILE_TYPE_SOLD;
-		//tile_type[4][3] = TILE_TYPE_OBST;
-		//tile_subtype[4][3] = 0;
-		//tile_type[6][3] = TILE_TYPE_OBST;
-		//tile_subtype[6][3] = 1;
-		//tile_type[7][3] = TILE_TYPE_WALL;
-		//tile_subtype[7][3] = WALL_TYPE_xXyY;
-
 		//=========== BSP Floor Generation ============
+		LOGE("BSP Floor generation started");
 
 		//Allocating the max possible number of rooms that can be created
-		Room room_stack[(length-1) * (width-1)];
+		/*Room room_stack[(length-1) * (width-1)];
 		Room* last_room_ptr = room_stack;
 
 		*last_room_ptr = Room(0,1,(char)(width-1),(char)(length-2));//width/length will never exceed 255... we're okay here
@@ -1460,24 +1453,12 @@ public:
 		recursive_bsp(&last_room_ptr,true);
 		//last_room_ptr now points to the last room on the stack
 
-		//Printing rooms
-		//for(Room* ptr = room_stack; ptr <= last_room_ptr; ptr++)
-		//{
-		//	LOGE("Room: x:(%d,%d), y:(%d,%d)",ptr->min_x,ptr->max_x,ptr->min_y,ptr->max_y);
-		//}
 
 		Wall unique_walls[length * width * 4];
 		Wall* next_free_wall = unique_walls;
 
 		get_unique_walls(&next_free_wall, room_stack, last_room_ptr);
 		//next_free_wall now points to one pointer past the last wall assigned
-
-		/*int wall_num = 0;
-		LOGE("====== Printing Walls: =======");
-		for(Wall* ptr = unique_walls; ptr < wall_stack_ptr; ptr++)
-		{
-			LOGE("Wall[%d]: x(%d,%d) y(%d,%d)",wall_num++,ptr->x1,ptr->x2,ptr->y1,ptr->y2);
-		}*/
 
 		//Iterating through walls, adding the appropriate collision tile
 		for(Wall* ptr = unique_walls; ptr < next_free_wall; ptr++)
@@ -1498,25 +1479,28 @@ public:
 			{
 				set_hor_wall_tiles(ptr);
 			}
-		}
+		}*/
 		// ============ end BSP Floor Generation ============
 
 		// ============ Player Route Generation =============
+		LOGE("Player Route Generation started");
 		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
 		goal_min_column = _goal_min_column;
 		goal_max_column = _goal_max_column;
 
 		// ==================================================
 
-		branch_debug_point_count = 0;
+		/*branch_debug_point_count = 0;
 		//Allowing 1 tile of room before any branching is allowed
 		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;
 		tile_branch_type[player_start_column][1] = BRANCH_TYPE_FROM_FORWARD;
 
 
 		recursive_branch_player_path(player_start_column,1,BRANCH_TYPE_FORWARD);
+		LOGE("Place rail tiles started");
 		place_rail_tiles();
 
+		LOGE("Obstacle placement started");
 		//Place obstacles in xXoo walls that we cross
 		//Go over the tiles in the floor once more, checking if there are any half-walls in our path, and remove them.
 		for(int i = 0; i < width; i++)
@@ -1543,13 +1527,13 @@ public:
 					}
 				}
 			}
-		}
+		}*/
 
 		// =========== end Player Route Generation ===========
-
+		LOGE("Populate floor started");
 		populate_floor();
 
-		//TEMP FIXME:
+		LOGE("Gathering floor models to combine...");
 		//Populating the dynamic floor model:
 		int model_count = length * width;
 		Static_Model* models[model_count];
@@ -1566,6 +1550,7 @@ public:
 		}
 
 		//dynamic_floor_model->populate_model(models,transforms,model_count);
+		LOGE("Dynamic floor model combination started");
 		dynamic_floor_model->populate_model(models,transforms,model_count);
 
 		//Temp iterating through all tiles adding debug branch points to array
@@ -1626,7 +1611,7 @@ public:
 				}
 			}
 		}*/
-
+		LOGE("Floor generation finished");
 		generated = true;
 	}
 
@@ -1725,11 +1710,11 @@ public:
 		//get tile indices for the position
 		if(is_local_y_out_of_bounds(p))
 		{
-			return Voxel(CLIP_WINDOW,COL_DIR_FORWARD);
+			return Voxel(CLIP_SOLID,COL_DIR_FORWARD);
 		}
 		if(is_local_x_out_of_bounds(p))
 		{
-			return Voxel(CLIP_WINDOW,COL_DIR_RIGHT);
+			return Voxel(CLIP_SOLID,COL_DIR_RIGHT);
 		}
 
 		int tile_x = (int) floorf(p.x/TILE_SIZE);

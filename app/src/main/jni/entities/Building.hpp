@@ -102,14 +102,16 @@ public:
 		{
 			prev_bldg_ofs = Vec3(prev_bldg->pos.x,prev_bldg->global_maxs.y,0);
 
-			int ofs_min = (int)-dimensions.x + 1;
-			int ofs_max = (int) (prev_bldg->dimensions.x) - 1;
+			//Can only offset to the left by half of our width
+			int ofs_min = ((int)(-dimensions.x / 2));
+			//Can only offset to the right by half of the last building's width
+			int ofs_max = (int) (prev_bldg->dimensions.x / 2);
 
 			lateral_ofs = Random::rand_int_in_range(ofs_min, ofs_max + 1);
 
-			LOGE("Previous building pos:(%.2f,%.2f,%.2f), dims:(%.1f,%.1f,%1.f)",prev_bldg->pos.x,prev_bldg->pos.y,prev_bldg->pos.z,prev_bldg->dimensions.x,prev_bldg->dimensions.y,prev_bldg->dimensions.z);
-			LOGE("Current building dims:(%.1f,%.1f,%1.f)",dimensions.x,dimensions.y,dimensions.z);
-			LOGE("Lateral ofs range: [%d,%d]: res = %d",ofs_min,ofs_max,lateral_ofs);
+			LOGI("Previous building pos:(%.2f,%.2f,%.2f), dims:(%.1f,%.1f,%1.f)",prev_bldg->pos.x,prev_bldg->pos.y,prev_bldg->pos.z,prev_bldg->dimensions.x,prev_bldg->dimensions.y,prev_bldg->dimensions.z);
+			LOGI("Current building dims:(%.1f,%.1f,%1.f)",dimensions.x,dimensions.y,dimensions.z);
+			LOGI("Lateral ofs range: [%d,%d]: res = %d",ofs_min,ofs_max,lateral_ofs);
 
 		}
 		pos = prev_bldg_ofs + bldg_ofs + Vec3(lateral_ofs*TILE_SIZE,0,BUILDING_GROUNDLEVEL);
@@ -128,13 +130,6 @@ public:
 
 		//Finding which floor number the player is in:
 		active_floor_number = (int) (((player_pos.z - BUILDING_GROUNDLEVEL))/WINDOW_TILE_SIZE);
-		//TODO: when the player goes below the tenth floor:
-		//TODO: 	we want to somehow teleport the player back up, so that we never reach the bottom:
-		//TODO:	maybe teleport this building up all the way so that this active floor is the same as the next building's top floor?
-		//if(active_floor_number < 10)
-		//{
-		//
-		//}
 
 		//Finding our goal column range
 		//(what tiles of this building line up with tiles of next_bldg)
@@ -142,8 +137,8 @@ public:
 		int other_left_endpnt = (int)((next_bldg->pos.x - pos.x)/TILE_SIZE);
 		int other_right_endpnt = ((int)next_bldg->dimensions.x) + other_left_endpnt;
 
-		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt);
-		int goal_max = clamp((int)dimensions.x,other_left_endpnt,other_right_endpnt);
+		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt-1);
+		int goal_max = clamp((int)dimensions.x-1,other_left_endpnt,other_right_endpnt-1);
 
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
 
@@ -185,7 +180,7 @@ public:
 		int other_right_endpnt = ((int)next_bldg->dimensions.x) + other_left_endpnt;
 		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt);
 		int goal_max = clamp((int)dimensions.x,other_left_endpnt,other_right_endpnt);
-		LOGE("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
+		LOGI("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
 
 
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
@@ -537,7 +532,7 @@ public:
 		wall_orient = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
 		subdivide_wall(wall_orient,(int)dimensions.y,(int)dimensions.z,&ext_mdl_lw_count,ext_mdls_lw,ext_mdl_lw_trans);
 
-		LOGE("Exterior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
+		LOGI("Exterior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
 		ext_mdl_fw_count + ext_mdl_bw_count + ext_mdl_rw_count + ext_mdl_lw_count,
 			ext_mdl_fw_count, ext_mdl_bw_count, ext_mdl_rw_count, ext_mdl_lw_count);
 	}
@@ -561,7 +556,7 @@ public:
 		wall_orient = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
 		subdivide_interior_wall(wall_orient,(int)dimensions.y,&int_mdl_lw_count,int_mdls_lw,int_mdl_lw_trans);
 
-		LOGE("Interior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
+		LOGI("Interior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
 			int_mdl_fw_count + int_mdl_bw_count + int_mdl_rw_count + int_mdl_lw_count,
 			int_mdl_fw_count, int_mdl_bw_count, int_mdl_rw_count, int_mdl_lw_count);
 	}
@@ -707,7 +702,6 @@ public:
 		{
 			return 1;
 		}
-		bool plyr_in_bldg = !is_out_of_bounds(player_pos);
 
 		if(broken_owindow_active)
 		{
@@ -732,8 +726,10 @@ public:
 			model->render_sans_weights(Mat4::IDENTITY(),vp,mat,broken_iwindow_skel);
 		}
 
+		bool render_inner_window = (is_in_bounds_or_near_front(player_pos));
+
 		//Only render the interior windows if we are in the building
-		if(plyr_in_bldg)
+		if(render_inner_window)
 		{
 
 			Global_Tiles::instance->window_styles[0]->variants[0]->bind_variant_int();
@@ -754,7 +750,7 @@ public:
 	}
 
 	//Sets the window that player_pos hits as broken. (direction: true = into the building, false = out of the building)
-	void break_window(Vec3 player_pos, bool direction)
+	void break_window(Vec3 player_pos, bool into_building)
 	{
 		//Finding pos relative to building global min
 		player_pos = player_pos - global_mins;
@@ -764,8 +760,7 @@ public:
 
 		//TODO: make sure we use the correct exterior tile model tiles
 
-		bool into_building = true;
-		if(direction == into_building)
+		if(into_building)
 		{
 			broken_iwindow_index_x = window_x;
 			broken_iwindow_index_y = window_y;

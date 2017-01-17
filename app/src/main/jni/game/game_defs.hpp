@@ -257,7 +257,7 @@ extern int PREV_BLDG[3];
 #define PLAYER_STATE_CAM_FLY 8
 
 //Player Data
-#define PLAYER_SIZE 0.5f
+#define PLAYER_SIZE 0.3f
 //For collision detection, if PLAYER_SIZE * 2 < GRID_SIZE, we can omit certain collision checks
 //Basically, the player bbox will cover less voxels, requiring fewer checks.
 //#define SMALL_PLAYER_BBOX
@@ -284,12 +284,40 @@ extern int PREV_BLDG[3];
 #define PLAYER_ANIM_RUN 0
 #define PLAYER_ANIM_SPEED_VAULT 1
 #define PLAYER_ANIM_RUN_JUMP 2
-#define PLAYER_ANIM_SLIDE 3
-#define PLAYER_ANIM_SLIDE_END 4
-#define PLAYER_ANIM_TRAV_A 5
-#define PLAYER_ANIM_TRAV_B 6
-#define PLAYER_ANIM_TRAV_C 7
-#define PLAYER_ANIM_SHOWCASE_HANDS 8
+#define PLAYER_ANIM_RUN_PRE_JUMP 3
+#define PLAYER_ANIM_SLIDE 4
+#define PLAYER_ANIM_SLIDE_END 5
+#define PLAYER_ANIM_TRAV_A 6
+#define PLAYER_ANIM_TRAV_B 7
+#define PLAYER_ANIM_TRAV_C 8
+
+//... load maneuver animations here
+
+#define PLAYER_ANIM_DEATH_HITWALL 9
+#define PLAYER_ANIM_DEATH_HITLEFT 10
+#define PLAYER_ANIM_DEATH_HITRIGHT 11
+#define PLAYER_ANIM_DEATH_HITWAIST 12
+#define PLAYER_ANIM_DEATH_HITSLIDE 13
+#define PLAYER_ANIM_DEATH_HITDOORWAY 14
+#define PLAYER_ANIM_DEATH_HITWINDOW 15
+#define PLAYER_ANIM_DEATH_SLIDEHITWALL 16
+#define PLAYER_ANIM_DEATH_SLIDEHITLEFT 17
+#define PLAYER_ANIM_DEATH_SLIDEHITRIGHT 18
+#define PLAYER_ANIM_DEATH_SLIDEHITWINDOW 19
+#define PLAYER_ANIM_SHOWCASE_HANDS 20
+
+//These are defs for the behavior of the game when it's game over
+//How long it takes for the black screen to fade in upon death
+#define DEATH_TIME_BLACK_SCREEN_FADEIN 0.1f
+#define DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN 0.5f
+//How long we spend at the black screen
+#define DEATH_TIME_BLACK_SCREEN 0.7f
+//How long it takes for the white screen to fade in
+#define DEATH_TIME_WHITE_SCREEN_FADEIN 0.3f
+//How long we spend at the white screen
+#define DEATH_TIME_WHITE_SCREEN 0.0f
+//How long it takes for the white screen to fade out
+#define DEATH_TIME_WHITE_SCREEN_FADEOUT 0.4f
 
 //Window Breaking Anim Defs
 //out and in are the same, since they are the both the first animations of their skeletons

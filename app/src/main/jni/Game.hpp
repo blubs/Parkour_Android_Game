@@ -106,7 +106,6 @@ public:
 	int cbldg_index = 0;
 
 	int last_recycled_bldg_index = MAX_BUILDINGS - 1;
-
 	int bldgs_jumped = 0;
 	bool recycle_every_time = false;
 
@@ -173,6 +172,8 @@ public:
 	float player_substate = 0.0f;
 	//Misc variable used for timing something the state needs to time
 	float player_substate_time = 0.0f;
+	//Second misc variable used for timing something else that the state may need
+	float player_substate_time2 = 0.0f;
 
 	//Sliding variables
 	float player_slide_speed = 0.0f;
@@ -181,9 +182,9 @@ public:
 	//FIXME: remove this
 	//===================
 	int viewbob_menu_state = 0;
-	float viewbob_pitch = 16.0f;
-	float viewbob_yaw = 15.0f;
-	float viewbob_roll = 8.0f;
+	float viewbob_pitch = 11.5f;
+	float viewbob_yaw = 14.5f;
+	float viewbob_roll = 11.5f;
 
 	bool player_colliding = false;
 	//===================
@@ -220,8 +221,10 @@ public:
 	//Given portion of bbox outlined by both (l1a,l1b) and (l2a,l2b), , check if vox is outside of both bbox lines
 	char voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox);
 
-	//Check if a voxel is an out of bounds voxel (with clip type CLIP_WINDOW and clip shape as out of bounds direction)
-	bool is_out_of_bounds_voxel(Voxel vox);
+	//Returns if the pos's x coordinate is within the area required to start a building to building traversal
+	//This only checks the x-coordinate
+	bool is_in_traversal_x_bounds(Vec3 pos);
+
 
 	//Executes code if player is at specific frames in specific animations
 	void player_anim_special_events();
@@ -288,6 +291,17 @@ public:
 	void reached_mnvr_keyframe();
 	//Returns angle from player pos to the orientation position of the keyframe
 	float get_keyframe_goal_yaw(Keyframe* key);
+
+	//Roll of camera that changes when we turn rapidly
+	float camera_roll_tilt_angle = 0.0f;
+	float player_goal_yaw = 0.0f;
+	bool lock_player_rot = false;
+
+	//Prepares the game to run again
+	void reset();
+
+	//Contains the code that makes the player run
+	void player_run();
 
 };
 

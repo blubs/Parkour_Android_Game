@@ -16,7 +16,5 @@ void main()
 	//fade_color.a = (pow(uv.x,4.0) + pow(uv.y,4.0));
 	fade_color.a = info.z * 0.01 + 0.3 * (pow(uv.x,4.0) + pow(uv.y,4.0));
 
-	//gl_FragColor = (((fade_color * (1.0 - info.x)) + (info.x * vec4(0.0,0.0,0.0,1.0))) * (1.0 - info.y)) + info.y * vec4(1.0,1.0,1.0,1.0);
-
-	gl_FragColor = fade_color;
+	gl_FragColor = (((fade_color * (1.0 - info.x)) + (info.x * vec4(0.0,0.0,0.0,1.0))) * (1.0 - info.y)) + info.y * vec4(1.0,1.0,1.0,1.0);
 }
