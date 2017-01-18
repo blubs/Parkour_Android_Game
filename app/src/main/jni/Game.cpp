@@ -252,11 +252,14 @@ int Game::load_models()
 
 	//The order of loading these animations must match the animation identifiers
 	player_skel_data->load_animation("animations/run.skaf");
-	player_skel_data->load_animation("animations/speed_vault.skaf");
 	player_skel_data->load_animation("animations/run_jump.skaf");
 	player_skel_data->load_animation("animations/run_prejump.skaf");
 	player_skel_data->load_animation("animations/slide.skaf");
 	player_skel_data->load_animation("animations/slide_end.skaf");
+	player_skel_data->load_animation("animations/dive.skaf");
+	player_skel_data->load_animation("animations/dive_end.skaf");
+	player_skel_data->load_animation("animations/speed_vault.skaf");
+	//TODO: place them here
 	player_skel_data->load_animation("animations/traversal_a.skaf");
 	player_skel_data->load_animation("animations/traversal_b.skaf");
 	player_skel_data->load_animation("animations/traversal_c.skaf");
@@ -272,6 +275,10 @@ int Game::load_models()
 	player_skel_data->load_animation("animations/death_slidehitright.skaf");
 	player_skel_data->load_animation("animations/death_slidehitwindow.skaf");
 	player_skel_data->load_animation("animations/showcase_hands.skaf");
+	//TODO: place the following lines above...
+	player_skel_data->load_animation("animations/vault_slide.skaf");
+	player_skel_data->load_animation("animations/kong.skaf");
+	player_skel_data->load_animation("animations/dash_vault.skaf");
 	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
 
 	skybox = new Skybox();

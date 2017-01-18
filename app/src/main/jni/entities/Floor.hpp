@@ -17,9 +17,6 @@ public:
 	//height of the floor's ground level
 	float altitude;
 
-	static const int MAX_WIDTH = BUILDING_MAX_WIDTH;
-	static const int MAX_LENGTH = BUILDING_MAX_LENGTH;
-
 	//Width/length in tiles
 	int width;
 	int length;
@@ -33,14 +30,14 @@ public:
 	bool generated = false;
 
 	//Type index of tile
-	int tile_type[MAX_WIDTH][MAX_LENGTH];
+	int tile_type[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
 	//Subtype index of tile (used for walls)
-	int tile_subtype[MAX_WIDTH][MAX_LENGTH];
+	int tile_subtype[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
 	//Variant index of tile
-	int tile_variant[MAX_WIDTH][MAX_LENGTH];
+	int tile_variant[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
 
 	//Temp matrix that we're going to use to generate the branching path of the player
-	int tile_branch_type[MAX_WIDTH][MAX_LENGTH];
+	int tile_branch_type[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
 
 	//What tile set are we using?
 	int interior_style;
@@ -48,9 +45,9 @@ public:
 	int interior_variant;
 
 	//For convenience/speed, we're going to hold an array of pointers to models and collision maps
-	Collision_Map* tile_coll_map[MAX_WIDTH][MAX_LENGTH];
-	Static_Model* tile_model[MAX_WIDTH][MAX_LENGTH];
-	Grid_Tile* tile_object[MAX_WIDTH][MAX_LENGTH];
+	Collision_Map* tile_coll_map[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
+	Static_Model* tile_model[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
+	Grid_Tile* tile_object[BUILDING_MAX_WIDTH][BUILDING_MAX_LENGTH];
 
 	Dynamic_Model* dynamic_floor_model;
 
@@ -74,9 +71,9 @@ public:
 
 	void clear_floor_tiles()
 	{
-		for(int i = 0; i < MAX_WIDTH; i++)
+		for(int i = 0; i < BUILDING_MAX_WIDTH; i++)
 		{
-			for(int j = 0; j < MAX_LENGTH; j++)
+			for(int j = 0; j < BUILDING_MAX_LENGTH; j++)
 			{
 				tile_type[i][j] = TILE_TYPE_EMPT;
 				tile_subtype[i][j] = 0;
@@ -215,6 +212,10 @@ public:
 		if(size_x < 4 && !horizontal_divide)
 			return;
 
+		//We do not want rooms that are 2 tiles long, so stop early
+		if(size_y < 4 && horizontal_divide)
+			return;
+
 		//Impossible to divide further, so stop
 		if(size_x <= 2 || size_y <= 2)
 			return;
@@ -227,7 +228,10 @@ public:
 		if(horizontal_divide)
 		{
 			//Division is horizontal
-			char delta = (char)(floorf(frac * (size_y - 1)) + 1);
+			//This allows divisions at least 1 tile long
+			//char delta = (char)(floorf(frac * (size_y - 1)) + 1);
+			//This allows divisions at least 2 tiles long
+			char delta = (char)(floorf(frac * (size_y - 3)) + 2);
 			divide_point = Room(rm.min_x,rm.min_y + delta, rm.max_x, rm.min_y + delta);
 		}
 		else
@@ -1445,10 +1449,10 @@ public:
 		LOGE("BSP Floor generation started");
 
 		//Allocating the max possible number of rooms that can be created
-		/*Room room_stack[(length-1) * (width-1)];
+		Room room_stack[(length-1) * (width-1)];
 		Room* last_room_ptr = room_stack;
 
-		*last_room_ptr = Room(0,1,(char)(width-1),(char)(length-2));//width/length will never exceed 255... we're okay here
+		*last_room_ptr = Room(0,2,(char)(width-1),(char)(length-3));//width/length will never exceed 255... we're okay here
 
 		recursive_bsp(&last_room_ptr,true);
 		//last_room_ptr now points to the last room on the stack
@@ -1479,7 +1483,7 @@ public:
 			{
 				set_hor_wall_tiles(ptr);
 			}
-		}*/
+		}
 		// ============ end BSP Floor Generation ============
 
 		// ============ Player Route Generation =============
@@ -1490,7 +1494,7 @@ public:
 
 		// ==================================================
 
-		/*branch_debug_point_count = 0;
+		branch_debug_point_count = 0;
 		//Allowing 1 tile of room before any branching is allowed
 		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;
 		tile_branch_type[player_start_column][1] = BRANCH_TYPE_FROM_FORWARD;
@@ -1527,7 +1531,7 @@ public:
 					}
 				}
 			}
-		}*/
+		}
 
 		// =========== end Player Route Generation ===========
 		LOGE("Populate floor started");
@@ -1554,7 +1558,7 @@ public:
 		dynamic_floor_model->populate_model(models,transforms,model_count);
 
 		//Temp iterating through all tiles adding debug branch points to array
-		/*for(int i = 0; i < width; i++)
+		for(int i = 0; i < width; i++)
 		{
 			for(int j = 0; j < length; j++)
 			{
@@ -1610,7 +1614,7 @@ public:
 					}
 				}
 			}
-		}*/
+		}
 		LOGE("Floor generation finished");
 		generated = true;
 	}
@@ -1621,11 +1625,7 @@ public:
 
 		if(!generated)
 			return 1;
-		//how do we get the material?
-		//Need to iterate through all tiles in this floor and draw them
-		//Starting from frontmost tile, render it and all other tiles that use the same model
-		//Then move onto the next unrendered tile
-		//TODO: how will we store tile type in the floors?
+
 		Global_Tiles::instance->tile_styles[0]->variants[0]->bind_variant();
 		Material* mat = Global_Tiles::instance->tile_styles[0]->variants[0]->mat;
 		Mat4 m;
@@ -1639,28 +1639,6 @@ public:
 		Mat3 m_it = m.inverted_then_transposed().get_mat3();
 		mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
 		dynamic_floor_model->render_without_bind();
-
-		//Quick unoptimized test for rendering
-		/*for(int i = 0; i < width; i++)
-		{
-			for(int j = 0; j < length; j++)
-			{
-				//tile_model[i][j]->bind_mesh_data(mat);
-				//dynamic_floor_model->bind_mesh_data(mat);
-
-				m = world_trans * Mat4::TRANSLATE(Vec3(i*TILE_SIZE,j*TILE_SIZE,0));
-				mat->bind_value(Shader::PARAM_M_MATRIX, (void*) m.m);
-
-				Mat4 mvp = vp * m;
-				mat->bind_value(Shader::PARAM_MVP_MATRIX, (void*) mvp.m);
-
-				Mat3 m_it = m.inverted_then_transposed().get_mat3();
-				mat->bind_value(Shader::PARAM_M_IT_MATRIX, (void*) m_it.m);
-
-				//tile_model[i][j]->render_without_bind();
-				//dynamic_floor_model->render_without_bind();
-			}
-		}*/
 
 		//===== Rendering Debug branch lines =======
 		/*if(!debug_branch_mat)

@@ -195,8 +195,6 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->variants[0]->misc_map = new Texture("textures/tiles/s0v1_misc.pkm",2048,2048);
 	tile_styles[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
 	tile_styles[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
-	//tile_styles[0]->variants[0]->misc_map = new Texture();
-	//tile_styles[0] = new Tile_Style();
 
 	//tile_styles[0]->type[0]->model->load_model();
 	//tile_styles[0]->type[0]->collision_map = new Collision_Map();
@@ -205,11 +203,16 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->empty_tile = new Grid_Tile(0,0);
 	tile_styles[0]->empty_tile->model = new Static_Model("models/tiles/style0/empt0.stmf");
 
-	for(int i = 0; i < TILE_OBSTACLE_COUNT; i++)
-	{
-		//tile_styles[0]->obst_tiles[i] = new Grid_Tile(1,0);
-		tile_styles[0]->obst_tiles[i] = new Grid_Tile(0,0);//(temp meanwhile we haven't set up the obstacle maneuvers)
-	}
+	tile_styles[0]->obst_tiles[0] = new Grid_Tile(1,0);
+	tile_styles[0]->obst_tiles[1] = new Grid_Tile(1,0);
+	tile_styles[0]->obst_tiles[2] = new Grid_Tile(0,0);
+	tile_styles[0]->obst_tiles[3] = new Grid_Tile(0,0);
+	tile_styles[0]->obst_tiles[4] = new Grid_Tile(1,0);
+	tile_styles[0]->obst_tiles[5] = new Grid_Tile(1,0);
+	tile_styles[0]->obst_tiles[6] = new Grid_Tile(1,0);
+	tile_styles[0]->obst_tiles[7] = new Grid_Tile(0,0);//FIXME: 1 maneuver
+	tile_styles[0]->obst_tiles[8] = new Grid_Tile(1,0);
+	tile_styles[0]->obst_tiles[9] = new Grid_Tile(0,0);//FIXME: 1 maneuver
 
 	//Loading obstacle tile models:
 	tile_styles[0]->obst_tiles[0]->model = new Static_Model("models/tiles/style0/obst_0.stmf");
@@ -531,47 +534,147 @@ Global_Tiles::Global_Tiles()
 
 	//=============================================================
 
-	//========= Setting up Maneuvers ===============
+	//======================================================================================================================
+	//================================================ Obstacle Maneuvers ==================================================
+	//======================================================================================================================
 
 	Keyframe** frames;
 
-	//Setting up test maneuver
-	/*tile_styles[0]->floor_vent->maneuvers[0] = new Maneuver(2);//2 keyframes
-	tile_styles[0]->floor_vent->maneuvers[0]->set_input(INPUT_SWIPE_UP);
-
-	//Test obstacle: has activate area from (1,0) to (2,2),
-	//4 frames.
-	frames = tile_styles[0]->floor_vent->maneuvers[0]->keyframes;
-
-	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,2,0));
+	//=================================================
+	//Slide through air duct tile [0]
+	//=================================================
+	tile_styles[0]->obst_tiles[0]->maneuvers[0] = new Maneuver(4);
+	tile_styles[0]->obst_tiles[0]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[0]->maneuvers[0]->keyframes;
+	//Begin slide, move to center
+	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,1,0));
 	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
-	frames[0]->set_lerp(FRAME_LERP_LINEAR,0);//redundant (this is default)
-	frames[0]->set_orient(FRAME_ORIENT_NONE,Vec3::ZERO(),0.1);//redundant (this is default)
-	frames[0]->set_anim(FRAME_ANIM_NOOP,0,ANIM_END_TYPE_ROOT_POSE);//redundant (this is default)
-	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);//redundant (this is default)
-	frames[0]->set_specflag(0);//redundant (this is default)
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.0,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
+	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
+	//Continue slide through
+	frames[1]->set_bounds(Vec3(1.75,1.1,0));
+	frames[1]->set_vbob(CAM_VIEWBOB_SLIDING);
+	frames[1]->set_speed(PLAYER_RUN_SPEED,PLAYER_SLIDE_ACCEL,PLAYER_SLIDE_MIN_SPEED);
+	//Get up from slide
+	frames[2]->set_bounds(Vec3(1.75,2.75,0));
+	frames[2]->set_vbob(CAM_VIEWBOB_SLIDING);
+	frames[2]->set_speed(PLAYER_SLIDE_MIN_SPEED,0,0);
+	frames[2]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_DEFAULT_ANIM);
+	//End maneuver
+	frames[3]->set_bounds(Vec3(1.75,3.25,0));
 
-	//Now for the next frames, omitting redundant calls
-	frames[1]->set_bounds(Vec3(1.75f,2.5,0));
+	//=================================================
+	//Dive through air duct tile [1]
+	//=================================================
+	tile_styles[0]->obst_tiles[1]->maneuvers[0] = new Maneuver(3);
+	tile_styles[0]->obst_tiles[1]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[1]->maneuvers[0]->keyframes;
+	//Begin dive, aim towards center
+	frames[0]->set_bounds(Vec3(0.75,0,0),Vec3(2.75,1,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE,ANIM_END_TYPE_FREEZE);
+	//Past wall, slowly re-aim towards forward
+	frames[1]->set_bounds(Vec3(1.75,2.5,0));
+	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE_END,ANIM_END_TYPE_FREEZE);
+	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),0.1);
+	frames[1]->set_speed(0.8,0,0);
+	//End maneuver
+	frames[2]->set_bounds(Vec3(1.75f,3.0,0));
+	//=================================================
+	//Run through doorways [2]
+	//=================================================
+		//No maneuver
+	//=================================================
+	//Run through elevator [3]
+	//=================================================
+		//No maneuver
+	//=================================================
+	//Vault through wall [4]
+	//=================================================
+	tile_styles[0]->obst_tiles[4]->maneuvers[0] = new Maneuver(3);
+	tile_styles[0]->obst_tiles[4]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[4]->maneuvers[0]->keyframes;
+	//Begin speed vault, aim towards center
+	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.75,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
+	//Make player be at center
+	frames[1]->set_bounds(Vec3(1.75,0.75,0));
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
+	//End Maneuver
+	frames[2]->set_bounds(Vec3(1.75,1.75,0));
+	//=================================================
+	//slide over TV [5]
+	//=================================================
+	tile_styles[0]->obst_tiles[5]->maneuvers[0] = new Maneuver(3);
+	tile_styles[0]->obst_tiles[5]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[5]->maneuvers[0]->keyframes;
+	//Begin speed vault, aim towards center
+	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.75,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_VAULT_SLIDE,ANIM_END_TYPE_FREEZE);
+	//Make player be at center
+	frames[1]->set_bounds(Vec3(1.75,0.75,0));
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 2.0f,0,0);
+	//End Maneuver
+	frames[2]->set_bounds(Vec3(1.75,2.75,0));
+	//=================================================
+	//Kong over desks [6]
+	//=================================================
+	tile_styles[0]->obst_tiles[6]->maneuvers[0] = new Maneuver(4);
+	tile_styles[0]->obst_tiles[6]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[6]->maneuvers[0]->keyframes;
+	//Begin kong, aim towards center
+	frames[0]->set_bounds(Vec3(0.6,-0.25f,0),Vec3(2.9,0.75,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_KONG,ANIM_END_TYPE_FREEZE);
+	//Make player approach center
+	frames[1]->set_bounds(Vec3(1.25,2,0),Vec3(2.25,2,0));
+	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
+	//Land at desk
+	frames[2]->set_bounds(Vec3(1.75,2.75,0));
+	frames[2]->set_speed(2.0,0,0);
+	//End Maneuver
+	frames[3]->set_bounds(Vec3(1.75,3.25,0));
+	//=================================================
+	//jump into elevator vent [7]
+	//=================================================
+	//TODO: animation
+	//=================================================
+	//dash vault over decor [8]
+	//=================================================
+	tile_styles[0]->obst_tiles[8]->maneuvers[0] = new Maneuver(4);
+	tile_styles[0]->obst_tiles[8]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[8]->maneuvers[0]->keyframes;
+	//Begin vault, aim towards center
+	frames[0]->set_bounds(Vec3(0.5,0,0),Vec3(3,1,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DASH_VAULT,ANIM_END_TYPE_FREEZE);
+	//Make player approach center
+	frames[1]->set_bounds(Vec3(1.25,2,0),Vec3(2.25,2,0));
+	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
+	//Land on surface
+	frames[2]->set_bounds(Vec3(1.75,2.75,0));
+	frames[2]->set_speed(2.0,0,0);
+	//End Maneuver
+	frames[3]->set_bounds(Vec3(1.75,3.25,0));
+	//=================================================
+	//swing through bookshelf [9]
+	//=================================================
+	//TODO: animation
 
-	//For now just copying this maneuver to the other vent:
-	tile_styles[0]->wall_vent->maneuvers[0] = tile_styles[0]->floor_vent->maneuvers[0];*/
-	//frames[1]->set_speed(0.5f,0,0);
-	//frames[1]->set_anim(FRAME_ANIM_PAUSE);
+	//======================================================================================================================
+	//======================================================================================================================
+	//======================================================================================================================
 
-	/*frames[2]->set_bounds(Vec3(1.75f,6,0));
-	frames[2]->set_speed(0.5f,0,0);
-	frames[2]->set_anim(FRAME_ANIM_RESUME);
-
-	frames[3]->set_bounds(Vec3(1.75f,8,0));
-	frames[3]->set_speed(0.5f,0,0);
-	frames[3]->set_anim(FRAME_ANIM_STOP);
-
-	frames[4]->set_bounds(Vec3(1.75f,10,0));
-	frames[4]->set_speed(0.5f,0,0);
-	frames[4]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
-
-	frames[5]->set_bounds(Vec3(1.75f,12,0));*/
 
 	//=================== Setting Up Window Models ====================
 	window_styles[0] = new Exterior_Style();
@@ -599,17 +702,13 @@ Global_Tiles::Global_Tiles()
 	//===========================================================================
 	//This animation takes player down 1 floor
 	bldg_travs[0] = new Traversal(8);
-	//bldg_travs[0]->set_input(INPUT_SWIPE_UP);
-	//test input FIXME
-	bldg_travs[0]->set_input(INPUT_SWIPE_NONE);
+	bldg_travs[0]->set_input(INPUT_SWIPE_UP);
 	frames = bldg_travs[0]->keyframes;
 	//Distance between buildings: 15 m
 	//Player is running to window
-	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
-	//Test bounds: FIXME
-	frames[0]->set_bounds(Vec3(0.25,0,0),Vec3(3.25,2,0));
+	frames[0]->set_bounds(Vec3(0.25,0,0),Vec3(3.25,0,0));//2
 	frames[0]->set_speed(PLAYER_RUN_SPEED + 0.5f,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,4,0),1);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,4,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_RUN_PRE_JUMP,ANIM_END_TYPE_FREEZE);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 
@@ -644,91 +743,95 @@ Global_Tiles::Global_Tiles()
 	frames[6]->set_speed(0.8f,0,0);
 
 	//Player player has finished landing, ready to run again
-	frames[7]->set_bounds(Vec3(1.75f,21.6f,-WINDOW_TILE_SIZE));
+	frames[7]->set_bounds(Vec3(1.75f,20.65f,-WINDOW_TILE_SIZE));
 
 	//===========================================================================
 	//This animation takes player down 2 floors
-	bldg_travs[1] = new Traversal(6);
-	//bldg_travs[1]->set_input(INPUT_SWIPE_UP);
-	//test input FIXME
+	bldg_travs[1] = new Traversal(7);
 	bldg_travs[1]->set_input(INPUT_SWIPE_NONE);
 	frames = bldg_travs[1]->keyframes;
 	//Distance between buildings: 15 m
 	//Player is running to window
-	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
-	//Test bounds: FIXME
-	frames[0]->set_bounds(Vec3(0,0,0),Vec3(0,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
-	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_B,ANIM_END_TYPE_DEFAULT_ANIM);
+	frames[0]->set_bounds(Vec3(0.25,0,0),Vec3(3.25,0,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED + 0.5f,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,4,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_RUN_PRE_JUMP,ANIM_END_TYPE_FREEZE);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 
+	//Playing traversal animation
+	frames[1]->set_bounds(Vec3(1.75,2.5,0));
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 1.5f,0,0);
+	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_B,ANIM_END_TYPE_DEFAULT_ANIM);
+	frames[1]->set_vbob(CAM_VIEWBOB_RUNNING);
+
 	//Player breaks glass
-	frames[1]->set_bounds(Vec3(1.75f,3.0f,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.25f,0,0);
-	frames[1]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
+	frames[2]->set_bounds(Vec3(1.75f,3.0f,0));
+	frames[2]->set_speed(PLAYER_RUN_SPEED - 1.5f,0,0);
+	frames[2]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
 
 	//Player jumps
-	frames[2]->set_bounds(Vec3(1.75f,4.0f,0));
-	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[2]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
+	frames[3]->set_bounds(Vec3(1.75f,4.0f,0));
+	frames[3]->set_speed(PLAYER_RUN_SPEED + 1.8f,0,0);
+	frames[3]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
 
 	//This path has no parabolic vertex
 
 	//Player is breaking through the next window:
-	frames[3]->set_bounds(Vec3(1.75f,18.5f,-2*WINDOW_TILE_SIZE + 1.0f));
-	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[3]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
-
-	//Player lands
-	frames[4]->set_bounds(Vec3(1.75f,19.0f,-2*WINDOW_TILE_SIZE));
-	frames[4]->set_speed(0.8f,0,0);
-
-	//Player player has finished landing, ready to run again
-	frames[5]->set_bounds(Vec3(1.75f,20.3f,-2*WINDOW_TILE_SIZE));
-
-	//===========================================================================
-	//This animation takes player down 3 floors
-	bldg_travs[2] = new Traversal(7);
-	//bldg_travs[2]->set_input(INPUT_SWIPE_UP);
-	//test input FIXME
-	bldg_travs[2]->set_input(INPUT_SWIPE_NONE);
-	frames = bldg_travs[2]->keyframes;
-	//Player is running to window
-	//frames[0]->set_bounds(Vec3(0,0,0),Vec3(3.5,2,0));
-	//Test bounds: FIXME
-	frames[0]->set_bounds(Vec3(0,0,0),Vec3(0,2,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,6,0),1);
-	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_C,ANIM_END_TYPE_DEFAULT_ANIM);
-	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
-
-	//Player breaks glass
-	frames[1]->set_bounds(Vec3(1.75f,3.0f,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED + 0.25f,0,0);
-	frames[1]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
-
-	//Player jumps
-	frames[2]->set_bounds(Vec3(1.75f,4.0f,0));
-	frames[2]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[2]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
-
-	//Player is at apex of parabolic path
-	frames[3]->set_bounds(Vec3(1.75f,7.0f,0.8f));
-	frames[3]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
-	frames[3]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
-
-	//Player is breaking through the next window:
-	frames[4]->set_bounds(Vec3(1.75f,18.5f,-3*WINDOW_TILE_SIZE + 1.0f));
-	frames[4]->set_speed(PLAYER_RUN_SPEED + 2.25f,0,0);
+	frames[4]->set_bounds(Vec3(1.75f,17.5f,-2*WINDOW_TILE_SIZE + 1.0f));
+	frames[4]->set_speed(PLAYER_RUN_SPEED + 1.8f,0,0);
 	frames[4]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
 
 	//Player lands
-	frames[5]->set_bounds(Vec3(1.75f,19.0f,-3*WINDOW_TILE_SIZE));
+	frames[5]->set_bounds(Vec3(1.75f,20.0f,-2*WINDOW_TILE_SIZE));
 	frames[5]->set_speed(0.8f,0,0);
 
 	//Player player has finished landing, ready to run again
-	frames[6]->set_bounds(Vec3(1.75f,20.3f,-3*WINDOW_TILE_SIZE));
+	frames[6]->set_bounds(Vec3(1.75f,20.6f,-2*WINDOW_TILE_SIZE));
+
+	//===========================================================================
+	//This animation takes player down 3 floors
+	bldg_travs[2] = new Traversal(8);
+	bldg_travs[2]->set_input(INPUT_SWIPE_NONE);
+	frames = bldg_travs[2]->keyframes;
+	//Player is running to window
+	frames[0]->set_bounds(Vec3(0.25,0,0),Vec3(3.25,2,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED+0.5f,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,4,0),1);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_RUN_PRE_JUMP,ANIM_END_TYPE_FREEZE);
+	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
+
+	//Playing traversal animation
+	frames[1]->set_bounds(Vec3(1.75,2.5,0));
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 1.5f,0,0);
+	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_TRAV_C,ANIM_END_TYPE_DEFAULT_ANIM);
+	frames[1]->set_vbob(CAM_VIEWBOB_RUNNING);
+
+	//Player breaks glass
+	frames[2]->set_bounds(Vec3(1.75f,3.0f,0));
+	frames[2]->set_speed(PLAYER_RUN_SPEED - 1.5f,0,0);
+	frames[2]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_OUT);
+
+	//Player jumps
+	frames[3]->set_bounds(Vec3(1.75f,4.0f,0));
+	frames[3]->set_speed(PLAYER_RUN_SPEED + 1.6f,0,0);
+	frames[3]->set_lerp(FRAME_LERP_QUAD_TO_VERT,0);
+
+	//Player is at apex of parabolic path
+	frames[4]->set_bounds(Vec3(1.75f,7.0f,0.8f));
+	frames[4]->set_speed(PLAYER_RUN_SPEED + 1.6f,0,0);
+	frames[4]->set_lerp(FRAME_LERP_QUAD_FROM_VERT,0);
+
+	//Player is breaking through the next window:
+	frames[5]->set_bounds(Vec3(1.75f,17.5f,-3*WINDOW_TILE_SIZE + 1.0f));
+	frames[5]->set_speed(PLAYER_RUN_SPEED + 1.6f,0,0);
+	frames[5]->set_specflag(FRAME_SPECFLAG_BREAKWINDOW_IN);
+
+	//Player lands
+	frames[6]->set_bounds(Vec3(1.75f,20.0f,-3*WINDOW_TILE_SIZE));
+	frames[6]->set_speed(0.8f,0,0);
+
+	//Player player has finished landing, ready to run again
+	frames[7]->set_bounds(Vec3(1.75f,20.6f,-3*WINDOW_TILE_SIZE));
 	//===================================================================================
 }
 Global_Tiles::~Global_Tiles()

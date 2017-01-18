@@ -34,7 +34,7 @@ public:
 	int orient = FRAME_ORIENT_NONE;
 	Vec3 orient_pos;//x & y coordinates of point that player faces as we head towards keyframe
 	//How interpolation factor ( 0 < factor <= 1 )
-	float orient_speed = 0.5f;
+	float orient_speed = PLAYER_TURN_LERP_FACTOR;
 
 	//Animation to play starting at this keyframe
 	//What cmd to execute

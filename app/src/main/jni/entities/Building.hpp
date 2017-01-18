@@ -90,8 +90,8 @@ public:
 		floors = 20;
 
 		dimensions = Vec3(0,0,floors);
-		dimensions.x = Random::rand_int_in_range(BUILDING_MIN_WIDTH,BUILDING_MAX_WIDTH+1);
-		dimensions.y = Random::rand_int_in_range(BUILDING_MIN_LENGTH,BUILDING_MAX_LENGTH+1);
+		dimensions.x = Random::rand_int_in_range(BUILDING_MIN_WIDTH,BUILDING_MAX_WIDTH);
+		dimensions.y = Random::rand_int_in_range(BUILDING_MIN_LENGTH,BUILDING_MAX_LENGTH);
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
 
@@ -149,22 +149,21 @@ public:
 	void regenerate_floor(Vec3 player_pos, Building* next_bldg)
 	{
 		int temp = active_floor_number;
+
+		//We cannot change the size of the building, so back up the dimensions and pos
+		Vec3 old_pos = pos;
+		Vec3 old_dims = dimensions;
+
 		clear();
 		active_floor_number = temp;
 		active_floor->clear();
 
-		floors = 20;
+		pos = old_pos;
+		dimensions = old_dims;
 
-		//Range from [6 -> 14] in width
-		float size_x = Random::rand_int_in_range(6,BUILDING_MAX_WIDTH+1);
-		//Range from [10 -> 20] in length
-		float size_y = Random::rand_int_in_range(10,BUILDING_MAX_LENGTH+1);
-
-		dimensions = Vec3(size_x,size_y,floors);
+		floors = (int)old_dims.z;
 
 		size = Vec3(dimensions.x * TILE_SIZE, dimensions.y * TILE_SIZE, dimensions.z * WINDOW_TILE_SIZE);
-
-		pos = Vec3(0,0,BUILDING_GROUNDLEVEL);
 
 		global_mins = pos;
 		global_maxs = pos + size;
@@ -178,10 +177,10 @@ public:
 		//Finding tile dimensions of next_bldg in terms of this building's tile dimensions
 		int other_left_endpnt = (int)((next_bldg->pos.x - pos.x)/TILE_SIZE);
 		int other_right_endpnt = ((int)next_bldg->dimensions.x) + other_left_endpnt;
-		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt);
-		int goal_max = clamp((int)dimensions.x,other_left_endpnt,other_right_endpnt);
-		LOGI("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
 
+		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt-1);
+		int goal_max = clamp((int)dimensions.x-1,other_left_endpnt,other_right_endpnt-1);
+		LOGI("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
 
 		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
 	}
