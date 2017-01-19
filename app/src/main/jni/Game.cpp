@@ -1875,14 +1875,17 @@ void Game::player_state_logic()
 	if(player_state == PLAYER_STATE_RUNNING)
 	{
 		//Checking for traversals
-		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe);
+
+		Vec3 temp_tile_ofs = Vec3::ZERO();
+
+		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe,temp_tile_ofs);
 
 		if(trav)
 		{
 			player_state = PLAYER_STATE_TRAVERSING;
 			trav_current = trav;
 			mnvr_current = trav;
-			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_tile_ofs = temp_tile_ofs;
 			mnvr_frame_number = -1;
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = trav->keyframes[0];
@@ -1891,13 +1894,13 @@ void Game::player_state_logic()
 		}
 
 		//Check for maneuvers that require no input or whatever input we have sent (input_swipe)
-		Maneuver* man = current_building->input_to_maneuver(player->pos, INPUT_SWIPE_NONE | input_swipe);
+		Maneuver* man = current_building->input_to_maneuver(player->pos, INPUT_SWIPE_NONE | input_swipe,temp_tile_ofs);
 
 		if(man)
 		{
 			player_state = PLAYER_STATE_MANEUVERING;
 			mnvr_current = man;
-			mnvr_tile_ofs = current_building->get_tile_ofs_at_pos(player->pos);
+			mnvr_tile_ofs = temp_tile_ofs;
 			mnvr_frame_number = -1;
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = man->keyframes[0];
@@ -2480,7 +2483,7 @@ void Game::render()
 	}
 
 	//draw_floor_collision_voxels(vp);
-	//draw_floor_maneuvers(vp);
+	draw_floor_maneuvers(vp);
 	//if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
 	//	draw_player_bbox(vp);
 

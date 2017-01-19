@@ -1447,7 +1447,7 @@ public:
 
 		//=========== BSP Floor Generation ============
 		LOGE("BSP Floor generation started");
-
+		/*
 		//Allocating the max possible number of rooms that can be created
 		Room room_stack[(length-1) * (width-1)];
 		Room* last_room_ptr = room_stack;
@@ -1483,11 +1483,11 @@ public:
 			{
 				set_hor_wall_tiles(ptr);
 			}
-		}
+		}*/
 		// ============ end BSP Floor Generation ============
 
 		// ============ Player Route Generation =============
-		LOGE("Player Route Generation started");
+		/*LOGE("Player Route Generation started");
 		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
 		goal_min_column = _goal_min_column;
 		goal_max_column = _goal_max_column;
@@ -1531,9 +1531,20 @@ public:
 					}
 				}
 			}
-		}
+		}*/
 
 		// =========== end Player Route Generation ===========
+
+		int obst_types[8] = {0,1,4,5,6,7,8,9};
+
+		//TEMP: assigning tiles as obstacles
+		for(int i = 0; i < width && i < 8; i++)
+		{
+			tile_type[i][3] = TILE_TYPE_OBST;
+			tile_subtype[i][3] = obst_types[i];
+		}
+
+
 		LOGE("Populate floor started");
 		populate_floor();
 
@@ -1777,7 +1788,7 @@ public:
 	//===================================================
 
 	//p is the global position
-	Maneuver* input_to_maneuver(Vec3 p, int input_type)
+	Maneuver* input_to_maneuver(Vec3 p, int input_type, Vec3& tile_ofs)
 	{
 		//get tile indices for the position
 		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
@@ -1817,6 +1828,10 @@ public:
 				maxs = man->keyframes[0]->maxs;
 				if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
 				{
+					//Assigning tile_ofs
+					tile_ofs.x = global_mins.x + tile_x * TILE_SIZE;
+					tile_ofs.y = global_mins.y + tile_y * TILE_SIZE;
+					tile_ofs.z = global_mins.z;
 					return man;
 				}
 			}
@@ -1847,6 +1862,10 @@ public:
 				maxs = man->keyframes[0]->maxs;
 				if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
 				{
+					//Assigning tile_ofs
+					tile_ofs.x = global_mins.x + tile_x * TILE_SIZE;
+					tile_ofs.y = global_mins.y + tile_y * TILE_SIZE;
+					tile_ofs.z = global_mins.z;
 					return man;
 				}
 			}
@@ -1858,7 +1877,8 @@ public:
 	//	Returns a traversal if there exists a traversal if pos is within the last tile, and if:
 	//	(the input required to start the traversal is input_type) AND (the player is within the bounding box required to start the traversal)
 	//	returns NULL otherwise
-	Traversal* input_to_traversal(Vec3 p, int input_type)
+	//Assigns tile_ofs to the world position of whatever tile the maneuver is on
+	Traversal* input_to_traversal(Vec3 p, int input_type, Vec3& tile_ofs)
 	{
 		if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
 		{
@@ -1899,6 +1919,10 @@ public:
 
 				if(p.x >= mins.x && p.x <= maxs.x && p.y >= mins.y && p.y <= maxs.y)
 				{
+					//Assigning tile_ofs
+					tile_ofs.x = global_mins.x + tile_x * TILE_SIZE;
+					tile_ofs.y = global_mins.y + tile_y * TILE_SIZE;
+					tile_ofs.z = global_mins.z;
 					return trav;
 				}
 			}

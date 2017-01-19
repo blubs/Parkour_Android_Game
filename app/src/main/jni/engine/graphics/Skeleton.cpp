@@ -195,7 +195,7 @@ int Skeleton::update_frame()
 
 	float ctime = Time::time();
 
-	//We don't want to miss a frame over an extremely small margin, check +/- a few milliseconds
+	//We don't want to miss a frame over an extremely small margin, check +/- 5 milliseconds
 	if(ctime > time_for_next_frame - 0.005f)
 	{
 		current_frame += 1;

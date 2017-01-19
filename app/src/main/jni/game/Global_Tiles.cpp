@@ -548,21 +548,21 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[0]->maneuvers[0]->keyframes;
 	//Begin slide, move to center
 	frames[0]->set_bounds(Vec3(1,0,0),Vec3(2.5,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.0,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 	//Continue slide through
 	frames[1]->set_bounds(Vec3(1.75,1.1,0));
 	frames[1]->set_vbob(CAM_VIEWBOB_SLIDING);
-	frames[1]->set_speed(PLAYER_RUN_SPEED,PLAYER_SLIDE_ACCEL,PLAYER_SLIDE_MIN_SPEED);
+	frames[1]->set_speed(PLAYER_RUN_SPEED-1.0f,PLAYER_SLIDE_ACCEL,PLAYER_SLIDE_MIN_SPEED);
 	//Get up from slide
 	frames[2]->set_bounds(Vec3(1.75,2.75,0));
 	frames[2]->set_vbob(CAM_VIEWBOB_SLIDING);
 	frames[2]->set_speed(PLAYER_SLIDE_MIN_SPEED,0,0);
 	frames[2]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_DEFAULT_ANIM);
 	//End maneuver
-	frames[3]->set_bounds(Vec3(1.75,3.25,0));
+	frames[3]->set_bounds(Vec3(1.75,2.95,0));
 
 	//=================================================
 	//Dive through air duct tile [1]
@@ -572,16 +572,16 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[1]->maneuvers[0]->keyframes;
 	//Begin dive, aim towards center
 	frames[0]->set_bounds(Vec3(0.75,0,0),Vec3(2.75,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.8,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE,ANIM_END_TYPE_FREEZE);
 	//Past wall, slowly re-aim towards forward
-	frames[1]->set_bounds(Vec3(1.75,2.5,0));
+	frames[1]->set_bounds(Vec3(1.75,2.1,0));
 	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE_END,ANIM_END_TYPE_FREEZE);
 	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),0.1);
-	frames[1]->set_speed(0.8,0,0);
+	frames[1]->set_speed(0.6,0,0);
 	//End maneuver
-	frames[2]->set_bounds(Vec3(1.75f,3.0,0));
+	frames[2]->set_bounds(Vec3(1.75f,2.82,0));
 	//=================================================
 	//Run through doorways [2]
 	//=================================================
@@ -598,30 +598,33 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[4]->maneuvers[0]->keyframes;
 	//Begin speed vault, aim towards center
 	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.75,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-2.5f,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.95,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
 	//Make player be at center
 	frames[1]->set_bounds(Vec3(1.75,0.75,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED - 1.0f,0,0);
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 4.0f,0,0);
 	//End Maneuver
-	frames[2]->set_bounds(Vec3(1.75,1.75,0));
+	frames[2]->set_bounds(Vec3(1.75,1.95,0));
 	//=================================================
 	//slide over TV [5]
 	//=================================================
-	tile_styles[0]->obst_tiles[5]->maneuvers[0] = new Maneuver(3);
+	tile_styles[0]->obst_tiles[5]->maneuvers[0] = new Maneuver(4);
 	tile_styles[0]->obst_tiles[5]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
 	frames = tile_styles[0]->obst_tiles[5]->maneuvers[0]->keyframes;
 	//Begin speed vault, aim towards center
 	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
-	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.75,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.95,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_VAULT_SLIDE,ANIM_END_TYPE_FREEZE);
 	//Make player be at center
 	frames[1]->set_bounds(Vec3(1.75,0.75,0));
 	frames[1]->set_speed(PLAYER_RUN_SPEED - 2.0f,0,0);
+	//Lower player
+	frames[2]->set_bounds(Vec3(1.75,2.5,-0.3f));
+	frames[2]->set_speed(PLAYER_RUN_SPEED - 2.0f,0,0);
 	//End Maneuver
-	frames[2]->set_bounds(Vec3(1.75,2.75,0));
+	frames[3]->set_bounds(Vec3(1.75,3.60,0));
 	//=================================================
 	//Kong over desks [6]
 	//=================================================
@@ -630,7 +633,7 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[6]->maneuvers[0]->keyframes;
 	//Begin kong, aim towards center
 	frames[0]->set_bounds(Vec3(0.6,-0.25f,0),Vec3(2.9,0.75,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.5,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_KONG,ANIM_END_TYPE_FREEZE);
 	//Make player approach center
@@ -639,7 +642,7 @@ Global_Tiles::Global_Tiles()
 	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
 	//Land at desk
 	frames[2]->set_bounds(Vec3(1.75,2.75,0));
-	frames[2]->set_speed(2.0,0,0);
+	frames[2]->set_speed(3.0,0,0);
 	//End Maneuver
 	frames[3]->set_bounds(Vec3(1.75,3.25,0));
 	//=================================================
@@ -654,15 +657,15 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[8]->maneuvers[0]->keyframes;
 	//Begin vault, aim towards center
 	frames[0]->set_bounds(Vec3(0.5,0,0),Vec3(3,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DASH_VAULT,ANIM_END_TYPE_FREEZE);
 	//Make player approach center
 	frames[1]->set_bounds(Vec3(1.25,2,0),Vec3(2.25,2,0));
-	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),0.2);
 	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
 	//Land on surface
-	frames[2]->set_bounds(Vec3(1.75,2.75,0));
+	frames[2]->set_bounds(Vec3(1.25,2.75,-0.2f),Vec3(2.25,2.75,-0.2f));
 	frames[2]->set_speed(2.0,0,0);
 	//End Maneuver
 	frames[3]->set_bounds(Vec3(1.75,3.25,0));
