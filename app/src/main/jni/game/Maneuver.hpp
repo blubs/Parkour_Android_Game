@@ -25,9 +25,13 @@ public:
 	float y_accel = 0;//y axis acceleration (for speeding up or slowing down)
 	float min_y_vel = 0;//minimum y axis speed
 
+	//y-axis lerp type
+	int speed_type = FRAME_LERP_LINEAR;
+
 	//z-axis interpolation types
 	int lerp_type = FRAME_LERP_LINEAR;//interpolation used for z-axis (spherical, linear, quadratic, inverse quadratic)
 	float lerp_data = 0;
+
 
 
 	//Turn the player towards a direction
@@ -65,6 +69,12 @@ public:
 		y_accel = _y_accel;
 		min_y_vel = _min_y_vel;
 	}
+	void set_speed(float _y_vel, int _speed_type)
+	{
+		y_vel = _y_vel;
+		speed_type = _speed_type;
+	}
+
 	//Sets lerp type for frame, lerp_data is z acceleration for LERP_QUADRATIC, is not used otherwise
 	void set_lerp(int _lerp_type, float _lerp_data)
 	{

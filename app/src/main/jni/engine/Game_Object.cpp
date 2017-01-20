@@ -57,15 +57,13 @@ int Entity::render(Mat4 vp)
 	return 1;
 }
 
-int Entity::play_sound(Sound_Sample* sample)
+Sound_Source* Entity::play_sound(Sound_Sample* sample, Vec3 ofs,float volume,int end_type)
 {
 	if(!sample)
 	{
 		LOGW("Warning: tried playing sound with null sample");
-		return 1;
+		return NULL;
 	}
 
-	Audio_Engine::play_sound(sample,this,Vec3::ZERO(),0,1.0f);
-
-	return 1;
+	return Audio_Engine::play_sound(sample,this,ofs,0,volume,end_type);
 }

@@ -27,8 +27,14 @@
 
 #define ANIM_FPS_60 (1.0f/60.0f)
 
+//The maximum number of frames that can be skipped by a skeleton in a single update call (used when update fps is low but animation fps is high)
+#define ANIM_MAX_SKIPPABLE_FRAMES 5
+
 //============ Sound Engine Defs ==============
 #define MAX_SOUND_SOURCES 32
+
+#define SOUND_END_TYPE_STOP 0
+#define SOUND_END_TYPE_LOOP 1
 
 #define SOUND_PRIORITY_AMBIENCE 0
 #define SOUND_PRIORITY_PLAYER 1

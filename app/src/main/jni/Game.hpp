@@ -41,6 +41,23 @@ public:
 	//=========================== Game Asset Variables ====================
 	//-------------- Sound Files --------------
 	Sound_Sample *test_pulse = NULL;
+	Sound_Sample *snd_fstep_1 = NULL;
+	Sound_Sample *snd_fstep_2 = NULL;
+	Sound_Sample *snd_fstep_3 = NULL;
+	Sound_Sample *snd_fstep_4 = NULL;
+	Sound_Sample *snd_office_amb = NULL;
+	Sound_Sample *snd_highrise_amb = NULL;
+	Sound_Sample *snd_winbreak = NULL;
+	Sound_Sample *snd_jumpwind = NULL;
+	Sound_Sample *snd_breath_1 = NULL;
+	Sound_Sample *snd_breath_2 = NULL;
+	Sound_Sample *snd_breath_3 = NULL;
+	Sound_Sample *snd_breath_4 = NULL;
+	Sound_Sample *snd_death_impact = NULL;
+	Sound_Sample *snd_death_trans = NULL;
+
+	Sound_Sample *footstep_sounds[4];
+	Sound_Sample *breath_sounds[4];
 
 	//-------------- Shaders ------------------
 	Shader *test_shader = NULL;

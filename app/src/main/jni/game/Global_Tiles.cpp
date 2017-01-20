@@ -210,9 +210,9 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[4] = new Grid_Tile(1,0);
 	tile_styles[0]->obst_tiles[5] = new Grid_Tile(1,0);
 	tile_styles[0]->obst_tiles[6] = new Grid_Tile(1,0);
-	tile_styles[0]->obst_tiles[7] = new Grid_Tile(0,0);//FIXME: 1 maneuver
+	tile_styles[0]->obst_tiles[7] = new Grid_Tile(1,0);
 	tile_styles[0]->obst_tiles[8] = new Grid_Tile(1,0);
-	tile_styles[0]->obst_tiles[9] = new Grid_Tile(0,0);//FIXME: 1 maneuver
+	tile_styles[0]->obst_tiles[9] = new Grid_Tile(1,0);
 
 	//Loading obstacle tile models:
 	tile_styles[0]->obst_tiles[0]->model = new Static_Model("models/tiles/style0/obst_0.stmf");
@@ -578,10 +578,10 @@ Global_Tiles::Global_Tiles()
 	//Past wall, slowly re-aim towards forward
 	frames[1]->set_bounds(Vec3(1.75,2.1,0));
 	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE_END,ANIM_END_TYPE_FREEZE);
-	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),0.1);
+	frames[1]->set_orient(FRAME_ORIENT_NONE,Vec3(1.75,3.5,0),0.1);
 	frames[1]->set_speed(0.6,0,0);
 	//End maneuver
-	frames[2]->set_bounds(Vec3(1.75f,2.82,0));
+	frames[2]->set_bounds(Vec3(1.75f,2.8,0));
 	//=================================================
 	//Run through doorways [2]
 	//=================================================
@@ -614,7 +614,7 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[5]->maneuvers[0]->keyframes;
 	//Begin speed vault, aim towards center
 	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.95,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_VAULT_SLIDE,ANIM_END_TYPE_FREEZE);
 	//Make player be at center
@@ -633,7 +633,7 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[6]->maneuvers[0]->keyframes;
 	//Begin kong, aim towards center
 	frames[0]->set_bounds(Vec3(0.6,-0.25f,0),Vec3(2.9,0.75,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-1.5,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.5f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_KONG,ANIM_END_TYPE_FREEZE);
 	//Make player approach center
@@ -648,7 +648,25 @@ Global_Tiles::Global_Tiles()
 	//=================================================
 	//jump into elevator vent [7]
 	//=================================================
-	//TODO: animation
+	tile_styles[0]->obst_tiles[7]->maneuvers[0] = new Maneuver(5);
+	tile_styles[0]->obst_tiles[7]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[7]->maneuvers[0]->keyframes;
+	//Align at center of elevator
+	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,FRAME_SPEED_CONST_TIME);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,1.25,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_HIGH_UNDERBAR,ANIM_END_TYPE_FREEZE);
+	//Move slowly forward as we climb up
+	frames[1]->set_bounds(Vec3(1.75,0.51,0));
+	frames[1]->set_speed(0.6f,0,0);
+	//Move forward slightly faster as we enter vent
+	frames[2]->set_bounds(Vec3(1.75,0.75,0));
+	frames[2]->set_speed(0.8f,0,0);
+	//Move forward as we roll
+	frames[3]->set_bounds(Vec3(1.75,1.75,0));
+	frames[3]->set_speed(0.8f,0,0);
+	//End Maneuver
+	frames[4]->set_bounds(Vec3(1.75,2.5,0));
 	//=================================================
 	//dash vault over decor [8]
 	//=================================================
@@ -657,7 +675,7 @@ Global_Tiles::Global_Tiles()
 	frames = tile_styles[0]->obst_tiles[8]->maneuvers[0]->keyframes;
 	//Begin vault, aim towards center
 	frames[0]->set_bounds(Vec3(0.5,0,0),Vec3(3,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0,0,0);
+	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0f,0,0);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DASH_VAULT,ANIM_END_TYPE_FREEZE);
 	//Make player approach center
@@ -672,7 +690,22 @@ Global_Tiles::Global_Tiles()
 	//=================================================
 	//swing through bookshelf [9]
 	//=================================================
-	//TODO: animation
+	tile_styles[0]->obst_tiles[9]->maneuvers[0] = new Maneuver(4);
+	tile_styles[0]->obst_tiles[9]->maneuvers[0]->set_input(INPUT_SWIPE_NONE);
+	frames = tile_styles[0]->obst_tiles[9]->maneuvers[0]->keyframes;
+	//Run towards bookcase
+	frames[0]->set_bounds(Vec3(1.25,0,0),Vec3(2.25,1,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-1.0f,0,0);
+	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
+	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_UNDERBAR,ANIM_END_TYPE_FREEZE);
+	//Don't begin underbar until we are right up against wall
+	frames[1]->set_bounds(Vec3(1.75,1.01,0));
+	frames[1]->set_speed(0.7f,0,0);
+	//Move player past bookcase
+	frames[2]->set_bounds(Vec3(1.75,1.2,0));
+	frames[2]->set_speed(2.0f,0,0);
+	//End Maneuver
+	frames[3]->set_bounds(Vec3(1.75,2.0,0));
 
 	//======================================================================================================================
 	//======================================================================================================================

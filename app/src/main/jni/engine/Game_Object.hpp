@@ -10,6 +10,7 @@
 
 //Forward declaration
 class Sound_Sample;
+class Sound_Source;
 
 //Outlines a class for a generic game entity
 //Used to construct Entity hierarchy for parenting entities to each other
@@ -48,7 +49,9 @@ public:
 	Mat4 get_world_transform(bool modify_trans);
 
 	virtual int render(Mat4 vp);
-	int play_sound(Sound_Sample* sample);
+
+	//Returns pointer to the sound source used, null otherwise
+	Sound_Source* play_sound(Sound_Sample* sample, Vec3 ofs,float volume,int end_type);
 };
 
 #endif //ENGINE_ENTITY_H

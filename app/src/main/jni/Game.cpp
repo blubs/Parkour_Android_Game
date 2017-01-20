@@ -259,7 +259,11 @@ int Game::load_models()
 	player_skel_data->load_animation("animations/dive.skaf");
 	player_skel_data->load_animation("animations/dive_end.skaf");
 	player_skel_data->load_animation("animations/speed_vault.skaf");
-	//TODO: place them here
+	player_skel_data->load_animation("animations/vault_slide.skaf");
+	player_skel_data->load_animation("animations/kong.skaf");
+	player_skel_data->load_animation("animations/dash_vault.skaf");
+	player_skel_data->load_animation("animations/underbar.skaf");
+	player_skel_data->load_animation("animations/high_underbar.skaf");
 	player_skel_data->load_animation("animations/traversal_a.skaf");
 	player_skel_data->load_animation("animations/traversal_b.skaf");
 	player_skel_data->load_animation("animations/traversal_c.skaf");
@@ -275,10 +279,6 @@ int Game::load_models()
 	player_skel_data->load_animation("animations/death_slidehitright.skaf");
 	player_skel_data->load_animation("animations/death_slidehitwindow.skaf");
 	player_skel_data->load_animation("animations/showcase_hands.skaf");
-	//TODO: place the following lines above...
-	player_skel_data->load_animation("animations/vault_slide.skaf");
-	player_skel_data->load_animation("animations/kong.skaf");
-	player_skel_data->load_animation("animations/dash_vault.skaf");
 	//NOTE: any animation added here must also be added as an identifier in game_defs.hpp
 
 	skybox = new Skybox();
@@ -307,11 +307,50 @@ void Game::unload_models()
 int Game::load_sounds()
 {
 	test_pulse = new Sound_Sample("sounds/test_audio_pulse.raw");
+	snd_fstep_1 = new Sound_Sample("sounds/footstep_1.raw");
+	snd_fstep_2 = new Sound_Sample("sounds/footstep_2.raw");
+	snd_fstep_3 = new Sound_Sample("sounds/footstep_3.raw");
+	snd_fstep_4 = new Sound_Sample("sounds/footstep_4.raw");
+	snd_office_amb = new Sound_Sample("sounds/.raw");
+	snd_highrise_amb = new Sound_Sample("sounds/.raw");
+	snd_winbreak = new Sound_Sample("sounds/break_glass.raw");
+	snd_jumpwind = new Sound_Sample("sounds/jump_wind.raw");
+	snd_breath_1 = new Sound_Sample("sounds/breath_1.raw");
+	snd_breath_2 = new Sound_Sample("sounds/breath_1.raw");
+	snd_breath_3 = new Sound_Sample("sounds/breath_1.raw");
+	snd_breath_4 = new Sound_Sample("sounds/breath_1.raw");
+	snd_death_impact = new Sound_Sample("sounds/death_impact.raw");
+	snd_death_trans = new Sound_Sample("sounds/death_trans.raw");
+
+	footstep_sounds[0] = snd_fstep_1;
+	footstep_sounds[1] = snd_fstep_2;
+	footstep_sounds[2] = snd_fstep_3;
+	footstep_sounds[3] = snd_fstep_4;
+
+	breath_sounds[0] = snd_breath_1;
+	breath_sounds[1] = snd_breath_2;
+	breath_sounds[2] = snd_breath_3;
+	breath_sounds[3] = snd_breath_4;
+
 	return 1;
 }
 void Game::unload_sounds()
 {
 	delete test_pulse;
+	delete snd_fstep_1;
+	delete snd_fstep_2;
+	delete snd_fstep_3;
+	delete snd_fstep_4;
+	delete snd_office_amb;
+	delete snd_highrise_amb;
+	delete snd_winbreak;
+	delete snd_jumpwind;
+	delete snd_breath_1;
+	delete snd_breath_2;
+	delete snd_breath_3;
+	delete snd_breath_4;
+	delete snd_death_impact;
+	delete snd_death_trans;
 }
 
 int Game::load_assets()
@@ -1148,6 +1187,8 @@ void Game::reached_mnvr_keyframe ()
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_OUT:
 				current_building->break_window(player->pos,false);
+				player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				player->play_sound(snd_jumpwind,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				//If we are leaving the middle building, recycle a building
 				if(bldgs_jumped >= MAX_BUILDINGS/2 || recycle_every_time)
 				{
@@ -1194,7 +1235,7 @@ void Game::reached_mnvr_keyframe ()
 
 				current_building->generate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
 				current_building->break_window(player->pos,true);
-
+				player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				break;
 			}
 		}
@@ -1259,6 +1300,16 @@ void Game::reached_mnvr_keyframe ()
 			mnvr_goal_yaw_rot = 0.0f;
 
 		mnvr_y_vel = mnvr_frame->y_vel;
+		//Adjust the speed so we reach the next keyframe in the same amount of time regardless of where in the keyframe bounds we are
+		if(mnvr_frame->speed_type == FRAME_SPEED_CONST_TIME)
+		{
+			//find distance to our goal pos from the center of this keyframe
+			float d_from_keyframe_center = mnvr_next_frame->mins.y - ((mnvr_frame->mins.y + mnvr_frame->maxs.y)/2.0f);
+			//Calculate how long that would take to travel at mnvr_y_vel m/s
+			float t_from_keyframe_center = d_from_keyframe_center / mnvr_y_vel;
+			//Calculate our speed if we want to get there in the same amonut of time from our position
+			mnvr_y_vel = (mnvr_goal_pos.y - mnvr_start_pos.y)/t_from_keyframe_center;
+		}
 
 		mnvr_var_x_slope = ((mnvr_goal_pos.x - mnvr_start_pos.x)/(mnvr_goal_pos.y - mnvr_start_pos.y));
 
@@ -1628,6 +1679,7 @@ void Game::start_player_death(char col_dir, char col_type)
 					if(is_in_traversal_x_bounds(player->pos))
 					{
 						current_building->break_window(player->pos,false);
+						player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 						player_skel->play_anim(PLAYER_ANIM_DEATH_HITWINDOW,ANIM_END_TYPE_FREEZE);
 						player_substate_time = t + 1.0f;
 						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
@@ -1694,6 +1746,7 @@ void Game::start_player_death(char col_dir, char col_type)
 					if(is_in_traversal_x_bounds(player->pos))
 					{
 						current_building->break_window(player->pos,false);
+						player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 						player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITWINDOW,ANIM_END_TYPE_FREEZE);
 						player_substate_time = t + 1.0f;
 						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
@@ -1780,8 +1833,6 @@ void Game::player_run()
 	{
 		player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
 	}
-
-	player_anim_special_events();
 	camera->set_viewbob(CAM_VIEWBOB_RUNNING);
 
 	//Testing viewbob code
@@ -1826,26 +1877,32 @@ void Game::player_run()
 //Executes code if player is at specific frames in specific animations
 void Game::player_anim_special_events()
 {
-	if(player_skel->playing_anim && player_skel->animating)
+	//Checking all frames that the skeleton went through the last update call
+	for(int i = 0; i < player_skel->last_frames_passed_count; i++)
 	{
-		if(player_skel->current_anim == PLAYER_ANIM_RUN)//Running animation
+		int anim = player_skel->last_frames_passed_anims[i];
+		int frame = player_skel->last_frames_passed[i];
+
+		if(anim == PLAYER_ANIM_RUN)
 		{
-			if(player_skel->current_frame == 9)//left foot hit ground
+			if(frame == 9)//left foot hit ground
 			{
-				//TODO: play footstep sounds
+				player->play_sound(footstep_sounds[Random::rand_int_in_range(0,4)],Vec3::ZERO(),0.5f,SOUND_END_TYPE_STOP);
 				//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,2.0f*DEG_TO_RAD,0.0f);
 				//test viewbob: no pitch bob, only yaw and roll
 				//camera->viewbob_run_footstep(0.0f,2.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD);
 				camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
 			}
-			if(player_skel->current_frame == 24)//right foot hit ground
+			if(frame == 24)//right foot hit ground
 			{
+				player->play_sound(footstep_sounds[Random::rand_int_in_range(0,4)],Vec3::ZERO(),0.5f,SOUND_END_TYPE_STOP);
 				//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-2.0f*DEG_TO_RAD,0.0f);
 				//test viewbob
 				//camera->viewbob_run_footstep(0.0f,-2.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD);
 				camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
 			}
 		}
+
 	}
 }
 
@@ -1858,7 +1915,6 @@ void Game::player_state_logic()
 	{
 		camera->set_viewbob(mnvr_frame->viewbob_type);
 		camera->update_viewbob();
-		player_anim_special_events();
 		mnvr_movement();
 		return;
 	}
@@ -1867,7 +1923,6 @@ void Game::player_state_logic()
 	{
 		camera->set_viewbob(mnvr_frame->viewbob_type);
 		camera->update_viewbob();
-		player_anim_special_events();
 		mnvr_movement();
 		return;
 	}
@@ -2004,8 +2059,6 @@ void Game::player_state_logic()
 			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
 
 		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
-
-		player_anim_special_events();
 		camera->set_viewbob(CAM_VIEWBOB_SLIDING);
 		camera->update_viewbob();
 
@@ -2114,7 +2167,7 @@ void Game::update()
 	if(t > time_to_play_audio)
 	{
 		time_to_play_audio = t + 0.5f;
-		test_sound_source->play_sound(test_pulse);
+		test_sound_source->play_sound(test_pulse,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 	}
 
 	for(int i = 0; i < MAX_BUILDINGS; i++)
@@ -2411,11 +2464,11 @@ void Game::update()
 	camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,camera_roll_tilt_angle,5.0f);
 
 	player->angles.y += (player_goal_yaw - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-
-	player_state_logic();
-
-
+	LOGE("Player update");
 	player->update();
+	LOGE("end Player update");
+	player_anim_special_events();
+	player_state_logic();
 }
 
 //Draws the scene

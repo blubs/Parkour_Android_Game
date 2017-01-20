@@ -143,7 +143,30 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 		if(source->sound_pos >= source->sound->length)
 		{
-			source->used = false;
+			if(source->end_type == SOUND_END_TYPE_LOOP)
+			{
+				source->sound_pos = 0;
+				//Finish filling the rest of the buffer starting from the beginning of the sound
+				int wrapped_smpls_to_copy = SND_AUDIO_BUFFER_SIZE - smpls_to_copy;
+				int smpl_ofs = SND_AUDIO_BUFFER_SIZE - wrapped_smpls_to_copy;
+				for(int j = 0; j < wrapped_smpls_to_copy; j++)
+				{
+					//Calculating current lerped falloff
+					left_falloff = left_falloff_slope * j + last_left_falloff;
+					right_falloff = right_falloff_slope * j + last_right_falloff;
+
+					Stereo_Sample smp = *((Stereo_Sample *) (source->sound->raw_data) + (j + source->sound_pos));
+					smp.l *= left_falloff;
+					smp.r *= right_falloff;
+					e->active_audio_buffer[smpl_ofs + j].l += smp.l;
+					e->active_audio_buffer[smpl_ofs + j].r += smp.r;
+					//FIXME: this will lead to clipping for loud audio sources, need to add sounds using a different method
+				}
+			}
+			else if(source->end_type == SOUND_END_TYPE_STOP)
+			{
+				source->used = false;
+			}
 		}
 #ifdef DEBUG_AUDIO_CALLBACK
 		LOGE("Audio Callback: 5.4");
@@ -420,12 +443,12 @@ void Audio_Engine::pause_audio ()
 	(*sl_audio_player_interface)->SetPlayState(sl_audio_player_interface, SL_PLAYSTATE_PAUSED);
 }
 
-int Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity* ent,Vec3 position, int sound_priority, float vol)
+Sound_Source* Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity* ent,Vec3 position, int sound_priority, float vol, int sound_endtype)
 {
 	if(sound_sample->raw_data == NULL)
 	{
 		LOGW("Warning: tried playing sound with an uninitialized sample (Sample has null data)");
-		return 0;
+		return NULL;
 	}
 	Sound_Source* source = NULL;
 
@@ -440,7 +463,7 @@ int Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity* ent,Vec3 
 	if(!source)
 	{
 		LOGW("Warning: couldn't play sound, no free sound sources");
-		return 0;
+		return NULL;
 	}
 
 	source->used = true;
@@ -450,6 +473,7 @@ int Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity* ent,Vec3 
 	source->pos = position;
 	source->priority = sound_priority;
 	source->volume = vol;
+	source->end_type = sound_endtype;
 
 	source->last_falloff_L = 0.0f;
 	source->last_falloff_R = 0.0f;
@@ -462,16 +486,17 @@ int Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity* ent,Vec3 
 	//OR we could avoid this overriding functionality altogether, and opt to not override
 	//if there isn't a free sound slot, simply don't play the sound
 
-	return 1;
+	return source;
 }
 
-int Audio_Engine::play_sound (Sound_Sample* sound,Entity* ent,Vec3 pos,int sound_priority,float volume)
+//Returns a pointer to the sound source that is playing the sound, returns NULL if we could not play the sound
+Sound_Source* Audio_Engine::play_sound (Sound_Sample* sound,Entity* ent,Vec3 pos,int sound_priority,float volume, int sound_endtype)
 {
 	if(instance == NULL)
 	{
 		LOGW("Warning: tried to play sound without an Audio_Engine instance!\n");
-		return 0;
+		return NULL;
 	}
 
-	return instance->play_sound_sample(sound,ent,pos,sound_priority,volume);
+	return instance->play_sound_sample(sound,ent,pos,sound_priority,volume,sound_endtype);
 }

@@ -1487,13 +1487,13 @@ public:
 		// ============ end BSP Floor Generation ============
 
 		// ============ Player Route Generation =============
-		/*LOGE("Player Route Generation started");
+		//LOGE("Player Route Generation started");
 		int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
 		goal_min_column = _goal_min_column;
 		goal_max_column = _goal_max_column;
 
 		// ==================================================
-
+		/*
 		branch_debug_point_count = 0;
 		//Allowing 1 tile of room before any branching is allowed
 		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;

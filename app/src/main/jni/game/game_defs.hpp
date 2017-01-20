@@ -204,6 +204,13 @@ extern bool RAIL_TYPE_IS_VALID[RAIL_TYPE_COUNT];
 #define FRAME_ANIM_STOP 4
 #define FRAME_ANIM_PLAY_DEFAULT 5
 
+//speed types
+//The player's speed is set as the value
+#define FRAME_SPEED_CONST 0
+//The player's speed is set as the value, but modified so that we reach the next keyframe in the same amount of time as
+// if we were in the center of the bounds of this keyframe
+#define FRAME_SPEED_CONST_TIME 1
+
 //Special flags
 #define FRAME_SPECFLAG_NONE 0
 #define FRAME_SPECFLAG_BREAKWINDOW_OUT 1
@@ -289,27 +296,28 @@ extern int PREV_BLDG[3];
 #define PLAYER_ANIM_DIVE 5
 #define PLAYER_ANIM_DIVE_END 6
 #define PLAYER_ANIM_SPEED_VAULT 7
-//TODO: change the values to be sequential and change the loading order
-#define PLAYER_ANIM_VAULT_SLIDE 23
-#define PLAYER_ANIM_KONG 24
-#define PLAYER_ANIM_DASH_VAULT 25
+#define PLAYER_ANIM_VAULT_SLIDE 8
+#define PLAYER_ANIM_KONG 9
+#define PLAYER_ANIM_DASH_VAULT 10
+#define PLAYER_ANIM_UNDERBAR 11
+#define PLAYER_ANIM_HIGH_UNDERBAR 12
 
-#define PLAYER_ANIM_TRAV_A 8
-#define PLAYER_ANIM_TRAV_B 9
-#define PLAYER_ANIM_TRAV_C 10
+#define PLAYER_ANIM_TRAV_A 13
+#define PLAYER_ANIM_TRAV_B 14
+#define PLAYER_ANIM_TRAV_C 15
 
-#define PLAYER_ANIM_DEATH_HITWALL 11
-#define PLAYER_ANIM_DEATH_HITLEFT 12
-#define PLAYER_ANIM_DEATH_HITRIGHT 13
-#define PLAYER_ANIM_DEATH_HITWAIST 14
-#define PLAYER_ANIM_DEATH_HITSLIDE 15
-#define PLAYER_ANIM_DEATH_HITDOORWAY 16
-#define PLAYER_ANIM_DEATH_HITWINDOW 17
-#define PLAYER_ANIM_DEATH_SLIDEHITWALL 18
-#define PLAYER_ANIM_DEATH_SLIDEHITLEFT 19
-#define PLAYER_ANIM_DEATH_SLIDEHITRIGHT 20
-#define PLAYER_ANIM_DEATH_SLIDEHITWINDOW 21
-#define PLAYER_ANIM_SHOWCASE_HANDS 22
+#define PLAYER_ANIM_DEATH_HITWALL 16
+#define PLAYER_ANIM_DEATH_HITLEFT 17
+#define PLAYER_ANIM_DEATH_HITRIGHT 18
+#define PLAYER_ANIM_DEATH_HITWAIST 19
+#define PLAYER_ANIM_DEATH_HITSLIDE 20
+#define PLAYER_ANIM_DEATH_HITDOORWAY 21
+#define PLAYER_ANIM_DEATH_HITWINDOW 22
+#define PLAYER_ANIM_DEATH_SLIDEHITWALL 23
+#define PLAYER_ANIM_DEATH_SLIDEHITLEFT 24
+#define PLAYER_ANIM_DEATH_SLIDEHITRIGHT 25
+#define PLAYER_ANIM_DEATH_SLIDEHITWINDOW 26
+#define PLAYER_ANIM_SHOWCASE_HANDS 27
 
 //These are defs for the behavior of the game when it's game over
 //How long it takes for the black screen to fade in upon death

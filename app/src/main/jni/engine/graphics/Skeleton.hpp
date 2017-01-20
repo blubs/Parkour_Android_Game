@@ -36,6 +36,10 @@ public:
 	int current_anim_end_type = ANIM_END_TYPE_ROOT_POSE;
 	float time_for_next_frame;
 
+	int last_frames_passed[ANIM_MAX_SKIPPABLE_FRAMES];
+	int last_frames_passed_anims[ANIM_MAX_SKIPPABLE_FRAMES];
+	int last_frames_passed_count = 0;
+
 
 	bool playing_default_anim = false;
 	int default_anim = -1;

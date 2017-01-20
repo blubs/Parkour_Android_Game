@@ -190,17 +190,27 @@ void Skeleton::calc_pose_mats()
 //Ran every frame to update animation frame logic (calculate interpolation data, increment frame, etc)
 int Skeleton::update_frame()
 {
+	last_frames_passed_count = 0;
+	LOGE("update frame start");
 	if(!playing_anim || !animating)
 		return 1;
 
 	float ctime = Time::time();
+	LOGE("ctime = %f, next frame time: %f",ctime,time_for_next_frame-0.001f);
+
+	//If we are 5 or more frames behind, something has gone terribly wrong, so just ignore those missing frames
+	if((ctime - time_for_next_frame) / frame_time >= 5.0f)
+		ctime = time_for_next_frame;
+
 
 	//We don't want to miss a frame over an extremely small margin, check +/- 5 milliseconds
-	if(ctime > time_for_next_frame - 0.005f)
+	while(ctime > time_for_next_frame - 0.001f && last_frames_passed_count < ANIM_MAX_SKIPPABLE_FRAMES)
 	{
 		current_frame += 1;
 		dest_frame += 1;
-		time_for_next_frame = ctime + frame_time;
+		LOGE("advancing one frame to frame: %d, frames skipped: %d",current_frame,last_frames_passed_count);
+		//time_for_next_frame = ctime + frame_time;
+		time_for_next_frame += frame_time;
 		if(current_frame >= skel_data->anim_lengths[current_anim])
 		{
 			switch(current_anim_end_type)
@@ -223,15 +233,20 @@ int Skeleton::update_frame()
 					}
 					else
 					{
-						LOGW("Warning: anim end type of play_default_anim was summoned with an invalid default anim of %d\n",default_anim);
+						LOGW("Warning: anim end type of play_default_anim was invoked with an invalid default anim of %d\n",default_anim);
 						stop_anim();
 						return 1;
 					}
 					break;
 			}
 		}
+		LOGE("post end animation check: canim: %d, cframe: %d",current_anim,current_frame);
 
-		//Setting the frame to lerp to
+		last_frames_passed[last_frames_passed_count] = current_frame;
+		last_frames_passed_anims[last_frames_passed_count] = current_anim;
+		last_frames_passed_count++;
+
+		//Setting which frame to lerp to
 		if(dest_frame >= skel_data->anim_lengths[current_anim])
 		{
 			switch(current_anim_end_type)
@@ -254,6 +269,7 @@ int Skeleton::update_frame()
 					break;
 			}
 		}
+		LOGE("finished advancing one frame to frame: %d",current_frame);
 	}
 
 	if(current_frame != dest_frame)

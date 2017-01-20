@@ -51,9 +51,9 @@ public:
 	//Attenuation type would be good (constant, inverse, inverse squared)
 
 
-
-	static int play_sound (Sound_Sample* sound,Entity* ent,Vec3 pos,int sound_priority,float volume);
-	int play_sound_sample (Sound_Sample* sound,Entity* ent,Vec3 pos,int sound_priority,float volume);
+	//Returns a pointer to the sound source that is playing the sound, returns NULL if we could not play the sound
+	static Sound_Source* play_sound (Sound_Sample* sound,Entity* ent,Vec3 pos,int sound_priority,float volume, int sound_end_type);
+	Sound_Source* play_sound_sample (Sound_Sample* sound,Entity* ent,Vec3 pos,int sound_priority,float volume, int sound_end_type);
 
 	Camera* listener = NULL;
 	static int set_audio_listener(Camera* lstnr);

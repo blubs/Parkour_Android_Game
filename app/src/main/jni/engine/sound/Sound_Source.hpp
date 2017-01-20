@@ -14,16 +14,29 @@ class Sound_Source : public Entity
 public:
 	bool used = false;
 	int priority = 0;//the lower the priority, the more important TODO: not yet used
+	//Consider adding priority constants for standard values
+
 	float volume = 0.0f;
-	//TODO: maybe add priority constant identifiers for standardized values
 	int sound_pos = 0;
 
 	Sound_Sample* sound = NULL;
-	//TODO:need a variable for end style
+	int end_type = SOUND_END_TYPE_STOP;
 
 	//Need duplicate parameters for each audio effect
 	float last_falloff_L = 0.0f;
 	float last_falloff_R = 0.0f;
+
+	void stop_audio()
+	{
+		used = false;
+		priority = 0;
+		sound_pos = 0;
+		volume = 0.0f;
+		sound = NULL;
+		end_type = SOUND_END_TYPE_STOP;
+		last_falloff_L = 0.0f;
+		last_falloff_R = 0.0f;
+	}
 
 };
 
