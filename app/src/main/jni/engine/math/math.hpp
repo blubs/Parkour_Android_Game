@@ -15,6 +15,7 @@
 #define RAD_TO_DEG 57.2957795131f
 
 
+
 inline int min(int a, int b)
 {
 	return (a < b) ? a : b;
@@ -28,6 +29,11 @@ inline int max(int a, int b)
 inline int clamp(int a, int min_val, int max_val)
 {
 	return max(min_val,min(max_val,a));
+}
+
+inline float clampf(float a, float min_val, float max_val)
+{
+	return fmaxf(min_val,fminf(max_val,a));
 }
 
 //Implementation of a weighted average lerp

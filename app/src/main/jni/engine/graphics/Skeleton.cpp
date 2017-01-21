@@ -64,6 +64,7 @@ int Skeleton::play_anim(int anim, int end_type)
 	}
 	current_anim_end_type = end_type;
 	current_anim = anim;
+	time_for_next_frame = 0.0f;
 	current_frame = 0;
 	dest_frame = 1;
 	playing_anim = true;
@@ -82,6 +83,7 @@ int Skeleton::play_default_anim()
 	playing_default_anim = true;
 	animating = true;
 	current_anim = default_anim;
+	time_for_next_frame = 0.0f;
 	current_frame = 0;
 	dest_frame = 1;
 	current_anim_end_type = default_anim_end_type;
@@ -94,6 +96,7 @@ int Skeleton::stop_anim()
 	animating = false;
 	current_anim = -1;
 	current_anim_end_type = ANIM_END_TYPE_ROOT_POSE;
+	time_for_next_frame = 0.0f;
 	current_frame = 0;
 	dest_frame = 0;
 	return 1;
@@ -108,6 +111,7 @@ int Skeleton::pause_anim()
 int Skeleton::resume_anim()
 {
 	animating = true;
+	time_for_next_frame = 0.0f;
 	return 1;
 }
 
@@ -191,12 +195,14 @@ void Skeleton::calc_pose_mats()
 int Skeleton::update_frame()
 {
 	last_frames_passed_count = 0;
-	LOGE("update frame start");
 	if(!playing_anim || !animating)
 		return 1;
 
 	float ctime = Time::time();
-	LOGE("ctime = %f, next frame time: %f",ctime,time_for_next_frame-0.001f);
+
+	//If time_for_next_frame is 0, we initialize it to ctime
+	if(time_for_next_frame == 0.0f)
+		time_for_next_frame = ctime;
 
 	//If we are 5 or more frames behind, something has gone terribly wrong, so just ignore those missing frames
 	if((ctime - time_for_next_frame) / frame_time >= 5.0f)
@@ -208,7 +214,6 @@ int Skeleton::update_frame()
 	{
 		current_frame += 1;
 		dest_frame += 1;
-		LOGE("advancing one frame to frame: %d, frames skipped: %d",current_frame,last_frames_passed_count);
 		//time_for_next_frame = ctime + frame_time;
 		time_for_next_frame += frame_time;
 		if(current_frame >= skel_data->anim_lengths[current_anim])
@@ -240,7 +245,6 @@ int Skeleton::update_frame()
 					break;
 			}
 		}
-		LOGE("post end animation check: canim: %d, cframe: %d",current_anim,current_frame);
 
 		last_frames_passed[last_frames_passed_count] = current_frame;
 		last_frames_passed_anims[last_frames_passed_count] = current_anim;
@@ -269,7 +273,6 @@ int Skeleton::update_frame()
 					break;
 			}
 		}
-		LOGE("finished advancing one frame to frame: %d",current_frame);
 	}
 
 	if(current_frame != dest_frame)
@@ -337,6 +340,7 @@ Skeleton::Skeleton(Skeleton_Data* skeleton_data)
 {
 	skel_data = skeleton_data;
 	bone_count = skel_data->bone_count;
+	time_for_next_frame = 0.0f;
 
 	//Populating a list of identity matrices for displaying the skeleton's rest post
 	Mat4 ident4 = Mat4::IDENTITY();

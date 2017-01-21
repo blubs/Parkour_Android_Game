@@ -1432,18 +1432,18 @@ public:
 
 	}
 
-	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs, Vec3 player_pos, int _goal_min_column, int _goal_max_column)
+	void generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs,Vec3 dims, Vec3 player_pos, int _goal_min_column, int _goal_max_column)
 	{
 		if(generated)
 			return;
 		LOGE("Floor generate started");
-		altitude = p.z + floor_num*(WINDOW_TILE_SIZE);
 		global_pos = p + Vec3(0,0,floor_num*WINDOW_TILE_SIZE);
+		altitude = global_pos.z;
 		global_mins = mins;
 		global_maxs = maxs;
 		global_mins.z = global_maxs.z = altitude;
-		width = (int)((global_maxs.x - global_mins.x)/TILE_SIZE);
-		length = (int)((global_maxs.y - global_mins.y)/TILE_SIZE);
+		width = (int)(dims.x);
+		length = (int)(dims.y);
 
 		//=========== BSP Floor Generation ============
 		LOGE("BSP Floor generation started");

@@ -140,7 +140,7 @@ public:
 		int goal_min = clamp(0,other_left_endpnt,other_right_endpnt-1);
 		int goal_max = clamp((int)dimensions.x-1,other_left_endpnt,other_right_endpnt-1);
 
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,dimensions,player_pos,goal_min,goal_max);
 
 		generate_interior_model_list();
 	}
@@ -182,7 +182,7 @@ public:
 		int goal_max = clamp((int)dimensions.x-1,other_left_endpnt,other_right_endpnt-1);
 		LOGI("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
 
-		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,player_pos,goal_min,goal_max);
+		active_floor->generate(pos,active_floor_number,global_mins,global_maxs,dimensions,player_pos,goal_min,goal_max);
 	}
 
 	//Clears the created building, zeroes everything out
@@ -264,6 +264,12 @@ public:
 			return true;
 		//Z bounds are not handled here
 		return false;
+	}
+
+	//Returns Vec3 in bounds
+	Vec3 clamp_to_bounds(Vec3 p)
+	{
+		return Vec3(clampf(p.x,global_mins.x,global_maxs.x),clampf(p.y,global_mins.y,global_maxs.y),clampf(p.z,global_mins.z,global_maxs.z));
 	}
 
 

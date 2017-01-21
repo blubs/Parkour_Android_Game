@@ -34,7 +34,7 @@ public:
 	int dest_frame = 0;
 	int current_anim = -1;
 	int current_anim_end_type = ANIM_END_TYPE_ROOT_POSE;
-	float time_for_next_frame;
+	float time_for_next_frame = 0.0f;
 
 	int last_frames_passed[ANIM_MAX_SKIPPABLE_FRAMES];
 	int last_frames_passed_anims[ANIM_MAX_SKIPPABLE_FRAMES];

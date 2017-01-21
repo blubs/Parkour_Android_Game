@@ -10,7 +10,7 @@
 #include "entities/Player.hpp"
 #include "engine/graphics/UI.hpp"
 #include "engine/graphics/Skybox.hpp"
-#include "engine/sound/Sound_Source.hpp"
+#include "engine/sound/Audio_Engine.hpp"
 #include "engine/JNI_Interface.hpp"
 #include "entities/Building.hpp"
 #include "game/Global_Tiles.hpp"
@@ -41,23 +41,28 @@ public:
 	//=========================== Game Asset Variables ====================
 	//-------------- Sound Files --------------
 	Sound_Sample *test_pulse = NULL;
-	Sound_Sample *snd_fstep_1 = NULL;
-	Sound_Sample *snd_fstep_2 = NULL;
-	Sound_Sample *snd_fstep_3 = NULL;
-	Sound_Sample *snd_fstep_4 = NULL;
 	Sound_Sample *snd_office_amb = NULL;
 	Sound_Sample *snd_highrise_amb = NULL;
 	Sound_Sample *snd_winbreak = NULL;
 	Sound_Sample *snd_jumpwind = NULL;
-	Sound_Sample *snd_breath_1 = NULL;
-	Sound_Sample *snd_breath_2 = NULL;
-	Sound_Sample *snd_breath_3 = NULL;
-	Sound_Sample *snd_breath_4 = NULL;
 	Sound_Sample *snd_death_impact = NULL;
 	Sound_Sample *snd_death_trans = NULL;
+	Sound_Sample *snd_breath;
+	Sound_Sample *snd_breath_jump;
+	Sound_Sample *snd_breath_land;
 
-	Sound_Sample *footstep_sounds[4];
-	Sound_Sample *breath_sounds[4];
+	Sound_Sample *footstep_sounds[8];
+
+	Sound_Sample *snd_hand_contact_low = NULL;
+	Sound_Sample *snd_hand_contact_mid = NULL;
+	Sound_Sample *snd_hand_contact_high = NULL;
+	Sound_Sample *snd_slide = NULL;
+
+
+	Sound_Source* player_breath_src = NULL;
+
+	Sound_Source* office_ambience_src = NULL;
+	Sound_Source* highrise_ambience_src = NULL;
 
 	//-------------- Shaders ------------------
 	Shader *test_shader = NULL;
@@ -110,8 +115,6 @@ public:
 	Camera *camera = NULL;
 	Player *player = NULL;
 	Entity_Bone_Joint *cam_to_bone = NULL;
-
-	Entity *test_sound_source = NULL;
 
 	UI_Text *test_text = NULL;
 	UI_Image *test_img = NULL;
@@ -198,7 +201,7 @@ public:
 
 	//FIXME: remove this
 	//===================
-	int viewbob_menu_state = 0;
+	//int viewbob_menu_state = 0;
 	float viewbob_pitch = 11.5f;
 	float viewbob_yaw = 14.5f;
 	float viewbob_roll = 11.5f;
@@ -248,6 +251,9 @@ public:
 
 	//Holds the player state logic
 	void player_state_logic();
+
+	//Holds the player noclip logic (touch input and noclip flying about)
+	void player_noclip_logic();
 
 	//Draws the screen overlay (a slight edge darkening on the screen)
 	//This also handles the black / white overlays on the screen

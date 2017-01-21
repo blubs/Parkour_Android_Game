@@ -23,8 +23,6 @@ int Player::render(Mat4 vp)
 //Update method that is ran every frame
 int Player::update()
 {
-	LOGE("skeleton update frame");
 	skel->update_frame();
-	LOGE("end skeleton update frame");
 	return 1;
 }

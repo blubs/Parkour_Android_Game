@@ -307,50 +307,55 @@ void Game::unload_models()
 int Game::load_sounds()
 {
 	test_pulse = new Sound_Sample("sounds/test_audio_pulse.raw");
-	snd_fstep_1 = new Sound_Sample("sounds/footstep_1.raw");
-	snd_fstep_2 = new Sound_Sample("sounds/footstep_2.raw");
-	snd_fstep_3 = new Sound_Sample("sounds/footstep_3.raw");
-	snd_fstep_4 = new Sound_Sample("sounds/footstep_4.raw");
-	snd_office_amb = new Sound_Sample("sounds/.raw");
-	snd_highrise_amb = new Sound_Sample("sounds/.raw");
+	snd_office_amb = new Sound_Sample("sounds/office_amb.raw");
+	snd_highrise_amb = new Sound_Sample("sounds/highrise_amb.raw");
 	snd_winbreak = new Sound_Sample("sounds/break_glass.raw");
 	snd_jumpwind = new Sound_Sample("sounds/jump_wind.raw");
-	snd_breath_1 = new Sound_Sample("sounds/breath_1.raw");
-	snd_breath_2 = new Sound_Sample("sounds/breath_1.raw");
-	snd_breath_3 = new Sound_Sample("sounds/breath_1.raw");
-	snd_breath_4 = new Sound_Sample("sounds/breath_1.raw");
 	snd_death_impact = new Sound_Sample("sounds/death_impact.raw");
 	snd_death_trans = new Sound_Sample("sounds/death_trans.raw");
 
-	footstep_sounds[0] = snd_fstep_1;
-	footstep_sounds[1] = snd_fstep_2;
-	footstep_sounds[2] = snd_fstep_3;
-	footstep_sounds[3] = snd_fstep_4;
+	footstep_sounds[0] = new Sound_Sample("sounds/footstep_0.raw");
+	footstep_sounds[1] = new Sound_Sample("sounds/footstep_1.raw");
+	footstep_sounds[2] = new Sound_Sample("sounds/footstep_2.raw");
+	footstep_sounds[3] = new Sound_Sample("sounds/footstep_3.raw");
+	footstep_sounds[4] = new Sound_Sample("sounds/footstep_4.raw");
+	footstep_sounds[5] = new Sound_Sample("sounds/footstep_5.raw");
+	footstep_sounds[6] = new Sound_Sample("sounds/footstep_6.raw");
+	footstep_sounds[7] = new Sound_Sample("sounds/footstep_7.raw");
 
-	breath_sounds[0] = snd_breath_1;
-	breath_sounds[1] = snd_breath_2;
-	breath_sounds[2] = snd_breath_3;
-	breath_sounds[3] = snd_breath_4;
+	snd_breath = new Sound_Sample("sounds/breath.raw");
+	snd_breath_jump = new Sound_Sample("sounds/breath_jump.raw");
+	snd_breath_land = new Sound_Sample("sounds/breath_land.raw");
+
+	snd_hand_contact_low = new Sound_Sample("sounds/hand_contact_soft.raw");
+	snd_hand_contact_mid = new Sound_Sample("sounds/hand_contact_mid.raw");
+	snd_hand_contact_high = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_slide = new Sound_Sample("sounds/slide.raw");
 
 	return 1;
 }
 void Game::unload_sounds()
 {
 	delete test_pulse;
-	delete snd_fstep_1;
-	delete snd_fstep_2;
-	delete snd_fstep_3;
-	delete snd_fstep_4;
+	for(int i = 0; i < 8; i++)
+	{
+		delete footstep_sounds[i];
+	}
+
+	delete snd_breath;
+	delete snd_breath_jump;
+	delete snd_breath_land;
 	delete snd_office_amb;
 	delete snd_highrise_amb;
 	delete snd_winbreak;
 	delete snd_jumpwind;
-	delete snd_breath_1;
-	delete snd_breath_2;
-	delete snd_breath_3;
-	delete snd_breath_4;
 	delete snd_death_impact;
 	delete snd_death_trans;
+
+	delete snd_hand_contact_low;
+	delete snd_hand_contact_mid;
+	delete snd_hand_contact_high;
+	delete snd_slide;
 }
 
 int Game::load_assets()
@@ -590,7 +595,6 @@ void Game::start()
 	camera = new Camera();
 	player = new Player();
 	cam_to_bone = new Entity_Bone_Joint();
-	test_sound_source = new Entity();
 
 	//===== Setting up relationships between game objects ======
 	audio_listener = camera;
@@ -637,9 +641,6 @@ void Game::start()
 	//===================================================================================
 
 	skybox->set_cube_map(Global_Tiles::instance->sky_cube_map);
-
-	test_sound_source->model = model_prim_cube;
-	test_sound_source->mat = static_color_mat;
 
 
 	//===== Instantiating Game Objects =====
@@ -731,10 +732,30 @@ void Game::reset()
 	player->pos.y = current_building->global_mins.y + 1.0f;
 	player->pos.z = BUILDING_GROUNDLEVEL + 15 * WINDOW_TILE_SIZE;
 
+
+	if(office_ambience_src)
+		office_ambience_src->stop_audio();
+	office_ambience_src = Audio_Engine::play_sound(snd_office_amb,NULL,player->pos,0,0.6f,SOUND_END_TYPE_LOOP);
+
+	if(highrise_ambience_src)
+	{
+		highrise_ambience_src->stop_audio();
+	}
+	highrise_ambience_src = Audio_Engine::play_sound(snd_highrise_amb,NULL,player->pos + Vec3(0,10.0f,0),0,1.0f,SOUND_END_TYPE_LOOP);
+
+
+
 	//Generate the first building's floor after we generate all of the buildings themselves
 	buildings[0]->generate_floor(player->pos,buildings[1]);
 
 	player_state = PLAYER_STATE_NOCLIP;
+
+	if(player_breath_src)
+	{
+		player_breath_src->stop_audio();
+		player_breath_src = NULL;
+	}
+	player_breath_src = player->play_sound(snd_breath,Vec3(0,0,0),0.6f,SOUND_END_TYPE_LOOP);
 
 	player_phys_vel = Vec3::ZERO();
 	cplayer_col_precedence_array = running_col_precedence;
@@ -764,7 +785,6 @@ void Game::finish()
 
 	delete player;
 	delete player_skel;
-	delete test_sound_source;
 	delete camera;
 	delete cam_to_bone;
 }
@@ -1835,24 +1855,6 @@ void Game::player_run()
 	}
 	camera->set_viewbob(CAM_VIEWBOB_RUNNING);
 
-	//Testing viewbob code
-	static bool stepped = true;
-
-	if(input_y[1] <= 0.1f && !stepped)
-	{
-		stepped = true;
-		if(input_x[1] > 0.5f)
-		{
-			//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,-50.0f*DEG_TO_RAD,0.0f);
-		}
-		else
-		{
-			//camera->viewbob_run_footstep(-50.0f*DEG_TO_RAD,50.0f*DEG_TO_RAD,0.0f);
-		}
-	}
-	else if(input_y[1] > 0.1f)
-			stepped = false;
-	//========================= end test viewbob code
 	camera->update_viewbob();
 
 	if(player->pos.z > current_building->active_floor->altitude)
@@ -1883,29 +1885,355 @@ void Game::player_anim_special_events()
 		int anim = player_skel->last_frames_passed_anims[i];
 		int frame = player_skel->last_frames_passed[i];
 
-		if(anim == PLAYER_ANIM_RUN)
+		switch(anim)
 		{
-			if(frame == 9)//left foot hit ground
+			default:
+				break;
+			case PLAYER_ANIM_RUN:
+			case PLAYER_ANIM_RUN_PRE_JUMP:
 			{
-				player->play_sound(footstep_sounds[Random::rand_int_in_range(0,4)],Vec3::ZERO(),0.5f,SOUND_END_TYPE_STOP);
-				//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,2.0f*DEG_TO_RAD,0.0f);
-				//test viewbob: no pitch bob, only yaw and roll
-				//camera->viewbob_run_footstep(0.0f,2.0f*DEG_TO_RAD,5.0f*DEG_TO_RAD);
-				camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
+				if(frame == 9)//left foot hit ground
+				{
+					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3::ZERO(),0.05f,SOUND_END_TYPE_STOP);
+					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
+				}
+				if(frame == 24)//right foot hit ground
+				{
+					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3::ZERO(),0.05f,SOUND_END_TYPE_STOP);
+					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
+				}
+				break;
 			}
-			if(frame == 24)//right foot hit ground
+			case PLAYER_ANIM_SLIDE:
 			{
-				player->play_sound(footstep_sounds[Random::rand_int_in_range(0,4)],Vec3::ZERO(),0.5f,SOUND_END_TYPE_STOP);
-				//camera->viewbob_run_footstep(-5.0f*DEG_TO_RAD,-2.0f*DEG_TO_RAD,0.0f);
-				//test viewbob
-				//camera->viewbob_run_footstep(0.0f,-2.0f*DEG_TO_RAD,-5.0f*DEG_TO_RAD);
-				camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
+				if(frame == 19)//thigh hits floor
+				{
+					player->play_sound(snd_slide,Vec3::ZERO(),0.8f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			case PLAYER_ANIM_SLIDE_END:
+			{
+				if(frame == 7)//right hand hits floor to left
+				{
+					player->play_sound(snd_hand_contact_low,Vec3(-0.5f,0,0),0.4f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 11)//feet step on ground to stand up
+				{
+					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3(-0.1f,0,0),0.02f,SOUND_END_TYPE_STOP);
+					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3(0.1f,0,0),0.02f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			/*case PLAYER_ANIM_DIVE_END:
+			{
+				if(frame == 16)//TODO: play roll sound
+				{
+				}
+				break;
+			}*/
+			case PLAYER_ANIM_DASH_VAULT:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 28)//hands smack desk
+				{
+					player->play_sound(snd_hand_contact_high,Vec3::ZERO(),0.4f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 60)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			case PLAYER_ANIM_KONG:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 24)//hands smack desk
+				{
+					player->play_sound(snd_hand_contact_high,Vec3::ZERO(),0.4f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 43)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			case PLAYER_ANIM_SPEED_VAULT:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 10)//left hand on rail
+				{
+					player->play_sound(snd_hand_contact_mid,Vec3(-0.5f,0,0),0.4f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 12)//right foot on rail
+				{
+					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3(1.0f,0,0),0.02f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 45)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			case PLAYER_ANIM_VAULT_SLIDE:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 14)//left hand on obst
+				{
+					player->play_sound(snd_hand_contact_mid,Vec3(-0.5f,0,0),0.4f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 22)//slide begins
+				{
+					//TODO: hip contacts obst on frame 22
+					player->play_sound(snd_slide,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 64)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			case PLAYER_ANIM_HIGH_UNDERBAR:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				//TODO: foot on elevator on frame 17
+				//TODO: hands on metal on frame 44
+				//TODO: body hits and slides down metal frame 67
+				if(frame == 113)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				//TODO: roll on frame 127
+				break;
+			}
+			case PLAYER_ANIM_UNDERBAR:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 11)//hands contact wood
+				{
+					player->play_sound(snd_hand_contact_mid,Vec3(0,0,0),0.4f,SOUND_END_TYPE_STOP);
+				}
+				//TODO: whoosh on frame 22
+				if(frame == 32)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				break;
+			}
+			case PLAYER_ANIM_TRAV_A:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 140)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				//TODO: roll on frame 145
+				break;
+			}
+			case PLAYER_ANIM_TRAV_B:
+			case PLAYER_ANIM_TRAV_C:
+			{
+				if(frame == 1)
+				{
+					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 139)
+				{
+					//TODO: land contact
+					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+				}
+				//TODO: roll on frame 143
+				break;
 			}
 		}
-
 	}
 }
 
+void Game::player_noclip_logic()
+{
+	//zones:
+	//look left/right/up/down
+	//move left/right/forward/back
+	//move up/down
+
+	//Camera velocity
+	float cam_vel = 60.0f;
+
+	//Camera angular velocity
+	float cam_ang_vel = 140.0f * DEG_TO_RAD;
+
+	Entity* move_ent = NULL;
+
+	if(player_state == PLAYER_STATE_NOCLIP)
+		move_ent = player;
+	else
+		move_ent = camera;
+
+	//Checking input from all fingers:
+	for(int i = 0; i < MAX_INPUT_TOUCHES; i++)
+	{
+		if(!(input_touching[i]))
+			continue;
+		float x = input_x[i];
+		float y = input_y[i];
+
+		float sx = input_start_x[i];
+		float sy = input_start_y[i];
+
+		//top right corner: go back to player run mode
+		if(sx >= 0.66f)
+		{
+			if(sy >= 0.85f)
+			{
+				input_touching[i] = false;
+				if(player_state == PLAYER_STATE_NOCLIP)
+				{
+					player_state = PLAYER_STATE_CAM_FLY;
+					player->angles = Vec3::ZERO();
+					if(player->pos.z <= current_building->active_floor->altitude)
+					{
+						player->pos.z = current_building->active_floor->altitude+0.01f;
+					}
+					if(player->pos.x >= current_building->active_floor->global_maxs.x - 0.5f)
+					{
+						player->pos.x = current_building->active_floor->global_maxs.x - 1.0f;
+					}
+					if(player->pos.x <= current_building->active_floor->global_mins.x + 0.5f)
+					{
+						player->pos.x = current_building->active_floor->global_mins.x + 1.0f;
+					}
+
+					if(player->pos.y <= current_building->active_floor->global_mins.y + 0.5f)
+					{
+						player->pos.y = current_building->active_floor->global_mins.y + 1.0f;
+					}
+					return;
+				}
+				else
+				{
+					player_state = PLAYER_STATE_RUNNING;
+					return;
+				}
+			}
+		}
+		//top left corner
+		if(sx <= 0.33f)
+		{
+			if(sy >= 0.85f)
+			{
+				if(player_state == PLAYER_STATE_NOCLIP)
+				{
+					input_touching[i] = false;
+				}
+				//Reset camera offset
+				if(player_state == PLAYER_STATE_CAM_FLY)
+				{
+					camera->pos = Vec3::ZERO();
+					camera->angles = Vec3::ZERO();
+				}
+			}
+		}
+
+		//bottom third right half is camera view direction
+		if(sx > 0.5f)
+		{
+			if(sy < 0.33f)
+			{
+				//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
+				float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
+				//float delta_x = -1.0f * fmaxf(fminf((x - 0.75f) / 0.25f,1.0f),-1.0f);//measured from area center
+				float delta_x = -1.0f * fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
+				//Making the controls be cubic in acceleration
+				delta_x *= delta_x * delta_x;
+				delta_y *= delta_y * delta_y;
+				delta_x *= cam_ang_vel;
+				delta_y *= cam_ang_vel;
+				move_ent->angles.x += delta_y * Time::udelta_time;
+				move_ent->angles.y += delta_x * Time::udelta_time;
+				continue;
+			}
+		}
+		//bottom third left half is camera movement
+		if(sx < 0.5f)
+		{
+			if(sy < 0.33f)
+			{
+				//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
+				float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
+				//float delta_x = fmaxf(fminf((x - 0.25f) / 0.25f,1.0f),-1.0f);//measured from area center
+				float delta_x = fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
+				//Making movement be cubic
+				delta_x *= delta_x * delta_x;
+				delta_y *= delta_y * delta_y;
+				delta_x *= cam_vel;
+				delta_y *= cam_vel;
+				Vec3 forward, right, up;
+				move_ent->angles.angles_to_dirs(&forward,&right,&up);
+				move_ent->pos = move_ent->pos + (forward * delta_y * Time::udelta_time) + (right * delta_x * Time::udelta_time);
+				continue;
+			}
+		}
+
+		//second third left half is camera height
+		if(sx < 0.5f)
+		{
+			if(sy >= 0.33f && sy < 0.66f)
+			{
+				//float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);//measured from area center
+				float delta_y = fminf((y - sy) / 0.17f,1.0f);//measured from touch start pos
+				//Making movement be cubic
+				delta_y *= delta_y * delta_y;
+				delta_y *= cam_vel;
+				Vec3 forward, right, up;
+				move_ent->angles.angles_to_dirs(&forward,&right,&up);
+				move_ent->pos = move_ent->pos + (up * delta_y * Time::udelta_time);
+				continue;
+			}
+		}
+
+		//For floor generation
+		if(player_state == PLAYER_STATE_CAM_FLY)
+		{
+			if(sx < 0.5f)
+			{
+				if(sy >= 0.66f && sy < 0.85f)
+				{
+					input_touching[i] = false;
+					current_building->regenerate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
+					continue;
+				}
+			}
+		}
+	}
+}
 
 void Game::player_state_logic()
 {
@@ -1970,8 +2298,14 @@ void Game::player_state_logic()
 				player_state = PLAYER_STATE_FALLING;
 				player_phys_vel.z = PLAYER_JUMP_VEL;
 				player_phys_vel = player_phys_vel + (Quat(player->angles.y,Vec3::UP()) * Vec3(0,PLAYER_RUN_SPEED,0));
+				player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				player_skel->play_anim(PLAYER_ANIM_RUN_JUMP,ANIM_END_TYPE_DEFAULT_ANIM);
 				input_swipe = INPUT_SWIPE_NONE;
+				if(player_breath_src)
+				{
+					player_breath_src->stop_audio();
+					player_breath_src = NULL;
+				}
 				return;
 			}
 			//Get maneuvers that require input down
@@ -2008,6 +2342,11 @@ void Game::player_state_logic()
 
 		if(player->pos.z + delta_pos.z <= current_building->active_floor->altitude)
 		{
+			player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
+			if(!player_breath_src)
+			{
+				player_breath_src = player->play_sound(snd_breath,Vec3::ZERO(),0.6f,SOUND_END_TYPE_LOOP);
+			}
 			player_state = PLAYER_STATE_RUNNING;
 			player->pos.z = current_building->active_floor->altitude;
 			player_phys_vel = Vec3::ZERO();
@@ -2156,181 +2495,45 @@ void Game::update()
 
 	float t = Time::time();
 
-	//Making the test audio source move / rotate
-	float distance = 5.0f;
-	test_sound_source->pos = Vec3(distance * cosf(0.5f*t),distance * sinf(0.5f*t),0.0f);
-	test_sound_source->angles.y = fmodf(t*8.0f,TWO_PI);
-
-
-	//=========== Test Audio Playing every 0.5 seconds ==============
-	static float time_to_play_audio = 0.0f;
-	if(t > time_to_play_audio)
-	{
-		time_to_play_audio = t + 0.5f;
-		test_sound_source->play_sound(test_pulse,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
-	}
 
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->update();
 	}
 
+
+	//Handling and moving ambient audio sources
+	if(current_building->is_in_bounds_or_near_front(player->pos) && office_ambience_src)
+	{
+		office_ambience_src->pos = current_building->clamp_to_bounds(player->pos);
+	}
+	if(current_building->is_out_of_bounds(player->pos) && highrise_ambience_src)
+	{
+		highrise_ambience_src->pos = player->pos;
+	}
+
+	//Handling breath logic
+	if(player_breath_src)
+	{
+		if(player_state != PLAYER_STATE_RUNNING && player_state != PLAYER_STATE_SLIDING && player_state != PLAYER_STATE_NOCLIP && player_state != PLAYER_STATE_CAM_FLY)
+		{
+			player_breath_src->stop_audio();
+			player_breath_src = NULL;
+		}
+	}
+	else if(!player_breath_src)
+	{
+		if(player_state == PLAYER_STATE_RUNNING || player_state == PLAYER_STATE_SLIDING)
+		{
+			player_breath_src = player->play_sound(snd_breath,Vec3(0,0,0),0.6f,SOUND_END_TYPE_LOOP);
+		}
+	}
+
+
+
 	if(player_state == PLAYER_STATE_NOCLIP || player_state == PLAYER_STATE_CAM_FLY)
 	{
-		//zones:
-		//look left/right/up/down
-		//move left/right/forward/back
-		//move up/down
-
-		//Camera velocity
-		float cam_vel = 60.0f;
-
-		//Camera angular velocity
-		float cam_ang_vel = 140.0f * DEG_TO_RAD;
-
-		Entity* move_ent = NULL;
-
-		if(player_state == PLAYER_STATE_NOCLIP)
-			move_ent = player;
-		else
-			move_ent = camera;
-
-		//Checking input from all fingers:
-		for(int i = 0; i < MAX_INPUT_TOUCHES; i++)
-		{
-			if(!(input_touching[i]))
-				continue;
-			float x = input_x[i];
-			float y = input_y[i];
-
-			float sx = input_start_x[i];
-			float sy = input_start_y[i];
-
-			//top right corner: go back to player run mode
-			if(sx >= 0.66f)
-			{
-				if(sy >= 0.85f)
-				{
-					input_touching[i] = false;
-					if(player_state == PLAYER_STATE_NOCLIP)
-					{
-						player_state = PLAYER_STATE_CAM_FLY;
-						player->angles = Vec3::ZERO();
-						if(player->pos.z <= current_building->active_floor->altitude)
-						{
-							player->pos.z = current_building->active_floor->altitude+0.01f;
-						}
-						if(player->pos.x >= current_building->active_floor->global_maxs.x - 0.5f)
-						{
-							player->pos.x = current_building->active_floor->global_maxs.x - 1.0f;
-						}
-						if(player->pos.x <= current_building->active_floor->global_mins.x + 0.5f)
-						{
-							player->pos.x = current_building->active_floor->global_mins.x + 1.0f;
-						}
-
-						if(player->pos.y <= current_building->active_floor->global_mins.y + 0.5f)
-						{
-							player->pos.y = current_building->active_floor->global_mins.y + 1.0f;
-						}
-						return;
-					}
-					else
-					{
-						player_state = PLAYER_STATE_RUNNING;
-						return;
-					}
-				}
-			}
-			//top left corner
-			if(sx <= 0.33f)
-			{
-				if(sy >= 0.85f)
-				{
-					if(player_state == PLAYER_STATE_NOCLIP)
-					{
-						input_touching[i] = false;
-					}
-					//Reset camera offset
-					if(player_state == PLAYER_STATE_CAM_FLY)
-					{
-						camera->pos = Vec3::ZERO();
-						camera->angles = Vec3::ZERO();
-					}
-				}
-			}
-
-			//bottom third right half is camera view direction
-			if(sx > 0.5f)
-			{
-				if(sy < 0.33f)
-				{
-					//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
-					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
-					//float delta_x = -1.0f * fmaxf(fminf((x - 0.75f) / 0.25f,1.0f),-1.0f);//measured from area center
-					float delta_x = -1.0f * fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
-					//Making the controls be cubic in acceleration
-					delta_x *= delta_x * delta_x;
-					delta_y *= delta_y * delta_y;
-					delta_x *= cam_ang_vel;
-					delta_y *= cam_ang_vel;
-					move_ent->angles.x += delta_y * Time::udelta_time;
-					move_ent->angles.y += delta_x * Time::udelta_time;
-					continue;
-				}
-			}
-			//bottom third left half is camera movement
-			if(sx < 0.5f)
-			{
-				if(sy < 0.33f)
-				{
-					//float delta_y = fmaxf(fminf((y - 0.165f) / 0.17f,1.0f),-1.0f);//measured from area center
-					float delta_y = fmaxf(fminf((y - sy) / 0.17f,1.0f),-1.0f);//measured from touch start pos
-					//float delta_x = fmaxf(fminf((x - 0.25f) / 0.25f,1.0f),-1.0f);//measured from area center
-					float delta_x = fmaxf(fminf((x - sx) / 0.25f,1.0f),-1.0f);//measured from touch start pos
-					//Making movement be cubic
-					delta_x *= delta_x * delta_x;
-					delta_y *= delta_y * delta_y;
-					delta_x *= cam_vel;
-					delta_y *= cam_vel;
-					Vec3 forward, right, up;
-					move_ent->angles.angles_to_dirs(&forward,&right,&up);
-					move_ent->pos = move_ent->pos + (forward * delta_y * Time::udelta_time) + (right * delta_x * Time::udelta_time);
-					continue;
-				}
-			}
-
-			//second third left half is camera height
-			if(sx < 0.5f)
-			{
-				if(sy >= 0.33f && sy < 0.66f)
-				{
-					//float delta_y = fminf((y - 0.5f) / 0.17f,1.0f);//measured from area center
-					float delta_y = fminf((y - sy) / 0.17f,1.0f);//measured from touch start pos
-					//Making movement be cubic
-					delta_y *= delta_y * delta_y;
-					delta_y *= cam_vel;
-					Vec3 forward, right, up;
-					move_ent->angles.angles_to_dirs(&forward,&right,&up);
-					move_ent->pos = move_ent->pos + (up * delta_y * Time::udelta_time);
-					continue;
-				}
-			}
-
-			//For floor generation
-			if(player_state == PLAYER_STATE_CAM_FLY)
-			{
-				if(sx < 0.5f)
-				{
-					if(sy >= 0.66f && sy < 0.85f)
-					{
-						input_touching[i] = false;
-						current_building->regenerate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
-						continue;
-					}
-				}
-			}
-		}
+		player_noclip_logic();
 		return;
 	}
 
@@ -2357,7 +2560,7 @@ void Game::update()
 			camera->viewbob_vel = Vec3::ZERO();
 			return;
 		}
-		//For toggling viewbob edit menu
+		/*//For toggling viewbob edit menu
 		if(x <= 0.33f && y >= 0.85f)
 		{
 			input_touching[i] = false;
@@ -2423,11 +2626,11 @@ void Game::update()
 				camera->viewbob_max_stray = 90 * clipped_x;
 				continue;
 			}
-		}
+		}*/
 	}
 
 	//If modifying viewbob, run forward without checking collisions
-	if(viewbob_menu_state != 0)
+	/*if(viewbob_menu_state != 0)
 	{
 		player->pos.y += Time::udelta_time * PLAYER_RUN_SPEED;
 
@@ -2445,7 +2648,7 @@ void Game::update()
 			player->pos.y = current_building->global_mins.y + 1.0f;
 		}
 		return;
-	}
+	}*/
 
 	camera_roll_tilt_angle = 0.0f;
 	player_goal_yaw = 0.0f;
@@ -2464,9 +2667,7 @@ void Game::update()
 	camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,camera_roll_tilt_angle,5.0f);
 
 	player->angles.y += (player_goal_yaw - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
-	LOGE("Player update");
 	player->update();
-	LOGE("end Player update");
 	player_anim_special_events();
 	player_state_logic();
 }
@@ -2478,7 +2679,6 @@ void Game::render()
 	player_skel->transform_calculated = false;
 	camera->transform_calculated = false;
 	player->transform_calculated = false;
-	test_sound_source->transform_calculated = false;
 	cam_to_bone->transform_calculated = false;
 
 	for(int i = 0; i < MAX_BUILDINGS; i++)
@@ -2526,8 +2726,7 @@ void Game::render()
 	}
 
 	skybox->render(view_no_translation);
-	//Have to draw transparent objects after skybox
-	test_sound_source->render(vp);
+	//Rendering transparent objects after skybox
 
 	//buildings[0]->render_transparent_meshes(player->pos,vp);
 	for(int i = 0; i < MAX_BUILDINGS; i++)
@@ -2536,7 +2735,7 @@ void Game::render()
 	}
 
 	//draw_floor_collision_voxels(vp);
-	draw_floor_maneuvers(vp);
+	//draw_floor_maneuvers(vp);
 	//if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
 	//	draw_player_bbox(vp);
 
@@ -2550,7 +2749,7 @@ void Game::render()
 	//snprintf(time_str,20,"t=%f",t);
 	//test_text->set_text(time_str);
 
-	if(player_state != PLAYER_STATE_NOCLIP && player_state != PLAYER_STATE_CAM_FLY)
+	/*if(player_state != PLAYER_STATE_NOCLIP && player_state != PLAYER_STATE_CAM_FLY)
 	{
 		//"Edit	Reset Vbob"
 		if(viewbob_menu_state == 0)
@@ -2575,7 +2774,7 @@ void Game::render()
 		//snprintf(test_viewbob_str,40,"t=%f",t);
 		//test_text->set_text(test_viewbob_str);
 		test_text->render(camera->ortho_proj_m);
-	}
+	}*/
 
 	if(player_state == PLAYER_STATE_NOCLIP)
 	{
