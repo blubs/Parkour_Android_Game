@@ -1447,7 +1447,6 @@ public:
 
 		//=========== BSP Floor Generation ============
 		LOGE("BSP Floor generation started");
-		/*
 		//Allocating the max possible number of rooms that can be created
 		Room room_stack[(length-1) * (width-1)];
 		Room* last_room_ptr = room_stack;
@@ -1483,7 +1482,7 @@ public:
 			{
 				set_hor_wall_tiles(ptr);
 			}
-		}*/
+		}
 		// ============ end BSP Floor Generation ============
 
 		// ============ Player Route Generation =============
@@ -1493,7 +1492,6 @@ public:
 		goal_max_column = _goal_max_column;
 
 		// ==================================================
-		/*
 		branch_debug_point_count = 0;
 		//Allowing 1 tile of room before any branching is allowed
 		tile_branch_type[player_start_column][0] = BRANCH_TYPE_FROM_FORWARD | BRANCH_TYPE_FORWARD;
@@ -1531,7 +1529,7 @@ public:
 					}
 				}
 			}
-		}*/
+		}
 
 		// =========== end Player Route Generation ===========
 
