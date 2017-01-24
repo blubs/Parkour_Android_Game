@@ -186,7 +186,7 @@ void Global_Tiles::term_data()
 
 Global_Tiles::Global_Tiles()
 {
-	sky_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
+	sky_cube_map = new Cube_Map("cube_maps/sky_cm.pkm",512);
 
 	tile_styles[0] = new Interior_Style();
 
@@ -194,7 +194,7 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->variants[0]->normal_map = new Texture("textures/tiles/s0v1_nor.pkm",2048,2048);
 	tile_styles[0]->variants[0]->misc_map = new Texture("textures/tiles/s0v1_misc.pkm",2048,2048);
 	tile_styles[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
-	tile_styles[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/test_cube_map.pkm",512);
+	tile_styles[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/sky_cm.pkm",512);
 
 	//tile_styles[0]->type[0]->model->load_model();
 	//tile_styles[0]->type[0]->collision_map = new Collision_Map();
