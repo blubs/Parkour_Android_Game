@@ -2742,7 +2742,7 @@ void Game::render()
 	//=============================== Screen UI rendering begins here ===============================
 	render_screen_overlay();
 	//Test UI image
-	test_img->render(camera->ortho_proj_m);
+	//test_img->render(camera->ortho_proj_m);
 
 	//Test UI Text
 	//char time_str[20];
