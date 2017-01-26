@@ -116,9 +116,6 @@ public:
 	Player *player = NULL;
 	Entity_Bone_Joint *cam_to_bone = NULL;
 
-	UI_Text *test_text = NULL;
-	UI_Image *test_img = NULL;
-
 	Skybox *skybox = NULL;
 
 	Building **buildings;

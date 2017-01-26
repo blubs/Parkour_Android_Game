@@ -644,23 +644,8 @@ void Game::start()
 
 
 	//===== Instantiating Game Objects =====
-	test_text = new UI_Text(text_mat,char_set);
 	//Setting default text mat/shader/charset tex
 	UI_Text::set_default_values(text_mat,char_set);
-	//test_text->set_text("test\nT  E\n\nST !@\n#$%^&*()");
-	//test_text->set_text("Pause\npause\nPAUSE\n\nPlay\nplay\nPLAY\n\nExit\nexit\nEXIT\n\ntest_text->set_text(\"Stuff\")");
-	test_text->set_text(" ");
-	//Place in top leftish corner
-	test_text->pos.x = -screen_width * 0.4f;
-	test_text->pos.y = screen_height * 0.4f;
-
-	test_img = new UI_Image(text_mat,test_texture);
-	test_img->pos.x = screen_width*0.5f - 100.0f;
-	test_img->pos.y = screen_height*0.5f - 100.0f;
-	test_img->scale.x = 200.0f;
-	test_img->uv_maxs.x = 0.6f;
-	test_img->uv_mins.y = 0.5f;
-	test_img->maintain_aspect_ratio = true;
 
 	player->player_model1 = test_arms;
 	player->player_model2 = test_torso;
@@ -780,8 +765,6 @@ void Game::finish()
 	Global_Tiles::term_data();
 
 	delete[] buildings;
-	delete test_text;
-	delete test_img;
 
 	delete player;
 	delete player_skel;
@@ -2741,13 +2724,6 @@ void Game::render()
 
 	//=============================== Screen UI rendering begins here ===============================
 	render_screen_overlay();
-	//Test UI image
-	//test_img->render(camera->ortho_proj_m);
-
-	//Test UI Text
-	//char time_str[20];
-	//snprintf(time_str,20,"t=%f",t);
-	//test_text->set_text(time_str);
 
 	/*if(player_state != PLAYER_STATE_NOCLIP && player_state != PLAYER_STATE_CAM_FLY)
 	{
