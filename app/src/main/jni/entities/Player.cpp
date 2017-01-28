@@ -6,11 +6,7 @@
 
 int Player::render(Mat4 vp)
 {
-	//if(!mat)
-	//	return 1;
-
 	//TODO: implement more general player model rendering, not so hard-coded
-	//mat->bind_material();
 	mat1->bind_material();
 	player_model1->render(Mat4::IDENTITY(),vp,mat1,skel);
 	mat2->bind_material();
