@@ -9,9 +9,6 @@ Floor::Floor()
 	global_pos = Vec3(0,0,0);
 	altitude = 0;
 }
-Floor::~Floor()
-{
-}
 
 void Floor::clear_floor_tiles()
 {
