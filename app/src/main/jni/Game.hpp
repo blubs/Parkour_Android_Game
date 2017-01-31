@@ -47,9 +47,9 @@ public:
 	Sound_Sample *snd_jumpwind = NULL;
 	Sound_Sample *snd_death_impact = NULL;
 	Sound_Sample *snd_death_trans = NULL;
-	Sound_Sample *snd_breath;
-	Sound_Sample *snd_breath_jump;
-	Sound_Sample *snd_breath_land;
+	Sound_Sample *snd_breath = NULL;
+	Sound_Sample *snd_breath_jump = NULL;
+	Sound_Sample *snd_breath_land = NULL;
 
 	Sound_Sample *footstep_sounds[8];
 
@@ -58,11 +58,18 @@ public:
 	Sound_Sample *snd_hand_contact_high = NULL;
 	Sound_Sample *snd_slide = NULL;
 
+	Sound_Sample *snd_roll = NULL;
+	Sound_Sample *snd_hip_contact = NULL;
+	Sound_Sample *snd_land_contact = NULL;
+	Sound_Sample *snd_kick_elevator = NULL;
+	Sound_Sample *snd_hand_metal_contact = NULL;
+	Sound_Sample *snd_body_hit_slide = NULL;
 
-	Sound_Source* player_breath_src = NULL;
 
-	Sound_Source* office_ambience_src = NULL;
-	Sound_Source* highrise_ambience_src = NULL;
+	Sound_Source *player_breath_src = NULL;
+
+	Sound_Source *office_ambience_src = NULL;
+	Sound_Source *highrise_ambience_src = NULL;
 
 	//-------------- Shaders ------------------
 	Shader *test_shader = NULL;

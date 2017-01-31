@@ -332,6 +332,14 @@ int Game::load_sounds()
 	snd_hand_contact_high = new Sound_Sample("sounds/hand_contact_hard.raw");
 	snd_slide = new Sound_Sample("sounds/slide.raw");
 
+	//FIXME: replace all of these sounds with the correct sounds
+	snd_roll = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_hip_contact = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_land_contact = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_kick_elevator = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_hand_metal_contact = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_body_hit_slide = new Sound_Sample("sounds/hand_contact_hard.raw");
+
 	return 1;
 }
 void Game::unload_sounds()
@@ -356,6 +364,13 @@ void Game::unload_sounds()
 	delete snd_hand_contact_mid;
 	delete snd_hand_contact_high;
 	delete snd_slide;
+
+	delete snd_roll;
+	delete snd_hip_contact;
+	delete snd_land_contact;
+	delete snd_kick_elevator;
+	delete snd_hand_metal_contact;
+	delete snd_body_hit_slide;
 }
 
 int Game::load_assets()
@@ -1908,13 +1923,14 @@ void Game::player_anim_special_events()
 				}
 				break;
 			}
-			/*case PLAYER_ANIM_DIVE_END:
+			case PLAYER_ANIM_DIVE_END:
 			{
-				if(frame == 16)//TODO: play roll sound
+				if(frame == 16)
 				{
+					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				}
 				break;
-			}*/
+			}
 			case PLAYER_ANIM_DASH_VAULT:
 			{
 				if(frame == 1)
@@ -1927,7 +1943,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 60)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -1944,7 +1960,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 43)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -1965,7 +1981,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 45)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -1982,12 +1998,12 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 22)//slide begins
 				{
-					//TODO: hip contacts obst on frame 22
+					player->play_sound(snd_hip_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_slide,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 				}
 				if(frame == 64)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -1998,15 +2014,27 @@ void Game::player_anim_special_events()
 				{
 					player->play_sound(snd_breath_jump,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
-				//TODO: foot on elevator on frame 17
-				//TODO: hands on metal on frame 44
-				//TODO: body hits and slides down metal frame 67
+				if(frame == 17)
+				{
+					player->play_sound(snd_kick_elevator,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 44)
+				{
+					player->play_sound(snd_hand_metal_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				}
+				if(frame == 67)
+				{
+					player->play_sound(snd_body_hit_slide,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				}
 				if(frame == 113)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
-				//TODO: roll on frame 127
+				if(frame == 127)
+				{
+					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				}
 				break;
 			}
 			case PLAYER_ANIM_UNDERBAR:
@@ -2019,10 +2047,10 @@ void Game::player_anim_special_events()
 				{
 					player->play_sound(snd_hand_contact_mid,Vec3(0,0,0),0.4f,SOUND_END_TYPE_STOP);
 				}
-				//TODO: whoosh on frame 22
+				//some sort of whoosh sound on frame 22?
 				if(frame == 32)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -2035,10 +2063,13 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 140)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
-				//TODO: roll on frame 145
+				if(frame == 145)
+				{
+					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				}
 				break;
 			}
 			case PLAYER_ANIM_TRAV_B:
@@ -2050,10 +2081,13 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 139)
 				{
-					//TODO: land contact
+					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
-				//TODO: roll on frame 143
+				if(frame == 143)
+				{
+					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				}
 				break;
 			}
 		}
@@ -2520,8 +2554,7 @@ void Game::update()
 		return;
 	}
 
-	//TODO: handle input here
-	//FIXME: remove this
+	//TODO: handle input here, remove this
 	//Checking touch button interactions
 	//Checking input from all fingers:
 	for(int i = 0; i < MAX_INPUT_TOUCHES; i++)

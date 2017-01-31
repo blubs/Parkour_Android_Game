@@ -260,8 +260,6 @@ void Building::subdivide_wall(Mat4 trans, int wall_width, int wall_height, int* 
 	vert_models[4] = Global_Tiles::instance->window_styles[0]->window_models->m16x1_model;
 	vert_models[5] = Global_Tiles::instance->window_styles[0]->window_models->m32x1_model;
 
-	Mat4 m;
-
 	for(int i = BUILDING_WINDOW_MAX_TILE_MATRIX; i >= 0; i--)
 	{
 		int exp = 1 << i;
@@ -381,7 +379,7 @@ void Building::subdivide_wall(Mat4 trans, int wall_width, int wall_height, int* 
 }
 
 //Subdivide an interior window wall horizontally
-void subdivide_interior_wall(Mat4 trans, int wall_width, int *mdl_count, Static_Model **mdl_list, Mat4 *trans_list)
+void Building::subdivide_interior_wall(Mat4 trans, int wall_width, int *mdl_count, Static_Model **mdl_list, Mat4 *trans_list)
 {
 	Static_Model* hor_models[6];
 	//TODO: change these references depending on the style
@@ -391,8 +389,6 @@ void subdivide_interior_wall(Mat4 trans, int wall_width, int *mdl_count, Static_
 	hor_models[3] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x8_model;
 	hor_models[4] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x16_model;
 	hor_models[5] = Global_Tiles::instance->window_styles[0]->int_window_models->m1x32_model;
-
-	Mat4 m;
 
 	for(int i = BUILDING_WINDOW_MAX_TILE_MATRIX; i >= 0; i--)
 	{
