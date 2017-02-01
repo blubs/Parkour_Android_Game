@@ -333,12 +333,12 @@ int Game::load_sounds()
 	snd_slide = new Sound_Sample("sounds/slide.raw");
 
 	//FIXME: replace all of these sounds with the correct sounds
-	snd_roll = new Sound_Sample("sounds/hand_contact_hard.raw");
-	snd_hip_contact = new Sound_Sample("sounds/hand_contact_hard.raw");
-	snd_land_contact = new Sound_Sample("sounds/hand_contact_hard.raw");
-	snd_kick_elevator = new Sound_Sample("sounds/hand_contact_hard.raw");
-	snd_hand_metal_contact = new Sound_Sample("sounds/hand_contact_hard.raw");
-	snd_body_hit_slide = new Sound_Sample("sounds/hand_contact_hard.raw");
+	snd_roll = new Sound_Sample("sounds/roll.raw");
+	snd_hip_contact = new Sound_Sample("sounds/hip_contact.raw");
+	snd_land_contact = new Sound_Sample("sounds/land_contact.raw");
+	snd_kick_elevator = new Sound_Sample("sounds/kick_elevator.raw");
+	snd_hand_metal_contact = new Sound_Sample("sounds/hand_metal_contact.raw");
+	snd_body_hit_slide = new Sound_Sample("sounds/hit_slide.raw");
 
 	return 1;
 }
