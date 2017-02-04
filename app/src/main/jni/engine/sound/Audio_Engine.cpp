@@ -62,7 +62,7 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		LOGE("Audio Callback: 5");
 #endif
 		Sound_Source* source = &e->sources[i];
-		if(!source->used)
+		if(!source->used && !source->last_used)
 			continue;
 
 		source->transform_calculated = false;
@@ -109,6 +109,14 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		if(last_right_falloff == 0.0f)
 			last_right_falloff = right_falloff;
 
+		//If this source was playing a sound but it's audio has been stopped:
+		//fade out the audio
+		if(!source->used)
+		{
+			left_falloff = 0.0f;
+			right_falloff = 0.0f;
+		}
+
 		float left_falloff_slope = (left_falloff - last_left_falloff) / SND_AUDIO_BUFFER_SIZE;
 		float right_falloff_slope = (right_falloff - last_right_falloff) / SND_AUDIO_BUFFER_SIZE;
 #ifdef DEBUG_AUDIO_CALLBACK
@@ -117,6 +125,7 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 		//Calculate "distance" falloff
 		//Distance emulated between 0 and 50 meters
+
 
 		//How many samples to copy? Until this buffer is full, or the sound file is over (whichever happens first)
 		int smpls_to_copy = SND_AUDIO_BUFFER_SIZE < (source->sound->length - source->sound_pos) ?
@@ -467,6 +476,7 @@ Sound_Source* Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity*
 	}
 
 	source->used = true;
+	source->last_used = true;
 	source->sound = sound_sample;
 	source->sound_pos = 0;
 	source->parent = ent;
