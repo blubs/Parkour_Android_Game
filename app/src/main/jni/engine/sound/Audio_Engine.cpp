@@ -62,7 +62,7 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		LOGE("Audio Callback: 5");
 #endif
 		Sound_Source* source = &e->sources[i];
-		if(!source->used && !source->last_used)
+		if(!source->used)
 			continue;
 
 		source->transform_calculated = false;
@@ -109,9 +109,8 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		if(last_right_falloff == 0.0f)
 			last_right_falloff = right_falloff;
 
-		//If this source was playing a sound but it's audio has been stopped:
-		//fade out the audio
-		if(!source->used)
+		//If this source's audio has been stopped: fade out the audio
+		if(source->stopped)
 		{
 			left_falloff = 0.0f;
 			right_falloff = 0.0f;
@@ -120,16 +119,14 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		float left_falloff_slope = (left_falloff - last_left_falloff) / SND_AUDIO_BUFFER_SIZE;
 		float right_falloff_slope = (right_falloff - last_right_falloff) / SND_AUDIO_BUFFER_SIZE;
 #ifdef DEBUG_AUDIO_CALLBACK
-		LOGE("Audio Callback: 5.2");
+		LOGE("Audio Callback: 5.2: (left_falloff = %f -> %f, right_falloff = %f -> %f",last_left_falloff,left_falloff,last_right_falloff,right_falloff);
 #endif
-
-		//Calculate "distance" falloff
-		//Distance emulated between 0 and 50 meters
-
-
 		//How many samples to copy? Until this buffer is full, or the sound file is over (whichever happens first)
 		int smpls_to_copy = SND_AUDIO_BUFFER_SIZE < (source->sound->length - source->sound_pos) ?
 							SND_AUDIO_BUFFER_SIZE : (source->sound->length - source->sound_pos);
+#ifdef DEBUG_AUDIO_CALLBACK
+		LOGE("smpls to copy: %d, smpls left: %d, buffer_size: %d",smpls_to_copy,(source->sound->length - source->sound_pos),SND_AUDIO_BUFFER_SIZE);
+#endif
 
 		for(int j = 0; j < smpls_to_copy; j++)
 		{
@@ -150,9 +147,18 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 		source->sound_pos += smpls_to_copy;
 
-		if(source->sound_pos >= source->sound->length)
+		if(source->stopped)
 		{
-			if(source->end_type == SOUND_END_TYPE_LOOP)
+			source->clear();
+		}
+		else if(source->sound_pos >= source->sound->length)
+		{
+			//If the sound was explicitly stopped or set to stop
+			if(source->end_type == SOUND_END_TYPE_STOP)
+			{
+				source->clear();
+			}
+			else if(source->end_type == SOUND_END_TYPE_LOOP)
 			{
 				source->sound_pos = 0;
 				//Finish filling the rest of the buffer starting from the beginning of the sound
@@ -171,10 +177,6 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 					e->active_audio_buffer[smpl_ofs + j].r += smp.r;
 					//FIXME: this will lead to clipping for loud audio sources, need to add sounds using a different method
 				}
-			}
-			else if(source->end_type == SOUND_END_TYPE_STOP)
-			{
-				source->used = false;
 			}
 		}
 #ifdef DEBUG_AUDIO_CALLBACK
@@ -207,15 +209,6 @@ Audio_Engine::~Audio_Engine()
 {
 	delete[] sources;
 	term_sl();
-}
-
-void Audio_Engine::play_test_sound ()
-{
-	//if(snd_ch.data == NULL)
-	//	return;
-	//
-	//snd_ch.used = true;
-	//snd_ch.position = 0;
 }
 
 int Audio_Engine::init_sl ()
@@ -476,7 +469,7 @@ Sound_Source* Audio_Engine::play_sound_sample(Sound_Sample* sound_sample,Entity*
 	}
 
 	source->used = true;
-	source->last_used = true;
+	source->stopped = false;
 	source->sound = sound_sample;
 	source->sound_pos = 0;
 	source->parent = ent;

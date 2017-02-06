@@ -19,6 +19,11 @@
 //Enable this to render the game at a lower resolution and upscale it to the game's res
 #define RENDER_AT_LOWER_RES
 
+//=========== Texture Defs =============
+#define TEXTURE_FORMAT_NONE 0
+#define TEXTURE_FORMAT_ETC1 1
+#define TEXTURE_FORMAT_RGBA_8888 2
+
 //============ Skeletal Animation Defs ==========
 #define ANIM_END_TYPE_ROOT_POSE 0
 #define ANIM_END_TYPE_FREEZE 1

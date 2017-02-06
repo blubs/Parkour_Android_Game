@@ -13,6 +13,7 @@ class Texture
 public:
 	const char* raw_data;
 	GLuint gl_id = 0;
+	int texture_format = TEXTURE_FORMAT_NONE;
 	int raw_data_length = 0;
 	int width,height = 0;
 	int init_gl();

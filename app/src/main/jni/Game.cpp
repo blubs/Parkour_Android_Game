@@ -734,9 +734,10 @@ void Game::reset()
 	player->pos.y = current_building->global_mins.y + 1.0f;
 	player->pos.z = BUILDING_GROUNDLEVEL + 15 * WINDOW_TILE_SIZE;
 
-
 	if(office_ambience_src)
+	{
 		office_ambience_src->stop_audio();
+	}
 	office_ambience_src = Audio_Engine::play_sound(snd_office_amb,NULL,player->pos,0,0.6f,SOUND_END_TYPE_LOOP);
 
 	if(highrise_ambience_src)
@@ -755,7 +756,6 @@ void Game::reset()
 	if(player_breath_src)
 	{
 		player_breath_src->stop_audio();
-		player_breath_src = NULL;
 	}
 	player_breath_src = player->play_sound(snd_breath,Vec3(0,0,0),0.6f,SOUND_END_TYPE_LOOP);
 
@@ -1797,6 +1797,25 @@ void Game::start_player_death(char col_dir, char col_type)
 
 	}
 	player_substate = 0.0f;
+
+
+	if(player_breath_src)
+	{
+		player_breath_src->stop_audio();
+		player_breath_src = NULL;
+	}
+	if(office_ambience_src)
+	{
+		office_ambience_src->stop_audio();
+		office_ambience_src = NULL;
+	}
+	if(highrise_ambience_src)
+	{
+		highrise_ambience_src->stop_audio();
+		highrise_ambience_src = NULL;
+	}
+
+
 	player_state = PLAYER_STATE_DEAD;
 	lock_player_rot = true;
 }
@@ -2362,10 +2381,6 @@ void Game::player_state_logic()
 		if(player->pos.z + delta_pos.z <= current_building->active_floor->altitude)
 		{
 			player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
-			if(!player_breath_src)
-			{
-				player_breath_src = player->play_sound(snd_breath,Vec3::ZERO(),0.6f,SOUND_END_TYPE_LOOP);
-			}
 			player_state = PLAYER_STATE_RUNNING;
 			player->pos.z = current_building->active_floor->altitude;
 			player_phys_vel = Vec3::ZERO();
@@ -2696,6 +2711,7 @@ void Game::render()
 	//Setting all transforms to be recalculated
 	player_skel->transform_calculated = false;
 	camera->transform_calculated = false;
+	player_head->transform_calculated = false;
 	player->transform_calculated = false;
 	cam_to_bone->transform_calculated = false;
 
@@ -2789,11 +2805,11 @@ void Game::render()
 
 	if(player_state == PLAYER_STATE_NOCLIP)
 	{
-		UI_Text::draw_text("Mode:\n NOCLIP", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+		//UI_Text::draw_text("Mode:\n NOCLIP", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 	if(player_state == PLAYER_STATE_CAM_FLY)
 	{
-		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+		//UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
 }

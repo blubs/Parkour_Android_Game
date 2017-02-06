@@ -1401,14 +1401,14 @@ void Floor::generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs,Vec3 dims, Vec3
 
 	// =========== end Player Route Generation ===========
 
-	int obst_types[8] = {0,1,4,5,6,7,8,9};
-
 	//TEMP: assigning tiles as obstacles
+	/*int obst_types[8] = {0,1,4,5,6,7,8,9};
+
 	for(int i = 0; i < width && i < 8; i++)
 	{
 		tile_type[i][3] = TILE_TYPE_OBST;
 		tile_subtype[i][3] = obst_types[i];
-	}
+	}*/
 
 
 	LOGE("Populate floor started");

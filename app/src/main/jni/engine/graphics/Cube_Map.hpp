@@ -13,6 +13,7 @@ class Cube_Map
 {
 public:
 	GLuint gl_id = 0;
+	int texture_format = TEXTURE_FORMAT_NONE;
 
 	const char* raw_data_pos_x;
 	int raw_data_p_x_length = 0;

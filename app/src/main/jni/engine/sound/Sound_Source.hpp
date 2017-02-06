@@ -13,7 +13,6 @@ class Sound_Source : public Entity
 {
 public:
 	bool used = false;
-	bool last_used = false;
 
 	int priority = 0;//the lower the priority, the more important TODO: not yet used
 	//Consider adding priority constants for standard values
@@ -28,16 +27,24 @@ public:
 	float last_falloff_L = 0.0f;
 	float last_falloff_R = 0.0f;
 
+	//If stopped is set to true, we fade out the audio in the very next audio buffer cycle
+	bool stopped = false;
+
 	void stop_audio()
 	{
+		stopped = true;
+	}
+
+	void clear()
+	{
 		used = false;
-		priority = 0;
-		sound_pos = 0;
 		volume = 0.0f;
+		sound_pos = 0;
 		sound = NULL;
 		end_type = SOUND_END_TYPE_STOP;
 		last_falloff_L = 0.0f;
 		last_falloff_R = 0.0f;
+		stopped = false;
 	}
 
 };

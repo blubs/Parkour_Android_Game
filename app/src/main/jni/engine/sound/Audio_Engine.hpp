@@ -35,7 +35,6 @@ public:
 	void start_audio();
 	void stop_audio();
 	void pause_audio();
-	void play_test_sound();
 
 	//Engine Sound Data
 	Stereo_Sample audio_buffer1[SND_AUDIO_BUFFER_SIZE];
