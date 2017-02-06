@@ -6,7 +6,7 @@
 #define ENGINE_GAME_HPP
 
 #include "engine/common.hpp"
-#include "entities/Camera.hpp"
+#include "engine/graphics/Camera.hpp"
 #include "entities/Player.hpp"
 #include "engine/graphics/UI.hpp"
 #include "engine/graphics/Skybox.hpp"
@@ -15,6 +15,7 @@
 #include "entities/Building.hpp"
 #include "game/Global_Tiles.hpp"
 #include "game/Dynamic_Model.hpp"
+#include "entities/Player_Head.hpp"
 
 
 class Game
@@ -121,6 +122,7 @@ public:
 	//=========================== Game Object Variables ====================
 	Camera *camera = NULL;
 	Player *player = NULL;
+	Player_Head *player_head = NULL;
 	Entity_Bone_Joint *cam_to_bone = NULL;
 
 	Skybox *skybox = NULL;

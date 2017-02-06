@@ -8,7 +8,7 @@
 #include "SL_Utils.hpp"
 #include "../common.hpp"
 #include "Sound_Source.hpp"
-#include "../../entities/Camera.hpp"
+#include "../graphics/Camera.hpp"
 
 class Audio_Engine
 {

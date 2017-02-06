@@ -10,7 +10,7 @@
 #include "Engine.hpp"
 #include "File_Utils.hpp"
 #include "graphics/GL_Utils.hpp"
-#include "../entities/Camera.hpp"
+#include "graphics/Camera.hpp"
 #include "../entities/Player.hpp"
 
 

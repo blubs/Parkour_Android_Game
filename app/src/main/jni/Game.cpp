@@ -609,6 +609,7 @@ void Game::start()
 {
 	camera = new Camera();
 	player = new Player();
+	player_head = new Player_Head();
 	cam_to_bone = new Entity_Bone_Joint();
 
 	//===== Setting up relationships between game objects ======
@@ -667,7 +668,8 @@ void Game::start()
 	player->player_model3 = test_legs;
 	player->skel = player_skel;
 
-	camera->parent = cam_to_bone;
+	camera->parent = player_head;
+	player_head->parent = cam_to_bone;
 	cam_to_bone->parent_skel = player_skel;
 	cam_to_bone->parent_bone_index = 8; //head bone is at index 8, we could add methods for finding the bone
 	// but we don't need all of that at the moment (since we are never going to parent anything to any other bone)
@@ -783,6 +785,7 @@ void Game::finish()
 
 	delete player;
 	delete player_skel;
+	delete player_head;
 	delete camera;
 	delete cam_to_bone;
 }
@@ -1168,7 +1171,7 @@ void Game::mnvr_movement()
 	//Slight camera roll rotation when turning
 	float tilt_angle = (player->angles.y - mnvr_goal_yaw_rot) * 0.8f;
 	tilt_angle = efmodf(tilt_angle + PI,TWO_PI) - PI;
-	camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,tilt_angle,5.0f);
+	player_head->tilt_angles.z = lerp_wtd_avg(player_head->tilt_angles.z,tilt_angle,5.0f);
 
 	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * mnvr_frame->orient_speed;
 
@@ -1851,9 +1854,8 @@ void Game::player_run()
 	{
 		player_skel->play_anim(PLAYER_ANIM_RUN,ANIM_END_TYPE_LOOP);
 	}
-	camera->set_viewbob(CAM_VIEWBOB_RUNNING);
-
-	camera->update_viewbob();
+	player_head->set_viewbob(CAM_VIEWBOB_RUNNING);
+	player_head->update_viewbob();
 
 	if(player->pos.z > current_building->active_floor->altitude)
 	{
@@ -1893,12 +1895,12 @@ void Game::player_anim_special_events()
 				if(frame == 9)//left foot hit ground
 				{
 					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3::ZERO(),0.05f,SOUND_END_TYPE_STOP);
-					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
+					player_head->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,viewbob_yaw*DEG_TO_RAD,viewbob_roll*DEG_TO_RAD);
 				}
 				if(frame == 24)//right foot hit ground
 				{
 					player->play_sound(footstep_sounds[Random::rand_int_in_range(0,8)],Vec3::ZERO(),0.05f,SOUND_END_TYPE_STOP);
-					camera->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
+					player_head->viewbob_run_footstep(-viewbob_pitch*DEG_TO_RAD,-viewbob_yaw*DEG_TO_RAD,-viewbob_roll*DEG_TO_RAD);
 				}
 				break;
 			}
@@ -2258,16 +2260,16 @@ void Game::player_state_logic()
 
 	if(player_state == PLAYER_STATE_TRAVERSING)
 	{
-		camera->set_viewbob(mnvr_frame->viewbob_type);
-		camera->update_viewbob();
+		player_head->set_viewbob(mnvr_frame->viewbob_type);
+		player_head->update_viewbob();
 		mnvr_movement();
 		return;
 	}
 
 	if(player_state == PLAYER_STATE_MANEUVERING)
 	{
-		camera->set_viewbob(mnvr_frame->viewbob_type);
-		camera->update_viewbob();
+		player_head->set_viewbob(mnvr_frame->viewbob_type);
+		player_head->update_viewbob();
 		mnvr_movement();
 		return;
 	}
@@ -2415,8 +2417,8 @@ void Game::player_state_logic()
 			player_slide_speed = PLAYER_SLIDE_MIN_SPEED;
 
 		player_phys_vel = (Quat(player->angles.y,Vec3::UP()) * Vec3(0,player_slide_speed,0));
-		camera->set_viewbob(CAM_VIEWBOB_SLIDING);
-		camera->update_viewbob();
+		player_head->set_viewbob(CAM_VIEWBOB_SLIDING);
+		player_head->update_viewbob();
 
 		//Setting player collision precedence array
 		cplayer_col_precedence_array = sliding_col_precedence;
@@ -2572,8 +2574,8 @@ void Game::update()
 			player->angles.x = 0.0f;
 			player->angles.y = 0.0f;
 			player->angles.z = 0.0f;
-			camera->viewbob_angles = Vec3::ZERO();
-			camera->viewbob_vel = Vec3::ZERO();
+			player_head->viewbob_angles = Vec3::ZERO();
+			player_head->viewbob_vel = Vec3::ZERO();
 			return;
 		}
 		/*//For toggling viewbob edit menu
@@ -2680,7 +2682,7 @@ void Game::update()
 		camera_roll_tilt_angle = (player->angles.y - player_goal_yaw) * 0.8f;
 		camera_roll_tilt_angle = efmodf(camera_roll_tilt_angle + PI,TWO_PI) - PI;
 	}
-	camera->tilt_angles.z = lerp_wtd_avg(camera->tilt_angles.z,camera_roll_tilt_angle,5.0f);
+	player_head->tilt_angles.z = lerp_wtd_avg(player_head->tilt_angles.z,camera_roll_tilt_angle,5.0f);
 
 	player->angles.y += (player_goal_yaw - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
 	player->update();
