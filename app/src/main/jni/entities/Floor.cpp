@@ -641,6 +641,10 @@ void Floor::recursive_branch_player_path(int tile_x, int tile_y, int prev_branch
 	//This next section modulates probabilities of branching based on certain requirements
 	//================================================================================================================
 
+#ifdef DEBUG_BRANCH_LOGIC
+	LOGE("Modulating branch probabilities");
+#endif
+
 	float mod_prob_l = prob_of_branch_left;
 	float mod_prob_r = prob_of_branch_right;
 	float mod_prob_f = prob_of_branch_forward;
@@ -656,6 +660,10 @@ void Floor::recursive_branch_player_path(int tile_x, int tile_y, int prev_branch
 		mod_prob_l *= prob_of_branch_left_given_branch_right;
 	}
 
+#ifdef DEBUG_BRANCH_LOGIC
+	LOGE("Modulating branch probabilities 1");
+#endif
+
 	//Calculations for ensuring that we branch the player towards somewhere between gmin_x and gmax_x
 	//These are the tiles that line up with the next building
 	//Therefore, the player needs to end up on these tiles to be able to jump to the next building
@@ -663,9 +671,17 @@ void Floor::recursive_branch_player_path(int tile_x, int tile_y, int prev_branch
 	//Getting the nearest column to the one we're on that is in the goal range [gmin_x,gmax_x]
 	int goal_column = clamp(tile_x,goal_min_column,goal_max_column);
 
+#ifdef DEBUG_BRANCH_LOGIC
+	LOGE("Modulating branch probabilities 2");
+#endif
+
 	//We are to the left of the goal column (branch is right)
 	if(tile_x < goal_column)
 	{
+#ifdef DEBUG_BRANCH_LOGIC
+		LOGE("tile_x < goal_column");
+#endif
+
 		prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y);
 #ifdef DEBUG_BRANCH_LOGIC
 		LOGE("Prob of branching to column %d is %.2f",goal_column,prob_of_force_branch);
@@ -706,6 +722,9 @@ void Floor::recursive_branch_player_path(int tile_x, int tile_y, int prev_branch
 	//We are to the right of the goal column (branch is left)
 	if(tile_x > goal_column)
 	{
+#ifdef DEBUG_BRANCH_LOGIC
+		LOGE("tile_x > goal_column");
+#endif
 		prob_of_force_branch = prob_of_branch_to_goal(tile_x,tile_y);
 #ifdef DEBUG_BRANCH_LOGIC
 		LOGE("Prob of branching to column %d is %.2f",goal_column,prob_of_force_branch);
@@ -1135,18 +1154,18 @@ void Floor::recursive_branch_player_path(int tile_x, int tile_y, int prev_branch
 			//We cannot branch left if we branch across a horizontal wall tile
 			case 5:
 #ifdef DEBUG_BRANCH_LOGIC
-				LOGE("Removing xXoo component from tile we branch left across");
+				LOGE("Removing oXoo component from tile we branch left across");
 #endif
-				tile_subtype[tile_x-1][tile_y] &= ~WALL_TYPE_xooo;
+				tile_subtype[tile_x-1][tile_y] &= ~WALL_TYPE_oXoo;
 				if(!tile_subtype[tile_x-1][tile_y])
 					tile_type[tile_x-1][tile_y] = TILE_TYPE_EMPT;
 				break;
 			//We cannot branch right if we branch across a horizontal wall tile
 			case 6:
 #ifdef DEBUG_BRANCH_LOGIC
-				LOGE("Removing xXoo component from tile we branch right across");
+				LOGE("Removing xooo component from tile we branch right across");
 #endif
-				tile_subtype[tile_x+1][tile_y] &= ~WALL_TYPE_oXoo;
+				tile_subtype[tile_x+1][tile_y] &= ~WALL_TYPE_xooo;
 				if(!tile_subtype[tile_x+1][tile_y])
 					tile_type[tile_x+1][tile_y] = TILE_TYPE_EMPT;
 				break;
@@ -1321,14 +1340,18 @@ void Floor::generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs,Vec3 dims, Vec3
 
 	*last_room_ptr = Room(0,2,(char)(width-1),(char)(length-3));//width/length will never exceed 255... we're okay here
 
+	LOGE("BSP Floor generation pre-recursive bsp");
 	recursive_bsp(&last_room_ptr,true);
+	LOGE("BSP Floor generation post-recursive bsp");
 	//last_room_ptr now points to the last room on the stack
 
 
 	Wall unique_walls[length * width * 4];
 	Wall* next_free_wall = unique_walls;
 
+	LOGE("BSP Floor generation pre-get unique walls");
 	get_unique_walls(&next_free_wall, room_stack, last_room_ptr);
+	LOGE("BSP Floor generation post-get unique walls");
 	//next_free_wall now points to one pointer past the last wall assigned
 
 	//Iterating through walls, adding the appropriate collision tile
@@ -1354,7 +1377,7 @@ void Floor::generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs,Vec3 dims, Vec3
 	// ============ end BSP Floor Generation ============
 
 	// ============ Player Route Generation =============
-	//LOGE("Player Route Generation started");
+	LOGE("Player Route Generation started");
 	int player_start_column = (int)floorf((player_pos.x - global_mins.x)/TILE_SIZE);
 	goal_min_column = _goal_min_column;
 	goal_max_column = _goal_max_column;

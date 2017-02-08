@@ -2563,8 +2563,6 @@ void Game::update()
 		}
 	}
 
-
-
 	if(player_state == PLAYER_STATE_NOCLIP || player_state == PLAYER_STATE_CAM_FLY)
 	{
 		player_noclip_logic();

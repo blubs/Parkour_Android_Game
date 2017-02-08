@@ -21,7 +21,7 @@ void main()
 	float wrapped_diffuse = clamp((dot(normal_dir,dirlight_dir_tanspace) + wrap_amount)/(1.0 + wrap_amount),0.0,1.0);
 
 	//Specular shading
-	const float shininess = 5.0;//ranged 1-20
+	const float shininess = 2.0;//ranged 1-20
 	float specular = wrapped_diffuse * pow(clamp(dot(reflect(-dirlight_dir_tanspace,normal_dir),cam_dir_tanspace),0.0,1.0),shininess);
 
 	//Rim light shading

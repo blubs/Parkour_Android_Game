@@ -7,6 +7,9 @@ varying vec3 dirlight_dir_tanspace;
 varying vec3 cam_to_vert_tanspace;
 varying mat3 tan_to_world;
 
+varying vec4 vert_world;
+varying vec3 cam_to_vert_nrmlized;
+
 uniform sampler2D tex_nor;
 uniform sampler2D tex_diff;
 uniform sampler2D tex_misc;
@@ -46,6 +49,22 @@ void main()
 	vec3 misc_data = texture2D(tex_misc,v_uv_1).rgb;
 	vec3 color = mix(texture2D(tex_diff,v_uv_1).rgb,ref_color,misc_data.r);
 
-	gl_FragColor = vec4(color*light_power, 1.0);
-	//gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+	//Height based-fog
+	//Because these values never change, we can just embed them in the shader
+	//Where the fog starts vertically
+	float fog_height = 10.0;
+	//Where the fog ends verticalls
+	float fog_depth = -45.0;
+	//Where the fog starts from camera (distance squared)
+	float fog_start = 250.0;
+	//Where the fog ends from camera (distance squared)
+	float fog_end = 800.0;
+
+	float fog_weight = 1.0 - clamp((vert_world.z - fog_depth)/(fog_height-fog_depth),0.0,1.0);
+	fog_weight *= clamp((vert_world.w - fog_start)/(fog_end - fog_start),0.0,1.0);
+
+	vec3 sky_color = textureCube(cube_map,cam_to_vert_nrmlized).xyz;
+	vec3 final_color = mix(color*light_power,sky_color,fog_weight);
+
+	gl_FragColor = vec4(final_color, 1.0);
 }
