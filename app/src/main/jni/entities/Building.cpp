@@ -68,9 +68,9 @@ void Building::generate(Building* prev_bldg,Vec3 bldg_ofs)
 
 		lateral_ofs = Random::rand_int_in_range(ofs_min, ofs_max + 1);
 
-		LOGI("Previous building pos:(%.2f,%.2f,%.2f), dims:(%.1f,%.1f,%1.f)",prev_bldg->pos.x,prev_bldg->pos.y,prev_bldg->pos.z,prev_bldg->dimensions.x,prev_bldg->dimensions.y,prev_bldg->dimensions.z);
-		LOGI("Current building dims:(%.1f,%.1f,%1.f)",dimensions.x,dimensions.y,dimensions.z);
-		LOGI("Lateral ofs range: [%d,%d]: res = %d",ofs_min,ofs_max,lateral_ofs);
+		//LOGI("Previous building pos:(%.2f,%.2f,%.2f), dims:(%.1f,%.1f,%1.f)",prev_bldg->pos.x,prev_bldg->pos.y,prev_bldg->pos.z,prev_bldg->dimensions.x,prev_bldg->dimensions.y,prev_bldg->dimensions.z);
+		//LOGI("Current building dims:(%.1f,%.1f,%1.f)",dimensions.x,dimensions.y,dimensions.z);
+		//LOGI("Lateral ofs range: [%d,%d]: res = %d",ofs_min,ofs_max,lateral_ofs);
 
 	}
 	pos = prev_bldg_ofs + bldg_ofs + Vec3(lateral_ofs*TILE_SIZE,0,BUILDING_GROUNDLEVEL);
@@ -100,9 +100,7 @@ void Building::generate_floor(Vec3 player_pos, Building* next_bldg)
 	int goal_max = clamp((int)dimensions.x-1,other_left_endpnt,other_right_endpnt-1);
 
 	active_floor->generate(pos,active_floor_number,global_mins,global_maxs,dimensions,player_pos,goal_min,goal_max);
-	LOGE("Generate interior model list started");
 	generate_interior_model_list();
-	LOGE("Generate interior model list finished");
 }
 
 //Currently regenerates the building using different rng numbers
@@ -140,7 +138,7 @@ void Building::regenerate_floor(Vec3 player_pos, Building* next_bldg)
 
 	int goal_min = clamp(0,other_left_endpnt,other_right_endpnt-1);
 	int goal_max = clamp((int)dimensions.x-1,other_left_endpnt,other_right_endpnt-1);
-	LOGI("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
+	//LOGI("This Building: (x-pos:%.2f, x-dim:%.1f), Next Building: (x-pos:%.2f, x-dim:%.1f), goal range:[%d,%d]",pos.x,dimensions.x,next_bldg->pos.x,next_bldg->dimensions.x,goal_min,goal_max);
 
 	active_floor->generate(pos,active_floor_number,global_mins,global_maxs,dimensions,player_pos,goal_min,goal_max);
 }
@@ -442,41 +440,34 @@ void Building::generate_exterior_model_list()
 	wall_orient = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
 	subdivide_wall(wall_orient,(int)dimensions.y,(int)dimensions.z,&ext_mdl_lw_count,ext_mdls_lw,ext_mdl_lw_trans);
 
-	LOGI("Exterior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
-	ext_mdl_fw_count + ext_mdl_bw_count + ext_mdl_rw_count + ext_mdl_lw_count,
-		ext_mdl_fw_count, ext_mdl_bw_count, ext_mdl_rw_count, ext_mdl_lw_count);
+	//LOGI("Exterior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
+	//ext_mdl_fw_count + ext_mdl_bw_count + ext_mdl_rw_count + ext_mdl_lw_count,
+	//	ext_mdl_fw_count, ext_mdl_bw_count, ext_mdl_rw_count, ext_mdl_lw_count);
 }
+
 
 void Building::generate_interior_model_list()
 {
 	//TODO: set exterior style model
 	//Generating the front inside wall of the building
 	Mat4 world_trans = Mat4::TRANSLATE(Vec3(0,0,active_floor_number*WINDOW_TILE_SIZE));
-	LOGE("Subdivide front wall: dims: %.1f, fw_count:%d",dimensions.x,int_mdl_fw_count);
 	subdivide_interior_wall(world_trans,(int)dimensions.x,&int_mdl_fw_count,int_mdls_fw,int_mdl_fw_trans);
-	LOGE("front interior wall finished");
 
 	//Generating the back inside wall of the building
-	LOGE("Subdivide back wall: dims: %.1f, bw_count:%d",dimensions.x,int_mdl_bw_count);
 	Mat4 wall_orient = world_trans * Mat4::TRANSLATE(Vec3(size.x,size.y,0)) * Mat4::ROTATE(Quat(PI,Vec3::UP()));
 	subdivide_interior_wall(wall_orient,(int)dimensions.x,&int_mdl_bw_count,int_mdls_bw,int_mdl_bw_trans);
-	LOGE("back interior wall finished");
 
 	//Generating the right inside wall of the building
-	LOGE("Subdivide right wall: dims: %.1f, rw_count:%d",dimensions.y,int_mdl_rw_count);
 	wall_orient = world_trans * Mat4::TRANSLATE(Vec3(size.x,0,0)) * Mat4::ROTATE(Quat(HALF_PI,Vec3::UP()));
 	subdivide_interior_wall(wall_orient,(int)dimensions.y,&int_mdl_rw_count,int_mdls_rw,int_mdl_rw_trans);
-	LOGE("right interior wall finished");
 
 	//Generating the left inside wall of the building
-	LOGE("Subdivide left wall: dims: %.1f, lw_count:%d",dimensions.y,int_mdl_lw_count);
 	wall_orient = world_trans * Mat4::TRANSLATE(Vec3(0,size.y,0)) * Mat4::ROTATE(Quat(HALF_PI+PI,Vec3::UP()));
 	subdivide_interior_wall(wall_orient,(int)dimensions.y,&int_mdl_lw_count,int_mdls_lw,int_mdl_lw_trans);
-	LOGE("left interior wall finished");
 
-	LOGI("Interior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
-		int_mdl_fw_count + int_mdl_bw_count + int_mdl_rw_count + int_mdl_lw_count,
-		int_mdl_fw_count, int_mdl_bw_count, int_mdl_rw_count, int_mdl_lw_count);
+	//LOGI("Interior model list generation finished using %d (f%d,b%d,r%d,l%d) models",
+	//	int_mdl_fw_count + int_mdl_bw_count + int_mdl_rw_count + int_mdl_lw_count,
+	//	int_mdl_fw_count, int_mdl_bw_count, int_mdl_rw_count, int_mdl_lw_count);
 }
 
 
