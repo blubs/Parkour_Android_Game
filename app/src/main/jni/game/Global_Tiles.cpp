@@ -668,7 +668,7 @@ Global_Tiles::Global_Tiles()
 	frames[3]->set_bounds(Vec3(1.75,1.75,0));
 	frames[3]->set_speed(0.8f,0,0);
 	//End Maneuver
-	frames[4]->set_bounds(Vec3(1.75,2.3,0));
+	frames[4]->set_bounds(Vec3(1.75,2.28,0));
 	//=================================================
 	//dash vault over decor [8]
 	//=================================================

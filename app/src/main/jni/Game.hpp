@@ -44,7 +44,8 @@ public:
 	Sound_Sample *test_pulse = NULL;
 	Sound_Sample *snd_office_amb = NULL;
 	Sound_Sample *snd_highrise_amb = NULL;
-	Sound_Sample *snd_winbreak = NULL;
+	Sound_Sample *snd_winbreak_out = NULL;
+	Sound_Sample *snd_winbreak_in = NULL;
 	Sound_Sample *snd_jumpwind = NULL;
 	Sound_Sample *snd_death_impact = NULL;
 	Sound_Sample *snd_death_trans = NULL;

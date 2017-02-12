@@ -309,7 +309,8 @@ int Game::load_sounds()
 	test_pulse = new Sound_Sample("sounds/test_audio_pulse.raw");
 	snd_office_amb = new Sound_Sample("sounds/office_amb.raw");
 	snd_highrise_amb = new Sound_Sample("sounds/highrise_amb.raw");
-	snd_winbreak = new Sound_Sample("sounds/break_glass.raw");
+	snd_winbreak_in = new Sound_Sample("sounds/break_glass_in.raw");
+	snd_winbreak_out = new Sound_Sample("sounds/break_glass_out.raw");
 	snd_jumpwind = new Sound_Sample("sounds/jump_wind.raw");
 	snd_death_impact = new Sound_Sample("sounds/death_impact.raw");
 	snd_death_trans = new Sound_Sample("sounds/death_trans.raw");
@@ -355,7 +356,8 @@ void Game::unload_sounds()
 	delete snd_breath_land;
 	delete snd_office_amb;
 	delete snd_highrise_amb;
-	delete snd_winbreak;
+	delete snd_winbreak_in;
+	delete snd_winbreak_out;
 	delete snd_jumpwind;
 	delete snd_death_impact;
 	delete snd_death_trans;
@@ -1208,7 +1210,7 @@ void Game::reached_mnvr_keyframe ()
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_OUT:
 				current_building->break_window(player->pos,false);
-				player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				player->play_sound(snd_winbreak_out,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				player->play_sound(snd_jumpwind,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				//If we are leaving the middle building, recycle a building
 				if(bldgs_jumped >= MAX_BUILDINGS/2 || recycle_every_time)
@@ -1256,7 +1258,7 @@ void Game::reached_mnvr_keyframe ()
 
 				current_building->generate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
 				current_building->break_window(player->pos,true);
-				player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				player->play_sound(snd_winbreak_in,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				break;
 			}
 		}
@@ -1700,7 +1702,7 @@ void Game::start_player_death(char col_dir, char col_type)
 					if(is_in_traversal_x_bounds(player->pos))
 					{
 						current_building->break_window(player->pos,false);
-						player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+						player->play_sound(snd_winbreak_out,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 						player_skel->play_anim(PLAYER_ANIM_DEATH_HITWINDOW,ANIM_END_TYPE_FREEZE);
 						player_substate_time = t + 1.0f;
 						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
@@ -1767,7 +1769,7 @@ void Game::start_player_death(char col_dir, char col_type)
 					if(is_in_traversal_x_bounds(player->pos))
 					{
 						current_building->break_window(player->pos,false);
-						player->play_sound(snd_winbreak,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+						player->play_sound(snd_winbreak_out,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 						player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITWINDOW,ANIM_END_TYPE_FREEZE);
 						player_substate_time = t + 1.0f;
 						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
@@ -2583,6 +2585,8 @@ void Game::update()
 		if(x >= 0.66f && y >= 0.85f)
 		{
 			player_state = PLAYER_STATE_NOCLIP;
+			black_overlay_opacity = 0.0f;
+			white_overlay_opacity = 0.0f;
 			input_touching[i] = false;
 			player->angles.x = 0.0f;
 			player->angles.y = 0.0f;
