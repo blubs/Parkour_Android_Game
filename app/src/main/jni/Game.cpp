@@ -333,7 +333,6 @@ int Game::load_sounds()
 	snd_hand_contact_high = new Sound_Sample("sounds/hand_contact_hard.raw");
 	snd_slide = new Sound_Sample("sounds/slide.raw");
 
-	//FIXME: replace all of these sounds with the correct sounds
 	snd_roll = new Sound_Sample("sounds/roll.raw");
 	snd_hip_contact = new Sound_Sample("sounds/hip_contact.raw");
 	snd_land_contact = new Sound_Sample("sounds/land_contact.raw");
@@ -1210,7 +1209,7 @@ void Game::reached_mnvr_keyframe ()
 				break;
 			case FRAME_SPECFLAG_BREAKWINDOW_OUT:
 				current_building->break_window(player->pos,false);
-				player->play_sound(snd_winbreak_out,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				player->play_sound(snd_winbreak_out,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 				player->play_sound(snd_jumpwind,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
 				//If we are leaving the middle building, recycle a building
 				if(bldgs_jumped >= MAX_BUILDINGS/2 || recycle_every_time)
@@ -1258,7 +1257,7 @@ void Game::reached_mnvr_keyframe ()
 
 				current_building->generate_floor(player->pos,buildings[NEXT_BLDG[cbldg_index]]);
 				current_building->break_window(player->pos,true);
-				player->play_sound(snd_winbreak_in,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+				player->play_sound(snd_winbreak_in,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 				break;
 			}
 		}
@@ -1702,7 +1701,7 @@ void Game::start_player_death(char col_dir, char col_type)
 					if(is_in_traversal_x_bounds(player->pos))
 					{
 						current_building->break_window(player->pos,false);
-						player->play_sound(snd_winbreak_out,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+						player->play_sound(snd_winbreak_out,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 						player_skel->play_anim(PLAYER_ANIM_DEATH_HITWINDOW,ANIM_END_TYPE_FREEZE);
 						player_substate_time = t + 1.0f;
 						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
@@ -1769,7 +1768,7 @@ void Game::start_player_death(char col_dir, char col_type)
 					if(is_in_traversal_x_bounds(player->pos))
 					{
 						current_building->break_window(player->pos,false);
-						player->play_sound(snd_winbreak_out,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+						player->play_sound(snd_winbreak_out,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 						player_skel->play_anim(PLAYER_ANIM_DEATH_SLIDEHITWINDOW,ANIM_END_TYPE_FREEZE);
 						player_substate_time = t + 1.0f;
 						player_substate_time2 = player_substate_time + DEATH_TIME_BLACK_SCREEN_FALLING_FADEIN;
@@ -1817,6 +1816,7 @@ void Game::start_player_death(char col_dir, char col_type)
 		highrise_ambience_src = NULL;
 	}
 
+	player->play_sound(snd_death_impact,Vec3::ZERO(),0.5f,SOUND_END_TYPE_STOP);
 
 	player_state = PLAYER_STATE_DEAD;
 	lock_player_rot = true;
@@ -1950,7 +1950,7 @@ void Game::player_anim_special_events()
 			{
 				if(frame == 16)
 				{
-					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_roll,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
 				}
 				break;
 			}
@@ -2039,15 +2039,15 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 17)
 				{
-					player->play_sound(snd_kick_elevator,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_kick_elevator,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 				}
 				if(frame == 44)
 				{
-					player->play_sound(snd_hand_metal_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_hand_metal_contact,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 				}
 				if(frame == 67)
 				{
-					player->play_sound(snd_body_hit_slide,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_body_hit_slide,Vec3(0,0,0),0.8f,SOUND_END_TYPE_STOP);
 				}
 				if(frame == 113)
 				{
@@ -2056,7 +2056,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 127)
 				{
-					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_roll,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
 				}
 				break;
 			}
@@ -2091,7 +2091,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 145)
 				{
-					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_roll,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
 				}
 				break;
 			}
@@ -2109,7 +2109,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 143)
 				{
-					player->play_sound(snd_roll,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_roll,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
 				}
 				break;
 			}
