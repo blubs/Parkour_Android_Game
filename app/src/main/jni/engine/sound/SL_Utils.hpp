@@ -13,6 +13,13 @@ struct Stereo_Sample
 	short r;
 };
 
+//Double the size for intermediate calculations without early clipping
+struct Large_Stereo_Sample
+{
+	int l;
+	int r;
+};
+
 //Nothing here yet
 class SL_Utils
 {

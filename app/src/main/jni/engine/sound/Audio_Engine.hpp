@@ -42,6 +42,9 @@ public:
 	Stereo_Sample* active_audio_buffer;
 	Stereo_Sample* inactive_audio_buffer;
 
+	//Temporary buffers with a larger bit width for dsp calculations
+	Large_Stereo_Sample temp_audio_buffer[SND_AUDIO_BUFFER_SIZE];
+
 	//List of sound sources
 	Sound_Source* sources;
 

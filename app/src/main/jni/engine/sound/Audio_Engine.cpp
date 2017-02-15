@@ -8,6 +8,33 @@
 
 Audio_Engine* Audio_Engine::instance = NULL;
 
+
+//DSCP compressor values
+#define DSP_CMPR_CONST_A -0.2f
+#define DSP_CMPR_CONST_B 1.1f
+
+inline float dsp_compressor_func(float x)
+{
+	return ((DSP_CMPR_CONST_B * x) + (DSP_CMPR_CONST_A * x * x * x));
+}
+
+#define DSP_CMPR_MAX 1.5f
+#define DSP_CMPR_FUNC_VAL_AT_MAX dsp_compressor_func(DSP_CMPR_MAX)
+
+
+inline float dsp_compressor(float val)
+{
+	if(val <= -DSP_CMPR_MAX)
+	{
+		return -DSP_CMPR_FUNC_VAL_AT_MAX;
+	}
+	if(val >= DSP_CMPR_MAX)
+	{
+		return DSP_CMPR_FUNC_VAL_AT_MAX;
+	}
+	return dsp_compressor_func(val);
+}
+
 //#define DEBUG_AUDIO_CALLBACK
 //Callback for swapping audio buffers
 void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
@@ -30,6 +57,9 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 	//Wipe the current audio buffer
 	memset(e->active_audio_buffer, 0, sizeof(Stereo_Sample) * SND_AUDIO_BUFFER_SIZE);
+	//Wipe the temp audio buffer
+	memset(e->temp_audio_buffer, 0, sizeof(Large_Stereo_Sample) * SND_AUDIO_BUFFER_SIZE);
+
 	//For sound effect interpolation
 	//Last value to current value in SND_AUDIO_BUFFER_SIZE.
 	//equation: lerped_effect = i*((cur_effect - last_effect)/SND_AUDIO_BUFFER_SIZE) + last_effect
@@ -80,8 +110,7 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 		float distance_falloff = 1.0f / pos.len();//This is for inverse falloff
 
-		distance_falloff = fminf(1.0f, distance_falloff);
-		distance_falloff = fmaxf(0.0f, distance_falloff);
+		distance_falloff = clampf(distance_falloff,0.0f,1.0f);
 		//TODO: handle constant and inverse square falloff
 		right_falloff = pos.normalized() * listener_right;
 		//Bringing dot product between 0 and 1
@@ -128,6 +157,7 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		LOGE("smpls to copy: %d, smpls left: %d, buffer_size: %d",smpls_to_copy,(source->sound->length - source->sound_pos),SND_AUDIO_BUFFER_SIZE);
 #endif
 
+		Large_Stereo_Sample lsmp;
 		for(int j = 0; j < smpls_to_copy; j++)
 		{
 			//Calculating current lerped falloff
@@ -135,16 +165,14 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 			right_falloff = right_falloff_slope * j + last_right_falloff;
 
 			Stereo_Sample smp = *((Stereo_Sample *) (source->sound->raw_data) + (j + source->sound_pos));
-			smp.l *= left_falloff;
-			smp.r *= right_falloff;
-			e->active_audio_buffer[j].l += smp.l;
-			e->active_audio_buffer[j].r += smp.r;
-			//FIXME: this will lead to clipping for loud audio sources, need to add sounds using a different method
+			lsmp.l = (int)(smp.l * left_falloff);
+			lsmp.r = (int)(smp.r * right_falloff);
+			e->temp_audio_buffer[j].l += lsmp.l;
+			e->temp_audio_buffer[j].r += lsmp.r;
 		}
 #ifdef DEBUG_AUDIO_CALLBACK
 		LOGE("Audio Callback: 5.3");
 #endif
-
 		source->sound_pos += smpls_to_copy;
 
 		if(source->stopped)
@@ -153,11 +181,12 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		}
 		else if(source->sound_pos >= source->sound->length)
 		{
-			//If the sound was explicitly stopped or set to stop
+			//If the end type is stop
 			if(source->end_type == SOUND_END_TYPE_STOP)
 			{
 				source->clear();
 			}
+			//If we are looping the sound, start again at the beginning
 			else if(source->end_type == SOUND_END_TYPE_LOOP)
 			{
 				source->sound_pos = 0;
@@ -171,22 +200,52 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 					right_falloff = right_falloff_slope * j + last_right_falloff;
 
 					Stereo_Sample smp = *((Stereo_Sample *) (source->sound->raw_data) + (j + source->sound_pos));
-					smp.l *= left_falloff;
-					smp.r *= right_falloff;
-					e->active_audio_buffer[smpl_ofs + j].l += smp.l;
-					e->active_audio_buffer[smpl_ofs + j].r += smp.r;
-					//FIXME: this will lead to clipping for loud audio sources, need to add sounds using a different method
+					lsmp.l = (int)(smp.l * left_falloff);
+					lsmp.r = (int)(smp.r * right_falloff);
+					e->temp_audio_buffer[smpl_ofs + j].l += lsmp.l;
+					e->temp_audio_buffer[smpl_ofs + j].r += lsmp.r;
 				}
 			}
 		}
+
 #ifdef DEBUG_AUDIO_CALLBACK
 		LOGE("Audio Callback: 5.4");
 #endif
 	}
-	//Send the prepared audio buffer
+
+
+	const float short_to_float = 1.0f/SHRT_MAX;
+
+	float sample_l;
+	float sample_r;
+
+	//Adding a compressor to the filled audio buffer
+	for(int i=0; i<SND_AUDIO_BUFFER_SIZE;i++)
+	{
+		sample_l = e->temp_audio_buffer[i].l * short_to_float;
+		sample_r = e->temp_audio_buffer[i].r * short_to_float;
+
+		sample_l = dsp_compressor(sample_l);
+		sample_r = dsp_compressor(sample_r);
+
+		if(sample_l >= 1.0f)
+		{
+			LOGE("clipped sample L!");
+		}
+		if(sample_r >= 1.0f)
+		{
+			LOGE("clipped sample R!");
+		}
+
+		e->active_audio_buffer[i].l = (short) (sample_l * SHRT_MAX);
+		e->active_audio_buffer[i].r = (short) (sample_r * SHRT_MAX);
+	}
+		//Send the prepared audio buffer
 #ifdef DEBUG_AUDIO_CALLBACK
 	LOGE("Audio Callback: 6");
 #endif
+
+
 	(*(snd_queue))->Enqueue(snd_queue, e->active_audio_buffer, sizeof(Stereo_Sample) * SND_AUDIO_BUFFER_SIZE);
 #ifdef DEBUG_AUDIO_CALLBACK
 	LOGE("Audio Callback: 7 (end)");
