@@ -225,8 +225,12 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 		sample_l = e->temp_audio_buffer[i].l * short_to_float;
 		sample_r = e->temp_audio_buffer[i].r * short_to_float;
 
-		sample_l = dsp_compressor(sample_l);
-		sample_r = dsp_compressor(sample_r);
+		//sample_l = dsp_compressor(sample_l);
+		//sample_r = dsp_compressor(sample_r);
+
+		//Testing higher compression to see if this will get rid of the audio clipping
+		sample_l *= 0.2f;
+		sample_r *= 0.2f;
 
 		if(sample_l >= 1.0f)
 		{
