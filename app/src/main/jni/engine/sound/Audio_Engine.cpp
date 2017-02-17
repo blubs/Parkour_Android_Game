@@ -156,7 +156,6 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 #ifdef DEBUG_AUDIO_CALLBACK
 		LOGE("smpls to copy: %d, smpls left: %d, buffer_size: %d",smpls_to_copy,(source->sound->length - source->sound_pos),SND_AUDIO_BUFFER_SIZE);
 #endif
-
 		Large_Stereo_Sample lsmp;
 		for(int j = 0; j < smpls_to_copy; j++)
 		{
@@ -165,6 +164,18 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 			right_falloff = right_falloff_slope * j + last_right_falloff;
 
 			Stereo_Sample smp = *((Stereo_Sample *) (source->sound->raw_data) + (j + source->sound_pos));
+
+			if(smp.l >= SHRT_MAX || smp.r >= SHRT_MAX)
+			{
+				LOGE("Warning: audio source[%d] sample[%d] has max audio values (%d,%d)",i,j,smp.l,smp.r);
+			}
+			//LOGE("\t\tsample[%d] SrcVal:(%hi,%hi) falloff:(%f,%f) calc(%i,%i), buffer val:(%i,%i) result(%i,%i)",
+			//	j,smp.l,smp.r,
+			//	left_falloff,right_falloff,
+			//	(int)(smp.l * left_falloff),(int)(smp.r * right_falloff),
+			//	e->temp_audio_buffer[j].l,e->temp_audio_buffer[j].r,
+			//	e->temp_audio_buffer[j].l + (int)(smp.l * left_falloff),e->temp_audio_buffer[j].r + (int)(smp.r * right_falloff));
+
 			lsmp.l = (int)(smp.l * left_falloff);
 			lsmp.r = (int)(smp.r * right_falloff);
 			e->temp_audio_buffer[j].l += lsmp.l;
@@ -227,19 +238,6 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 		//sample_l = dsp_compressor(sample_l);
 		//sample_r = dsp_compressor(sample_r);
-
-		//Testing higher compression to see if this will get rid of the audio clipping
-		sample_l *= 0.2f;
-		sample_r *= 0.2f;
-
-		if(sample_l >= 1.0f)
-		{
-			LOGE("clipped sample L!");
-		}
-		if(sample_r >= 1.0f)
-		{
-			LOGE("clipped sample R!");
-		}
 
 		e->active_audio_buffer[i].l = (short) (sample_l * SHRT_MAX);
 		e->active_audio_buffer[i].r = (short) (sample_r * SHRT_MAX);
