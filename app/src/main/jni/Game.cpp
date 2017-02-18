@@ -2462,6 +2462,7 @@ void Game::player_state_logic()
 					player_substate_time = t;
 					player_substate_time2 = t + DEATH_TIME_WHITE_SCREEN_FADEIN;
 					player_substate = 1.0f;
+					player->play_sound(snd_death_trans,Vec3::ZERO(),0.8f,SOUND_END_TYPE_STOP);
 				}
 			}
 		}
