@@ -165,10 +165,10 @@ void sl_buffer_callback (SLBufferQueueItf snd_queue, void *c)
 
 			Stereo_Sample smp = *((Stereo_Sample *) (source->sound->raw_data) + (j + source->sound_pos));
 
-			if(smp.l >= SHRT_MAX || smp.r >= SHRT_MAX)
-			{
-				LOGE("Warning: audio source[%d] sample[%d] has max audio values (%d,%d)",i,j,smp.l,smp.r);
-			}
+			//if(smp.l >= SHRT_MAX || smp.r >= SHRT_MAX)
+			//{
+			//	LOGE("Warning: audio source[%d] sample[%d] has max audio values (%d,%d)",i,j,smp.l,smp.r);
+			//}
 			//LOGE("\t\tsample[%d] SrcVal:(%hi,%hi) falloff:(%f,%f) calc(%i,%i), buffer val:(%i,%i) result(%i,%i)",
 			//	j,smp.l,smp.r,
 			//	left_falloff,right_falloff,
