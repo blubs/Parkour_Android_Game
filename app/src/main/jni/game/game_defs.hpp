@@ -16,7 +16,6 @@
 #define TILE_TYPE_RAIL 2
 //FIXME: this next one is temp
 #define TILE_TYPE_OBST 3
-//TODO: ...more tile type const identifiers
 
 #define TILE_OBSTACLE_COUNT 10
 
@@ -215,7 +214,6 @@ extern bool RAIL_TYPE_IS_VALID[RAIL_TYPE_COUNT];
 #define FRAME_SPECFLAG_NONE 0
 #define FRAME_SPECFLAG_BREAKWINDOW_OUT 1
 #define FRAME_SPECFLAG_BREAKWINDOW_IN 4
-//TODO: actual special flags...
 
 
 //============================ Input Defs ==============================
@@ -282,7 +280,7 @@ extern int PREV_BLDG[3];
 #define PLAYER_SLIDE_TIME 1.1f
 
 
-#define PLAYER_JUMP_HEIGHT 0.75f
+//#define PLAYER_JUMP_HEIGHT 0.75f
 //jump vel = sqrt(PLAYER_JUMP_HEIGHT * 2.0f * 9.8f) (9.8f being acceleration of gravity)
 #define PLAYER_JUMP_VEL 3.83406f
 

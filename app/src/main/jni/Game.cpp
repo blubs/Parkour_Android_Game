@@ -1668,9 +1668,6 @@ void Game::start_player_death(char col_dir, char col_type)
 		return;
 	}
 
-	//substate 0 = player is transitioning into the slide
-	//if substate is 0 and we are before frame 18, consider state sliding as state run
-
 	bool player_sliding = (player_state == PLAYER_STATE_SLIDING);
 	//When sliding, a small portion (frames 0 - 18) of the transition ( running -> sliding ) animation has the character upright
 	//So we treat this segment as though the player is standing and play standing death animations
@@ -2070,7 +2067,6 @@ void Game::player_anim_special_events()
 				{
 					player->play_sound(snd_hand_contact_mid,Vec3(0,0,0),0.4f,SOUND_END_TYPE_STOP);
 				}
-				//some sort of whoosh sound on frame 22?
 				if(frame == 32)
 				{
 					player->play_sound(snd_land_contact,Vec3(0,0,0),1.0f,SOUND_END_TYPE_STOP);
@@ -2119,7 +2115,7 @@ void Game::player_anim_special_events()
 
 void Game::player_noclip_logic()
 {
-	//zones:
+	//Touch input zones:
 	//look left/right/up/down
 	//move left/right/forward/back
 	//move up/down
