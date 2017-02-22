@@ -2,7 +2,7 @@
 // Created by F1 on 8/2/2016.
 //
 
-#include "Game.hpp"
+#include "Game.hpp" #include "game/Maneuver.hpp"
 
 int Game::load_shaders ()
 {
@@ -1176,6 +1176,18 @@ void Game::mnvr_movement()
 
 	player->angles.y += (mnvr_goal_yaw_rot - player->angles.y) * mnvr_frame->orient_speed;
 
+	if(mnvr_current->end_on_anim_end)
+	{
+		//Check if we are on the last frame
+		if(mnvr_frame_number >= mnvr_current->keyframe_count - 1)
+		{
+			if(!player_skel->playing_anim)
+			{
+				reached_mnvr_keyframe();
+				return;
+			}
+		}
+	}
 
 	if(player->pos.y > mnvr_goal_pos.y)
 	{

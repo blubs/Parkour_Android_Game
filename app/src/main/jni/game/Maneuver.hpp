@@ -121,6 +121,9 @@ public:
 	int keyframe_count = 0;
 	int input_required = INPUT_SWIPE_NONE;
 
+	//Regardless of where we are, if we are on the last frame of the animation, stop the maneuver when the current animation ends
+	bool end_on_anim_end = true;
+
 	Maneuver( int frame_count)
 	{
 		keyframe_count = frame_count;
