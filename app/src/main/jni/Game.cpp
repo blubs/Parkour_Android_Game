@@ -735,6 +735,9 @@ void Game::reset()
 	player->pos.y = current_building->global_mins.y + 1.0f;
 	player->pos.z = BUILDING_GROUNDLEVEL + 15 * WINDOW_TILE_SIZE;
 
+	player_head->viewbob_angles = Vec3(0,0,0);
+	player_head->viewbob_vel = Vec3(0,0,0);
+
 	if(office_ambience_src)
 	{
 		office_ambience_src->stop_audio();
