@@ -1995,7 +1995,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 43)
 				{
-					player->play_sound(snd_land_contact,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_land_contact,Vec3(0,0,0),0.3f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -2016,7 +2016,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 45)
 				{
-					player->play_sound(snd_land_contact,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_land_contact,Vec3(0,0,0),0.3f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -2038,7 +2038,7 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 64)
 				{
-					player->play_sound(snd_land_contact,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_land_contact,Vec3(0,0,0),0.3f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				break;
@@ -2063,12 +2063,12 @@ void Game::player_anim_special_events()
 				}
 				if(frame == 113)
 				{
-					player->play_sound(snd_land_contact,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_land_contact,Vec3(0,0,0),0.3f,SOUND_END_TYPE_STOP);
 					player->play_sound(snd_breath_land,Vec3(0,0,0),0.6f,SOUND_END_TYPE_STOP);
 				}
 				if(frame == 127)
 				{
-					player->play_sound(snd_roll,Vec3(0,0,0),0.7f,SOUND_END_TYPE_STOP);
+					player->play_sound(snd_roll,Vec3(0,0,0),0.3f,SOUND_END_TYPE_STOP);
 				}
 				break;
 			}
