@@ -1829,6 +1829,7 @@ void Game::start_player_death(char col_dir, char col_type)
 	}
 
 	player->play_sound(snd_death_impact,Vec3::ZERO(),0.5f,SOUND_END_TYPE_STOP);
+	player->play_sound(snd_death_trans,Vec3::ZERO(),0.8f,SOUND_END_TYPE_STOP);
 
 	player_state = PLAYER_STATE_DEAD;
 	lock_player_rot = true;
@@ -2473,7 +2474,8 @@ void Game::player_state_logic()
 					player_substate_time = t;
 					player_substate_time2 = t + DEATH_TIME_WHITE_SCREEN_FADEIN;
 					player_substate = 1.0f;
-					player->play_sound(snd_death_trans,Vec3::ZERO(),0.8f,SOUND_END_TYPE_STOP);
+					//Should play sound here, but current sound is too long so we play it as soon as player impacts
+					//player->play_sound(snd_death_trans,Vec3::ZERO(),0.8f,SOUND_END_TYPE_STOP);
 				}
 			}
 		}
