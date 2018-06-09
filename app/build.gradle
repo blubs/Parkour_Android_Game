@@ -1,13 +1,13 @@
 apply plugin: 'com.android.model.application'
 model {
     android {
-        compileSdkVersion = 23
-        buildToolsVersion = "23.0.2"
+        compileSdkVersion = 26
+        buildToolsVersion = "25.0.0"
 
         defaultConfig.with {
             applicationId = "engine.games.luisg.engine"
             minSdkVersion.apiLevel = 15
-            targetSdkVersion.apiLevel = 23
+            targetSdkVersion.apiLevel = 26
             versionCode = 1
             versionName = "1.0"
         }

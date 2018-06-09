@@ -47,7 +47,7 @@ int Cube_Map::load(const char* filepath,int w)
 	}
 	else
 	{
-		LOGE("Error: unkown texture extension: %s",filepath);
+		LOGE("Error: unknown texture extension: %s",filepath);
 		return 0;
 	}
 

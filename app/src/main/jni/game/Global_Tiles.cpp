@@ -7,7 +7,8 @@
 
 Interior_Style::Interior_Style()
 {
-	variants[0] = new Interior_Variant();
+	for(int i = 0; i < INTERIOR_VARIANT_COUNT; i++)
+		variants[i] = new Interior_Variant();
 
 	tiles[0] = new Grid_Tile*[2];
 	type_variant_counts[0] = 2;
@@ -34,7 +35,8 @@ Interior_Style::Interior_Style()
 
 Interior_Style::~Interior_Style()
 {
-	delete variants[0];
+	for(int i = 0; i < INTERIOR_VARIANT_COUNT; i++)
+		delete variants[i];
 	for(int i = 0; i < TILE_TYPES; i++)
 	{
 		delete[] tiles[i];
@@ -191,12 +193,31 @@ Global_Tiles::Global_Tiles()
 
 	tile_styles[0] = new Interior_Style();
 
-	tile_styles[0]->variants[0]->diffuse_map = new Texture("textures/tiles/s0v1_diff.pkm",2048,2048);
-	tile_styles[0]->variants[0]->normal_map = new Texture("textures/tiles/s0v1_nor.pkm",2048,2048);
-	tile_styles[0]->variants[0]->misc_map = new Texture("textures/tiles/s0v1_misc.pkm",2048,2048);
-	tile_styles[0]->variants[0]->light_map = new Texture("textures/tiles/s0_lm.pkm",2048,2048);
-	//tile_styles[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/sky_cm.pkm",512);
-	tile_styles[0]->variants[0]->ref_cube_map = new Cube_Map("cube_maps/sky.data",512);
+	//Initializing interior variant textures
+
+	//Modifying the file name for each variant style and file name
+	char file_name[32] = "";
+	const int int_tex_size = 2048;
+
+	for(int i = 0; i < INTERIOR_VARIANT_COUNT; i++)
+	{
+		//Loading Diffuse Texture
+		sprintf(file_name,"textures/tiles/s0v%d_%s.pkm",i,"diff");
+		tile_styles[0]->variants[i]->diffuse_map = new Texture(file_name,int_tex_size,int_tex_size);
+
+		//Loading Normal Map Texture
+		sprintf(file_name,"textures/tiles/s0v%d_%s.pkm",i,"nor");
+		tile_styles[0]->variants[i]->normal_map = new Texture(file_name,int_tex_size,int_tex_size);
+
+		//Loading Diffuse Texture
+		sprintf(file_name,"textures/tiles/s0v%d_%s.pkm",i,"misc");
+		tile_styles[0]->variants[i]->misc_map = new Texture(file_name,int_tex_size,int_tex_size);
+
+		//Loading Misc Map Texture
+		tile_styles[0]->variants[i]->ref_cube_map = new Cube_Map("cube_maps/sky.data",512);
+		//Loading lightmap
+		tile_styles[0]->variants[i]->light_map = new Texture("textures/tiles/s0_lm.pkm",int_tex_size,int_tex_size);
+	}
 
 	//tile_styles[0]->type[0]->model->load_model();
 	//tile_styles[0]->type[0]->collision_map = new Collision_Map();
@@ -395,13 +416,13 @@ Global_Tiles::Global_Tiles()
 	}
 
 	//Loading rail models
-	tile_styles[0]->rail_subtypes[RAIL_TYPE_L ]->model = new Static_Model("models/tiles/style0/rail_l.stmf");
-	tile_styles[0]->rail_subtypes[RAIL_TYPE_R ]->model = new Static_Model("models/tiles/style0/rail_r.stmf");
+	tile_styles[0]->rail_subtypes[RAIL_TYPE_L ]->model = new Static_Model("models/tiles/style0/rail_0.stmf");
+	tile_styles[0]->rail_subtypes[RAIL_TYPE_R ]->model = new Static_Model("models/tiles/style0/rail_0.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TL ]->model = new Static_Model("models/tiles/style0/rail_tl.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2]->model = new Static_Model("models/tiles/style0/rail_tl2.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TR ]->model = new Static_Model("models/tiles/style0/rail_tr.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TR2 ]->model = new Static_Model("models/tiles/style0/rail_tr2.stmf");
-	tile_styles[0]->rail_subtypes[RAIL_TYPE_LR ]->model = new Static_Model("models/tiles/style0/rail_lr.stmf");
+	tile_styles[0]->rail_subtypes[RAIL_TYPE_LR ]->model = new Static_Model("models/tiles/style0/rail_0.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TR ]->model = new Static_Model("models/tiles/style0/rail_tl_tr.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TL2_TR2]->model = new Static_Model("models/tiles/style0/rail_tl2_tr2.stmf");
 	tile_styles[0]->rail_subtypes[RAIL_TYPE_TL_TL2]->model = new Static_Model("models/tiles/style0/rail_tl_tl2.stmf");
@@ -542,6 +563,14 @@ Global_Tiles::Global_Tiles()
 
 	Keyframe** frames;
 
+	//Defining the safe area for beginning a tile maneuver
+	//This defines the length of the buffer zone where the player must swipe to perform the maneuver
+	float safe_area = 2.0f;
+
+	//The last y-coord in a tile where the player can enter the maneuver from
+	//We will re-assign this value, but it's done for readability-sake
+	float last_safe_y = 0.0f;
+
 	//=================================================
 	//Slide through air duct tile [0]
 	//=================================================
@@ -549,19 +578,20 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[0]->maneuvers[0]->set_input(INPUT_SWIPE_DOWN);
 	frames = tile_styles[0]->obst_tiles[0]->maneuvers[0]->keyframes;
 	//Begin slide, move to center
-	frames[0]->set_bounds(Vec3(1,-0.5f,0),Vec3(2.5,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-2.0f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 1.0f;
+	frames[0]->set_bounds(Vec3(1,last_safe_y-safe_area,0),Vec3(2.5,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-5.5f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.0,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SLIDE,ANIM_END_TYPE_FREEZE);
 	frames[0]->set_vbob(CAM_VIEWBOB_RUNNING);
 	//Continue slide through
 	frames[1]->set_bounds(Vec3(1.75,1.1,0));
 	frames[1]->set_vbob(CAM_VIEWBOB_SLIDING);
-	frames[1]->set_speed(PLAYER_RUN_SPEED-1.0f,PLAYER_SLIDE_ACCEL,PLAYER_SLIDE_MIN_SPEED);
+	frames[1]->set_speed(PLAYER_RUN_SPEED-0.5f,PLAYER_SLIDE_ACCEL,PLAYER_SLIDE_MIN_SPEED);
 	//Get up from slide
 	frames[2]->set_bounds(Vec3(1.75,2.75,0));
 	frames[2]->set_vbob(CAM_VIEWBOB_SLIDING);
-	frames[2]->set_speed(PLAYER_SLIDE_MIN_SPEED,0,0);
+	frames[2]->set_speed(PLAYER_SLIDE_MIN_SPEED + 0.1,0,0);
 	frames[2]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SLIDE_END,ANIM_END_TYPE_DEFAULT_ANIM);
 	//End maneuver
 	frames[3]->set_bounds(Vec3(1.75,2.95,0));
@@ -573,17 +603,18 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[1]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 	frames = tile_styles[0]->obst_tiles[1]->maneuvers[0]->keyframes;
 	//Begin dive, aim towards center
-	frames[0]->set_bounds(Vec3(0.75,0,0),Vec3(2.75,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-1.5f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 1.0f;
+	frames[0]->set_bounds(Vec3(0.75,last_safe_y-safe_area,0),Vec3(2.75,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-3.5f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,2.8,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE,ANIM_END_TYPE_FREEZE);
 	//Past wall, slowly re-aim towards forward
 	frames[1]->set_bounds(Vec3(1.75,2.1,0));
 	frames[1]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DIVE_END,ANIM_END_TYPE_FREEZE);
 	frames[1]->set_orient(FRAME_ORIENT_NONE,Vec3(1.75,3.5,0),0.1);
-	frames[1]->set_speed(0.6,0,0);
+	frames[1]->set_speed(0.68,0,0);
 	//End maneuver
-	frames[2]->set_bounds(Vec3(1.75f,2.75,0));
+	frames[2]->set_bounds(Vec3(1.75f,2.77,0));
 	//=================================================
 	//Run through doorways [2]
 	//=================================================
@@ -599,13 +630,14 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[4]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 	frames = tile_styles[0]->obst_tiles[4]->maneuvers[0]->keyframes;
 	//Begin speed vault, aim towards center
-	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-2.5f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 0.5f;
+	frames[0]->set_bounds(Vec3(1.0,last_safe_y-safe_area,0),Vec3(2.5,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-5.9f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.95,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_SPEED_VAULT,ANIM_END_TYPE_FREEZE);
 	//Make player be at center
-	frames[1]->set_bounds(Vec3(1.75,0.75,0));
-	frames[1]->set_speed(PLAYER_RUN_SPEED - 4.0f,0,0);
+	frames[1]->set_bounds(Vec3(1.75,0.52,0));
+	frames[1]->set_speed(PLAYER_RUN_SPEED - 3.8f,0,0);
 	//End Maneuver
 	frames[2]->set_bounds(Vec3(1.75,1.95,0));
 	//=================================================
@@ -615,8 +647,9 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[5]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 	frames = tile_styles[0]->obst_tiles[5]->maneuvers[0]->keyframes;
 	//Begin slide vault, aim towards center
-	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 0.5f;
+	frames[0]->set_bounds(Vec3(1.0,last_safe_y-safe_area,0),Vec3(2.5,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-5.3f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,0.95,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_VAULT_SLIDE,ANIM_END_TYPE_FREEZE);
 	//Make player be at center
@@ -634,8 +667,9 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[6]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 	frames = tile_styles[0]->obst_tiles[6]->maneuvers[0]->keyframes;
 	//Begin kong, aim towards center
-	frames[0]->set_bounds(Vec3(0.6,-0.25f,0),Vec3(2.9,0.75,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-1.5f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 0.75f;
+	frames[0]->set_bounds(Vec3(0.6,last_safe_y-safe_area,0),Vec3(2.9,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_KONG,ANIM_END_TYPE_FREEZE);
 	//Make player approach center
@@ -644,7 +678,7 @@ Global_Tiles::Global_Tiles()
 	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
 	//Land at desk
 	frames[2]->set_bounds(Vec3(1.75,2.75,0));
-	frames[2]->set_speed(3.0,0,0);
+	frames[2]->set_speed(4.4,0,0);
 	//End Maneuver
 	frames[3]->set_bounds(Vec3(1.75,3.25,0));
 	//=================================================
@@ -652,23 +686,26 @@ Global_Tiles::Global_Tiles()
 	//=================================================
 	tile_styles[0]->obst_tiles[7]->maneuvers[0] = new Maneuver(5);
 	tile_styles[0]->obst_tiles[7]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
+
 	frames = tile_styles[0]->obst_tiles[7]->maneuvers[0]->keyframes;
 	//Align at center of elevator
-	frames[0]->set_bounds(Vec3(1.0,-0.5f,0),Vec3(2.5,0.5,0));
-	frames[0]->set_speed(0.8f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 0.5f;
+	frames[0]->set_bounds(Vec3(1.0,last_safe_y-safe_area,0),Vec3(2.5,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED - 5.9571f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,1.25,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_HIGH_UNDERBAR,ANIM_END_TYPE_FREEZE);
 	//Move slowly forward as we climb up
 	frames[1]->set_bounds(Vec3(1.75,0.51,0));
-	frames[1]->set_speed(0.8f,0,0);
+	frames[1]->set_speed(0.3783f,0,0);
 	//Move forward slightly faster as we enter vent
-	frames[2]->set_bounds(Vec3(1.75,0.75,0));
-	frames[2]->set_speed(0.8f,0,0);
+	frames[2]->set_bounds(Vec3(1.75,0.80,0));
+	frames[2]->set_speed(0.9f,0,0);
 	//Move forward as we roll
-	frames[3]->set_bounds(Vec3(1.75,1.75,0));
-	frames[3]->set_speed(0.8f,0,0);
+	frames[3]->set_bounds(Vec3(1.75,1.70,0));
+	frames[3]->set_speed(1.083f,0,0);
 	//End Maneuver
-	frames[4]->set_bounds(Vec3(1.75,2.28,0));
+	frames[4]->set_bounds(Vec3(1.75,2.5302,0));
+
 	//=================================================
 	//dash vault over decor [8]
 	//=================================================
@@ -676,18 +713,19 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[8]->maneuvers[0]->set_input(INPUT_SWIPE_UP);
 	frames = tile_styles[0]->obst_tiles[8]->maneuvers[0]->keyframes;
 	//Begin vault, aim towards center
-	frames[0]->set_bounds(Vec3(0.5,0,0),Vec3(3,1,0));
-	frames[0]->set_speed(PLAYER_RUN_SPEED-3.0f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 1.0f;
+	frames[0]->set_bounds(Vec3(0.5,last_safe_y-safe_area,0),Vec3(3,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED-4.55f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_DASH_VAULT,ANIM_END_TYPE_FREEZE);
 	//Make player approach center
 	frames[1]->set_bounds(Vec3(1.25,2,0),Vec3(2.25,2,0));
-	frames[1]->set_orient(FRAME_ORIENT_NONE,Vec3(0,0,0),0.2);
+	frames[1]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),0.2);
 	frames[1]->set_speed(PLAYER_RUN_SPEED,0,0);
 	//Land on surface
 	frames[2]->set_bounds(Vec3(1.5,2.75,-0.2f),Vec3(2.0,2.75,-0.2f));
-	frames[1]->set_orient(FRAME_ORIENT_NONE,Vec3(0,0,0),0.2);
-	frames[2]->set_speed(2.0,0,0);
+	frames[2]->set_orient(FRAME_ORIENT_NONE,Vec3(0,0,0),0.2);
+	frames[2]->set_speed(3.5,0,0);
 	//End Maneuver
 	frames[3]->set_bounds(Vec3(1.75,3.25,0));
 	//=================================================
@@ -697,18 +735,20 @@ Global_Tiles::Global_Tiles()
 	tile_styles[0]->obst_tiles[9]->maneuvers[0]->set_input(INPUT_SWIPE_DOWN | INPUT_SWIPE_UP);
 	frames = tile_styles[0]->obst_tiles[9]->maneuvers[0]->keyframes;
 	//Run towards bookcase
-	frames[0]->set_bounds(Vec3(1.25,0,0),Vec3(2.25,1,0));
-	frames[0]->set_speed(3.0f,FRAME_SPEED_CONST_TIME);
+	last_safe_y = 1.0f;
+	//MOVE AT 0.0025 m/s from 1m/s until 1.0025 m, then move at 4.05 m/s to 3 m
+	frames[0]->set_bounds(Vec3(1.25,last_safe_y-safe_area,0),Vec3(2.25,last_safe_y,0));
+	frames[0]->set_speed(PLAYER_RUN_SPEED - 5.841f,FRAME_SPEED_CONST_TIME);
 	frames[0]->set_orient(FRAME_ORIENT_CONSTANT,Vec3(1.75,3.5,0),PLAYER_TURN_LERP_FACTOR);
 	frames[0]->set_anim(FRAME_ANIM_PLAY,PLAYER_ANIM_UNDERBAR,ANIM_END_TYPE_FREEZE);
 	//Don't begin underbar until we are right up against wall
-	frames[1]->set_bounds(Vec3(1.75,1.01,0));
-	frames[1]->set_speed(3.0f,0,0);
+	frames[1]->set_bounds(Vec3(1.75,1.02913,0));
+	frames[1]->set_speed(4.05f,0,0);
 	//Move player past bookcase
 	frames[2]->set_bounds(Vec3(1.75,1.2,0));
-	frames[2]->set_speed(3.0f,0,0);
+	frames[2]->set_speed(4.05f,0,0);
 	//End Maneuver
-	frames[3]->set_bounds(Vec3(1.75,2.55,0));
+	frames[3]->set_bounds(Vec3(1.75,3.0f,0));
 
 	//======================================================================================================================
 	//======================================================================================================================
@@ -729,18 +769,18 @@ Global_Tiles::Global_Tiles()
 	window_styles[0]->broken_in_window_skel_data->load_animation("animations/winbreak/winbreak_in.skaf");
 	window_styles[0]->broken_out_window_skel_data->load_animation("animations/winbreak/winbreak_out.skaf");
 
-	window_styles[0]->variants[0]->ext_diffuse_map = new Texture("textures/windows/variant0_diff.pkm",512,512);
-	window_styles[0]->variants[0]->ext_misc_map = new Texture("textures/windows/variant0_misc.pkm",512,512);
-	window_styles[0]->variants[0]->ext_normal_map = new Texture("textures/windows/variant0_nor.pkm",512,512);
+	window_styles[0]->variants[0]->ext_diffuse_map = new Texture("textures/windows/v0_diff.pkm",512,512);
+	window_styles[0]->variants[0]->ext_misc_map = new Texture("textures/windows/v0_misc.pkm",512,512);
+	window_styles[0]->variants[0]->ext_normal_map = new Texture("textures/windows/v0_nor.pkm",512,512);
 
-	window_styles[0]->variants[0]->int_diffuse_map = new Texture("textures/windows/variant0_diff.pkm",512,512);
-	window_styles[0]->variants[0]->int_misc_map = new Texture("textures/windows/variant0_misc.pkm",512,512);
-	window_styles[0]->variants[0]->int_normal_map = new Texture("textures/windows/variant0_nor.pkm",512,512);
+	window_styles[0]->variants[0]->int_diffuse_map = new Texture("textures/windows/v0_diff.pkm",512,512);
+	window_styles[0]->variants[0]->int_misc_map = new Texture("textures/windows/v0_misc.pkm",512,512);
+	window_styles[0]->variants[0]->int_normal_map = new Texture("textures/windows/v0_nor.pkm",512,512);
 
 	//============= Setting up building to building traversals ==================
 	//===========================================================================
 	//This animation takes player down 1 floor
-	bldg_travs[0] = new Traversal(8);
+	bldg_travs[0] = new Traversal(9);
 	bldg_travs[0]->set_input(INPUT_SWIPE_UP);
 	frames = bldg_travs[0]->keyframes;
 	//Distance between buildings: 15 m
@@ -781,12 +821,17 @@ Global_Tiles::Global_Tiles()
 	frames[6]->set_bounds(Vec3(1.75f,20.0f,-WINDOW_TILE_SIZE));
 	frames[6]->set_speed(0.8f,0,0);
 
+	//Player runs for 30 frames
+	frames[7]->set_bounds(Vec3(1.75f,20.25f,-WINDOW_TILE_SIZE));
+	frames[7]->set_speed(PLAYER_RUN_SPEED,0,0);
+
 	//Player player has finished landing, ready to run again
-	frames[7]->set_bounds(Vec3(1.75f,20.65f,-WINDOW_TILE_SIZE));
+	frames[8]->set_bounds(Vec3(1.75f,23.25f,-WINDOW_TILE_SIZE));
+
 
 	//===========================================================================
 	//This animation takes player down 2 floors
-	bldg_travs[1] = new Traversal(7);
+	bldg_travs[1] = new Traversal(8);
 	bldg_travs[1]->set_input(INPUT_SWIPE_UP);
 	frames = bldg_travs[1]->keyframes;
 	//Distance between buildings: 15 m
@@ -824,12 +869,16 @@ Global_Tiles::Global_Tiles()
 	frames[5]->set_bounds(Vec3(1.75f,20.0f,-2*WINDOW_TILE_SIZE));
 	frames[5]->set_speed(0.8f,0,0);
 
+	//Player runs for 30 frames
+	frames[6]->set_bounds(Vec3(1.75f,20.2f,-2*WINDOW_TILE_SIZE));
+	frames[6]->set_speed(PLAYER_RUN_SPEED,0,0);
+
 	//Player player has finished landing, ready to run again
-	frames[6]->set_bounds(Vec3(1.75f,20.6f,-2*WINDOW_TILE_SIZE));
+	frames[7]->set_bounds(Vec3(1.75f,23.2,-2*WINDOW_TILE_SIZE));
 
 	//===========================================================================
 	//This animation takes player down 3 floors
-	bldg_travs[2] = new Traversal(8);
+	bldg_travs[2] = new Traversal(9);
 	bldg_travs[2]->set_input(INPUT_SWIPE_UP);
 	frames = bldg_travs[2]->keyframes;
 	//Player is running to window
@@ -869,8 +918,12 @@ Global_Tiles::Global_Tiles()
 	frames[6]->set_bounds(Vec3(1.75f,20.0f,-3*WINDOW_TILE_SIZE));
 	frames[6]->set_speed(0.8f,0,0);
 
+	//Player runs for 30 frames
+	frames[7]->set_bounds(Vec3(1.75f,20.2f,-3*WINDOW_TILE_SIZE));
+	frames[7]->set_speed(PLAYER_RUN_SPEED,0,0);
+
 	//Player player has finished landing, ready to run again
-	frames[7]->set_bounds(Vec3(1.75f,20.6f,-3*WINDOW_TILE_SIZE));
+	frames[8]->set_bounds(Vec3(1.75f,23.2f,-3*WINDOW_TILE_SIZE));
 	//===================================================================================
 }
 Global_Tiles::~Global_Tiles()
@@ -939,7 +992,8 @@ void Global_Tiles::init_gl()
 	if(!instance)
 		return;
 	instance->sky_cube_map->init_gl();
-	instance->tile_styles[0]->variants[0]->init_gl();
+	for(int i = 0; i < INTERIOR_VARIANT_COUNT; i++)
+		instance->tile_styles[0]->variants[i]->init_gl();
 
 	//==================== Style 0 models init gl ===================
 	instance->tile_styles[0]->empty_tile->model->init_gl();
@@ -978,7 +1032,8 @@ void Global_Tiles::term_gl()
 	if(!instance)
 		return;
 	instance->sky_cube_map->term_gl();
-	instance->tile_styles[0]->variants[0]->term_gl();
+	for(int i = 0; i < INTERIOR_VARIANT_COUNT; i++)
+		instance->tile_styles[0]->variants[i]->term_gl();
 
 	//==================== Style 0 models term gl ===================
 	instance->tile_styles[0]->empty_tile->model->term_gl();

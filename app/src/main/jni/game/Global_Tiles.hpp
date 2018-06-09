@@ -46,12 +46,14 @@
 //Fallback: if palette generation fails, we can store a large array of preset interior palettes and just use those
 //
 
+#define INTERIOR_VARIANT_COUNT 1
+
 
 class Interior_Style
 {
 public:
 	//Holds materials,diffuse, normal, and lightmap textures for this Interior Style
-	Interior_Variant* variants[1];
+	Interior_Variant* variants[INTERIOR_VARIANT_COUNT];
 
 	//TODO: use tiles
 	Grid_Tile** tiles[TILE_TYPES];

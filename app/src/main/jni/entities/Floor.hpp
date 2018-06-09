@@ -185,6 +185,8 @@ public:
 	float prob_of_branch_to_goal(int tile_x, int tile_y);
 
 //#define DEBUG_BRANCH_LOGIC
+//If DEBUG_FLOORS is 1, all generated floors are empty with all obstacle types placed.
+//#define DEBUG_FLOORS 1
 
 	// General layout of the logic of this recursive method
 		//============
@@ -259,6 +261,11 @@ public:
 	Traversal* input_to_traversal(Vec3 p, int input_type, Vec3& tile_ofs);
 	//Returns the global tile position that p lies on
 	Vec3 get_tile_ofs_at_pos(Vec3 p);
+	//Returns the tile type at a given position
+	int get_tile_type_at_pos(Vec3 p);
+	//Returns the subtype of a tile at a given position
+	int get_tile_subtype_at_pos(Vec3 p);
+
 };
 
 #endif //PARKOUR_FLOOR_HPP

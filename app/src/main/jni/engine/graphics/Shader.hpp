@@ -89,7 +89,7 @@ public:
 	//A list of the uniform locations of the global parameters, if a location is set, the shader uses that parameter
 	GLint global_param_loc[7] = {-1,-1,-1,-1,-1,-1,-1};
 
-	static const int GLOBAL_PARAM_COUNT = 7;
+	static const int GLOBAL_PARAM_COUNT = 8;
 
 	//Global parameter identifiers
 	static const int GLOBAL_PARAM_FLOAT_TIME = 0;
@@ -99,6 +99,8 @@ public:
 	static const int GLOBAL_PARAM_VEC3_DIRLIGHT_COL = 4;
 	static const int GLOBAL_PARAM_FLOAT_WIDTH = 5;
 	static const int GLOBAL_PARAM_FLOAT_HEIGHT = 6;
+	static const int GLOBAL_PARAM_FLOAT_DESATURATION = 7;
+
 
 	//Global parameter SHADER identifiers
 	static const char *GLOBAL_PARAM_FLOAT_TIME_ID;
@@ -108,6 +110,8 @@ public:
 	static const char *GLOBAL_PARAM_VEC3_DIRLIGHT_COL_ID;
 	static const char *GLOBAL_PARAM_FLOAT_WIDTH_ID;
 	static const char *GLOBAL_PARAM_FLOAT_HEIGHT_ID;
+	static const char *GLOBAL_PARAM_FLOAT_DESATURATION_ID;
+
 
 	//List of shader identifiers for the global parameters
 	static const char *GLOBAL_PARAM_IDS[];
@@ -120,6 +124,7 @@ public:
 	static float global_param_vec3_dirlight_col[3];
 	static float global_param_float_width[1];
 	static float global_param_float_height[1];
+	static float global_param_float_desaturation[1];
 
 	//Array holding all global parameter locations
 	static float *global_params[];
