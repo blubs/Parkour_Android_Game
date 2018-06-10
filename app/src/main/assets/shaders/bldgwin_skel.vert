@@ -1,3 +1,5 @@
+precision mediump float;
+
 uniform mat4 mvp;
 uniform mat4 m;
 
@@ -28,10 +30,23 @@ varying vec3 dirlight_dir_tanspace;
 varying vec3 cam_to_vert_tanspace;
 varying mat3 tan_to_world;
 
+//A randomly generated tint value [0,1] by which to darken / lighten the vertex
+//Used in frag shader to break monotonoy of the building texture repeating.
+varying vec4 vert_tint;
+//To generate, we use a noise function with the input as the vertex world position.
+
+
 //xyz world coords of vert, w is distance to the camera squared
 varying vec4 vert_world;
 //Normalized vector from camera to vertex
 varying vec3 cam_to_vert_nrmlized;
+
+float vert_tint_noise(vec3 pos)
+{
+	vec2 co = vec2(pos.x * pos.z,pos.y * pos.z);
+	//simple noise function found online
+	return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
 
 void main()
 {
@@ -52,6 +67,18 @@ void main()
 
 	vec3 world_vert = (m * pos).xyz;
 	vert_world.xyz = world_vert;
+
+	// Calculating a vertex tint between 0 and 1
+   	// This equation makes it vary depending on the vertex world coord,
+   	// and adds in the texture coords so that adjacent windows don't match
+   	//FIXME: doing a random rgb color tint isn't really what I want...
+   	//FIXME: maybe just doing the brightness tint is all I want
+   	//FIXME: mayb I make this a vec4 and the 4th component is the brightness.
+   	vert_tint.r = vert_tint_noise(world_vert + vec3(vert_uv_1.x, vert_uv_1.x, vert_uv_1.y) + vec3(1.2));
+  	vert_tint.g = vert_tint_noise(world_vert + vec3(vert_uv_1.x, vert_uv_1.x, vert_uv_1.y) + vec3(3.3));
+   	vert_tint.b = vert_tint_noise(world_vert + vec3(vert_uv_1.x, vert_uv_1.x, vert_uv_1.y) + vec3(-1.4));
+	vert_tint.a = vert_tint_noise(world_vert + vec3(vert_uv_1.x, vert_uv_1.x, vert_uv_1.y) + vec3(-2.3));
+	vert_tint.a = 0.75 + 0.25 * vert_tint.a;
 
 	//Calculating the camera direction and light direction in tangent space
 	//These 3 vectors are in world space

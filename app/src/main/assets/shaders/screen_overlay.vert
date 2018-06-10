@@ -1,3 +1,5 @@
+precision mediump float;
+
 attribute vec4 vert_pos;
 
 uniform vec4 info;

@@ -26,12 +26,16 @@ public:
 	//We use double here for more precision then convert down to float once subtracting time from this
 	static double start_time;
 
+	//Timescale modifies the time
+	static float time_scale;
+
 	//Sets start_time for later usage
 	static void set_start_time()
 	{
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		start_time = now.tv_sec + (double) now.tv_nsec / 1e9;
+		start_time *= time_scale;
 	}
 
 	//Returns time since start_time as a float
@@ -45,6 +49,7 @@ public:
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		double current_time = now.tv_sec + (double) now.tv_nsec / 1e9;
+		current_time *= time_scale;
 		return (float) (current_time - start_time);
 	}
 

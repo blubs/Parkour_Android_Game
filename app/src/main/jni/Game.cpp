@@ -480,6 +480,104 @@ void Game::term_gl()
 	test_texture->term_gl();
 }
 
+
+#define DEBUG_DRAW_INPUT 1
+//The following fields are used for debug drawing
+
+enum debug_draw_input_state {
+	DEBUG_DRAW_INPUT_NONE,
+	DEBUG_DRAW_INPUT_START,
+	DEBUG_DRAW_INPUT_MOVE,
+	DEBUG_DRAW_INPUT_END,
+	DEBUG_DRAW_INPUT_SWIPE_UP,
+	DEBUG_DRAW_INPUT_SWIPE_DOWN,
+	DEBUG_DRAW_INPUT_TURN,
+
+};
+
+int input_states[10] =
+{
+	DEBUG_DRAW_INPUT_NONE,DEBUG_DRAW_INPUT_NONE,
+	DEBUG_DRAW_INPUT_NONE,DEBUG_DRAW_INPUT_NONE,
+	DEBUG_DRAW_INPUT_NONE,DEBUG_DRAW_INPUT_NONE,
+	DEBUG_DRAW_INPUT_NONE,DEBUG_DRAW_INPUT_NONE,
+	DEBUG_DRAW_INPUT_NONE,DEBUG_DRAW_INPUT_NONE,
+};
+float input_states_time[10];
+float input_states_x0[10];
+float input_states_y0[10];
+float input_states_x1[10];
+float input_states_y1[10];
+
+//Draw released touches for 0.5f seconds
+#define DEBUG_DRAW_INPUT_RELEASE_TIME 0.5f
+
+//Draws a line from start to end with the lower left corner being (0,0)
+void Game::draw_single_debug_input(float startx, float starty, float endx, float endy, float *color)
+{
+	//Drawing bounding box
+	const int input_line_vert_count = 2;
+	const float input_line[] =
+	{
+		//Start vertex
+		screen_width * (-0.5F + startx),screen_height * (-0.5F + starty),0.1f,
+		//End vertex
+		screen_width * (-0.5F + endx),screen_height * (-0.5F + endy),0.1f,
+	};
+
+	solid_mat->bind_material();
+	solid_mat->bind_value(Shader::PARAM_MVP_MATRIX,(void*) camera->ortho_proj_m.m);
+
+	solid_mat->bind_value(Shader::PARAM_VERTICES,(void*) input_line);
+
+	solid_mat->bind_value(Shader::PARAM_COLOR_ADD,(void*) color);
+
+	glDrawArrays(GL_LINES, 0, input_line_vert_count);
+}
+
+void Game::draw_debug_input()
+{
+	for(int i = 0; i < 10; i++)
+	{
+		int state = input_states[i];
+		if(state != DEBUG_DRAW_INPUT_NONE)
+		{
+			float color[] = {0,0,0,1.0f};
+			if(state == DEBUG_DRAW_INPUT_START)
+				color[1] = 1.0f;
+			if(state == DEBUG_DRAW_INPUT_MOVE)
+				color[1] = color[0] = 1.0f;
+			if(state == DEBUG_DRAW_INPUT_END)
+			{
+				if(input_states_time[i] < Time::time())
+				{
+					input_states_time[i] = 0;
+					input_states[i] = DEBUG_DRAW_INPUT_NONE;
+					continue;
+				}
+				color[0] = 1.0f;
+			}
+			if(state == DEBUG_DRAW_INPUT_TURN)
+				color[0] = color[1] = color[2] = 1.0f;
+			if(state == DEBUG_DRAW_INPUT_SWIPE_UP)
+				color[0] = color[2] = 1.0f;
+			if(state == DEBUG_DRAW_INPUT_SWIPE_DOWN)
+				color[1] = color[2] = 1.0f;
+
+			//0: not-active
+			//1: first touch only (green)
+			//2: touch currently active (yellow)
+			//3: touch ended (red)
+			//4: turn input (white)
+			//5: swipe detected as up (purple)
+			//6: swipe detected as down (teal)
+
+			draw_single_debug_input(input_states_x0[i],input_states_y0[i],input_states_x1[i],input_states_y1[i],color);
+		}
+
+	}
+}
+
 void Game::handle_input(float x, float y, int event, int pointer_id)
 {
 	y = 1.0f - y;
@@ -497,11 +595,21 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 			input_y[pointer_id] = y;
 			input_start_x[pointer_id] = x;
 			input_start_y[pointer_id] = y;
+#if DEBUG_DRAW_INPUT
+			input_states[pointer_id] = DEBUG_DRAW_INPUT_START;
+			input_states_x0[pointer_id] = input_states_x1[pointer_id] = x;
+			input_states_y0[pointer_id] = input_states_y1[pointer_id] = y;
+#endif
 		}
 		if(event == INPUT_EVENT_ON_TOUCH_MOVE)
 		{
 			input_x[pointer_id] = x;
 			input_y[pointer_id] = y;
+#if DEBUG_DRAW_INPUT
+			input_states[pointer_id] = DEBUG_DRAW_INPUT_MOVE;
+			input_states_x1[pointer_id] = x;
+			input_states_y1[pointer_id] = y;
+#endif
 		}
 		if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
 		{
@@ -510,6 +618,12 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 			input_start_x[pointer_id] = 0.0f;
 			input_start_y[pointer_id] = 0.0f;
 			input_touching[pointer_id] = false;
+#if DEBUG_DRAW_INPUT
+			input_states[pointer_id] = DEBUG_DRAW_INPUT_END;
+			input_states_time[pointer_id] = Time::time() + DEBUG_DRAW_INPUT_RELEASE_TIME;
+			input_states_x1[pointer_id] = x;
+			input_states_y1[pointer_id] = y;
+#endif
 		}
 		return;
 	}
@@ -523,16 +637,29 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 		input_touching[0] = true;
 		input_start_x[0] = x;
 		input_start_y[0] = y;
+#if DEBUG_DRAW_INPUT
+		input_states[0] = DEBUG_DRAW_INPUT_START;
+		input_states_x0[0] = input_states_x1[0] = x;
+		input_states_y0[0] = input_states_y1[0] = y;
+#endif
 	}
 	else if(event == INPUT_EVENT_ON_TOUCH_RELEASE)
 	{
 		input_turning = false;
 		input_sent_command = false;
 		input_touching[0] = false;
+		//Should we remove this on release?
+		input_swipe = INPUT_SWIPE_NONE;
 		input_x[0] = 0.0f;
 		input_y[0] = 0.0f;
 		input_start_x[0] = 0.0f;
 		input_start_y[0] = 0.0f;
+#if DEBUG_DRAW_INPUT
+		input_states[0] = DEBUG_DRAW_INPUT_END;
+		input_states_time[0] = Time::time() + DEBUG_DRAW_INPUT_RELEASE_TIME;
+		input_states_x1[0] = x;
+		input_states_y1[0] = y;
+#endif
 		return;
 	}
 
@@ -547,12 +674,18 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 		default:
 			break;
 	}
+;
 
-	input_turn = 0;
-	input_swipe = 0;
+#if DEBUG_DRAW_INPUT
+	input_states_x1[0] = x;
+	input_states_y1[0] = y;
+#endif
 
 	if(input_sent_command)
 		return;
+
+	input_turn = 0;
+	input_swipe = 0;
 
 	float delta_x = input_x[0] - input_start_x[0];
 	float delta_y = input_y[0] - input_start_y[0];
@@ -568,6 +701,10 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 		input_turn = fmaxf(-1.0f,fminf(1.0f,input_turn));
 
 		input_turning = true;
+#if DEBUG_DRAW_INPUT
+		input_states[0] = DEBUG_DRAW_INPUT_TURN;
+#endif
+
 		return;
 	}
 
@@ -578,11 +715,17 @@ void Game::handle_input(float x, float y, int event, int pointer_id)
 		{
 			input_swipe = INPUT_SWIPE_UP;
 			input_sent_command = true;
+#if DEBUG_DRAW_INPUT
+			input_states[0] = DEBUG_DRAW_INPUT_SWIPE_UP;
+#endif
 		}
 		if(delta_y < - INPUT_SENSITIVITY*screen_ratio)
 		{
 			input_swipe = INPUT_SWIPE_DOWN;
 			input_sent_command = true;
+#if DEBUG_DRAW_INPUT
+			input_states[0] = DEBUG_DRAW_INPUT_SWIPE_DOWN;
+#endif
 		}
 		return;
 	}
@@ -676,7 +819,7 @@ void Game::start()
 	// but we don't need all of that at the moment (since we are never going to parent anything to any other bone)
 	player_skel->parent = player;
 	player_skel->pos.z = 1.0f;
-	camera->set_persp_view(90.0f * DEG_TO_RAD, screen_width,screen_height, 0.01f, 1000.0f);
+	camera->set_persp_view(90.0f * DEG_TO_RAD, screen_width,screen_height, 0.01f, 500.0f);
 	camera->set_ortho_view(screen_width,screen_height,0.0001f,1.0f);
 
 	//Evaluating player bounding box triangle constants
@@ -1280,6 +1423,7 @@ void Game::reached_mnvr_keyframe ()
 	//Setting up movement for keyframe:
 	mnvr_frame_number = mnvr_next_frame_number;
 	mnvr_next_frame_number++;
+
 	//Are we done with this maneuver?
 	if(mnvr_next_frame_number >= mnvr_current->keyframe_count)
 	{
@@ -1319,6 +1463,8 @@ void Game::reached_mnvr_keyframe ()
 		}
 
 		//Setting up movement data for the keyframe
+		//Force the player to actually be within the frame
+		player->pos = cap_to_bounds(player->pos, mnvr_tile_ofs + mnvr_frame->mins,mnvr_tile_ofs + mnvr_frame->maxs);
 		mnvr_start_pos = player->pos;
 		mnvr_goal_pos = cap_to_bounds(player->pos, mnvr_tile_ofs + mnvr_next_frame->mins, mnvr_tile_ofs + mnvr_next_frame->maxs);
 
@@ -1340,12 +1486,26 @@ void Game::reached_mnvr_keyframe ()
 		//Adjust the speed so we reach the next keyframe in the same amount of time regardless of where in the keyframe bounds we are
 		if(mnvr_frame->speed_type == FRAME_SPEED_CONST_TIME)
 		{
-			//find distance to our goal pos from the center of this keyframe
+			/*//find distance to our goal pos from the center of this keyframe
 			float d_from_keyframe_center = mnvr_next_frame->mins.y - ((mnvr_frame->mins.y + mnvr_frame->maxs.y)/2.0f);
+
 			//Calculate how long that would take to travel at mnvr_y_vel m/s
 			float t_from_keyframe_center = d_from_keyframe_center / mnvr_y_vel;
 			//Calculate our speed if we want to get there in the same amonut of time from our position
-			mnvr_y_vel = (mnvr_goal_pos.y - mnvr_start_pos.y)/t_from_keyframe_center;
+			mnvr_y_vel = (mnvr_goal_pos.y - mnvr_start_pos.y)/t_from_keyframe_center;*/
+
+
+			//Changed the definition of this: we will now use the optimal distance as:
+			//The last position in this keyframe to the first position of the next keyframe.
+			//This makes it easier to test for worst-case scenarios
+
+			//find distance to our goal pos from the edge of this keyframe
+			float d_from_keyframe_edge = mnvr_next_frame->mins.y - mnvr_frame->maxs.y;
+
+			//Calculate how long that would take to travel at mnvr_y_vel m/s
+			float t_from_keyframe_edge = d_from_keyframe_edge / mnvr_y_vel;
+			//Calculate our speed if we want to get there in the same amonut of time from our position
+			mnvr_y_vel = (mnvr_goal_pos.y - mnvr_start_pos.y)/t_from_keyframe_edge;
 		}
 
 		mnvr_var_x_slope = ((mnvr_goal_pos.x - mnvr_start_pos.x)/(mnvr_goal_pos.y - mnvr_start_pos.y));
@@ -1429,6 +1589,9 @@ char Game::voxel_not_in_lines(Vec3 l1a, Vec3 l1b, Vec3 l2a, Vec3 l2b, Voxel vox)
 	return CLIP_EMPTY;
 }
 
+
+//Whether or not we consider x-axis collisions as player deaths
+//#define PLAYER_COL_X
 
 //Returns whether or not the collision player bbox is colliding with something at position p
 //Sets col_dir and col_type to
@@ -1868,8 +2031,10 @@ bool Game::move_player(Vec3 v)
 
 	if(clip_player_bbox(side_pos,clip_dir,clip_type))
 	{
+#ifdef PLAYER_COL_X
 		start_player_death(clip_dir,clip_type);
-		return false;
+		return false;..
+#endif
 	}
 	else
 	{
@@ -2313,6 +2478,62 @@ void Game::player_state_logic()
 
 		Vec3 temp_tile_ofs = Vec3::ZERO();
 
+
+		// If we are in a traversal, modify the camera position:
+
+		//To auto do maneuvers / traversals:
+		int all_inputs = INPUT_SWIPE_UP | INPUT_SWIPE_DOWN;
+
+		bool in_a_maneuver = false;
+
+		// Check if we are in any maneuvers / traversals:
+		if(current_building->input_to_traversal(player->pos, all_inputs,temp_tile_ofs) != NULL)
+		{
+			in_a_maneuver = true;
+		}
+		else if(current_building->input_to_maneuver(player->pos, all_inputs,temp_tile_ofs))
+		{
+			in_a_maneuver = true;
+		}
+
+		//static float indicator = ;
+
+		//If we are in a maneuver: offset the player_head down by 5
+		if(in_a_maneuver)
+		{
+			//Lerp to -0.5f
+			//player_head->pos.z += (-0.5f - player_head->pos.z) * 0.3f;
+			//Lerp to 1.0f
+			screen_desaturation += (1.0f - screen_desaturation) * 0.2f;
+		}
+		else
+		{
+			// Lerp back to 0
+			//player_head->pos.z += (0.0f - player_head->pos.z) * 0.3f;
+			//Lerp back to 0.0f
+			screen_desaturation += (0.0f - screen_desaturation) * 0.2f;
+		}
+
+		//float flip = sinf(6.0f*Time::last_frame_time)*0.5f + 0.5f;
+		//Decrease saturation of screen colors
+		//screen_desaturation = indicator;
+		Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_DESATURATION, &screen_desaturation);
+
+		//Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_DESATURATION, &flip);
+
+
+
+		//Conclusion: this works very well for detecting if we are in a maneuver,
+		// HOWEVER, this is the wrong mechanism for it
+		// If we don't move the camera a lot, it's too subtle
+		// If we move the camera too much, it's dangerous because animation clipping is almost guaranteed.
+
+
+
+		//To auto do maneuvers / traversals:
+		//int prev_input = input_swipe;
+		//input_swipe = INPUT_SWIPE_UP | INPUT_SWIPE_DOWN;
+
 		Traversal* trav = current_building->input_to_traversal(player->pos, INPUT_SWIPE_NONE | input_swipe,temp_tile_ofs);
 
 		if(trav)
@@ -2324,6 +2545,12 @@ void Game::player_state_logic()
 			mnvr_frame_number = -1;
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = trav->keyframes[0];
+			//FIXME: remove the following logic
+			//Place the player at the very edge of the maneuver.
+			//Vec3 mins = temp_tile_ofs + Vec3(mnvr_next_frame->mins.x,mnvr_next_frame->maxs.y,mnvr_next_frame->mins.z);
+			//Vec3 maxs = temp_tile_ofs + Vec3(mnvr_next_frame->maxs.x,mnvr_next_frame->maxs.y,mnvr_next_frame->maxs.z);
+			//player->pos = cap_to_bounds(player->pos, mins, maxs);
+
 			reached_mnvr_keyframe();
 			return;
 		}
@@ -2339,10 +2566,25 @@ void Game::player_state_logic()
 			mnvr_frame_number = -1;
 			mnvr_next_frame_number = 0;
 			mnvr_next_frame = man->keyframes[0];
+			//FIXME: remove the following logic
+			//Place the player at the very edge of the maneuver.
+			//Vec3 mins = temp_tile_ofs + Vec3(mnvr_next_frame->mins.x,mnvr_next_frame->maxs.y,mnvr_next_frame->mins.z);
+			//Vec3 maxs = temp_tile_ofs + Vec3(mnvr_next_frame->maxs.x,mnvr_next_frame->maxs.y,mnvr_next_frame->maxs.z);
+			//player->pos = cap_to_bounds(player->pos, mins, maxs);
+
+			//Giving the player a random position within the maneuver bounds
+			//Vec3 mins = mnvr_next_frame->mins;
+			//Vec3 delta = mnvr_next_frame->maxs - mnvr_next_frame->mins;
+			//player->pos = temp_tile_ofs + mins + Vec3(Random::frand() * delta.x,Random::frand() * delta.y,Random::frand() * delta.z);
+
 			reached_mnvr_keyframe();
 			return;
 		}
-		else if(input_swipe)
+
+		//Restoring the actual swipe input
+		//input_swipe = prev_input;
+
+		if(input_swipe)
 		{
 			//There was a swipe, but we are not in a maneuver area:
 			if(input_swipe == INPUT_SWIPE_UP)
@@ -2546,6 +2788,7 @@ void Game::update()
 	float t = Time::time();
 
 
+
 	for(int i = 0; i < MAX_BUILDINGS; i++)
 	{
 		buildings[i]->update();
@@ -2699,7 +2942,6 @@ void Game::update()
 		return;
 	}*/
 
-	camera_roll_tilt_angle = 0.0f;
 	player_goal_yaw = 0.0f;
 	//Player turning code:
 	if(input_turning && !lock_player_rot && (player_state == PLAYER_STATE_RUNNING || player_state == PLAYER_STATE_SLIDING))
@@ -2707,15 +2949,121 @@ void Game::update()
 		player_goal_yaw = -PLAYER_MAX_TURN_ANGLE * input_turn * DEG_TO_RAD;
 	}
 
+	// Lerping yaw from input:
+	static float player_input_yaw = 0.0f;
+	player_input_yaw += (player_goal_yaw - player_input_yaw) * PLAYER_TURN_LERP_FACTOR;
+//	player->angles.y += (player_goal_yaw - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
+
+
+
+
+	// Lerping yaw from slant assistance
+	// This code aligns the player with slanting obstacles
+	// if any part of the player is in a tile where
+
+	static float player_assist_yaw = 0.0f;
+
+	//=========================================================================================
+	// Check for each of the player's bbox 4 corners
+	float goal_rot = 0.0f;
+
+
+	for(int i = 0; i < 6; i++)
+	{
+		Vec3 ppos = player->pos;
+		// This checks all 4 corners
+		Vec3 ofs;
+		// First check the center:
+		if(i == 0)
+			ofs = Vec3(0,0,0);
+		// Then check the front of the prediction triangle:
+		else if(i == 1)
+		{
+			ofs = Vec3(0,PLAYER_SIZE + player_bbox_tri_height,0);
+		}
+		// Then check the four corners:
+		else
+		{
+			int corner = i-2;
+			ofs = PLAYER_SIZE * Vec3((corner%2)*2-1,((corner/2))*2-1,0);
+		}
+
+		ppos = ppos + ofs;
+
+		LOGE("Ofs[%i] = (%f, %f, %f)",i,ofs.x,ofs.y,ofs.z);
+
+		// Get the tile type at a position
+		int type = current_building->active_floor->get_tile_type_at_pos(ppos);
+		int subtype = current_building->active_floor->get_tile_subtype_at_pos(ppos);
+
+		if(type != TILE_TYPE_RAIL)
+			continue;
+
+		// Get the player's position within the tile
+		Vec3 tile_pos = ppos - current_building->active_floor->get_tile_ofs_at_pos(ppos);
+
+		float max_turn = PLAYER_MAX_TURN_ANGLE * DEG_TO_RAD;
+
+		switch(subtype)
+		{
+			case RAIL_TYPE_TL_TL2:
+				if(tile_pos.x >= TILE_SIZE - tile_pos.y)
+					break;
+			case RAIL_TYPE_TL_L:
+			case RAIL_TYPE_TL:
+				goal_rot = max_turn;
+				break;
+			case RAIL_TYPE_TR_TR2:
+				if(tile_pos.x <= tile_pos.y)
+					break;
+			case RAIL_TYPE_TR:
+			case RAIL_TYPE_TR_R:
+				goal_rot = -max_turn;
+				break;
+			case RAIL_TYPE_TL_TR:
+				if(tile_pos.x < TILE_SIZE/2.0f)
+				{
+					goal_rot = max_turn;
+				}
+				else
+				{
+					goal_rot = -max_turn;
+				}
+			default:
+				break;
+		}
+
+		if(goal_rot != 0.0f)
+			break;
+	}
+	LOGE("Goal rotation: %f",goal_rot);
+	LOGE("Player angle_ofs before: %f", player_assist_yaw);
+	player_assist_yaw += (goal_rot - player_assist_yaw) * 0.1f;
+	LOGE("Player angle_ofs = %f",player_assist_yaw);
+	//==========================================================================================================
+
+	// Getting the actual goal yaw, from input turning contributions and assist turning contributions
+	float true_goal_yaw = player_goal_yaw + goal_rot;
+
+	//FIXME: should change the calculation of true_goal_yaw
+	// if turn assist is on, and we are going at 45deg to the right, and the player is turning all the way, we still
+	// only want to turn at max degree, but if we are turning all the way to the left, we only want it to go straight
+	// basically, if touch turn = 0, 45, touch turn = 1? max right (60), touch turn = -1? 0 degrees (straight)
+	// This requires some restructuring of the turning code, but that's fine
+	// for now, I need to make sure the auto touch turn works with repeating tiles.
+
+	camera_roll_tilt_angle = 0.0f;
 	//Slight camera roll rotation when turning
 	if(player_state != PLAYER_STATE_MANEUVERING && player_state != PLAYER_STATE_TRAVERSING)
 	{
-		camera_roll_tilt_angle = (player->angles.y - player_goal_yaw) * 0.8f;
+		camera_roll_tilt_angle = (player->angles.y - true_goal_yaw) * 0.8f;
 		camera_roll_tilt_angle = efmodf(camera_roll_tilt_angle + PI,TWO_PI) - PI;
 	}
 	player_head->tilt_angles.z = lerp_wtd_avg(player_head->tilt_angles.z,camera_roll_tilt_angle,5.0f);
 
-	player->angles.y += (player_goal_yaw - player->angles.y) * PLAYER_TURN_LERP_FACTOR;
+
+	player->angles.y = player_input_yaw + player_assist_yaw;
+
 	player->update();
 	player_anim_special_events();
 	player_state_logic();
@@ -2762,6 +3110,8 @@ void Game::render()
 	//Directional light color
 	float light_col[] = {1.0,0.0,0.0};
 	Shader::set_static_global_param(Shader::GLOBAL_PARAM_VEC3_DIRLIGHT_COL, light_col);
+	//Screen saturation color
+	//Shader::set_static_global_param(Shader::GLOBAL_PARAM_FLOAT_DESATURATION, &screen_desaturation);
 
 	Mat4 vp = camera->persp_proj_m * camera->view_m;
 
@@ -2790,6 +3140,10 @@ void Game::render()
 	//	draw_player_bbox(vp);
 
 	//=============================== Screen UI rendering begins here ===============================
+	//Draw debug input
+#if DEBUG_DRAW_INPUT
+	draw_debug_input();
+#endif
 	render_screen_overlay();
 
 	/*if(player_state != PLAYER_STATE_NOCLIP && player_state != PLAYER_STATE_CAM_FLY)
@@ -2821,11 +3175,11 @@ void Game::render()
 
 	if(player_state == PLAYER_STATE_NOCLIP)
 	{
-		//UI_Text::draw_text("Mode:\n NOCLIP", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+		UI_Text::draw_text("Mode:\n NOCLIP", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 	if(player_state == PLAYER_STATE_CAM_FLY)
 	{
-		//UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
+		UI_Text::draw_text("Mode:\n CAM FLY", Vec3(-screen_width * 0.4f,screen_height * 0.45f,0.5f), Vec3(0,0,0), 100.0f, Vec3(1,1,1), Vec3(0,0,0), 1.0f, false, camera->ortho_proj_m);
 	}
 
 }

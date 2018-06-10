@@ -17,7 +17,7 @@
 
 
 //Enable this to render the game at a lower resolution and upscale it to the game's res
-#define RENDER_AT_LOWER_RES
+//#define RENDER_AT_LOWER_RES
 
 //=========== Texture Defs =============
 #define TEXTURE_FORMAT_NONE 0

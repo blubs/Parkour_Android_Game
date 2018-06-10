@@ -262,6 +262,7 @@ extern int PREV_BLDG[3];
 #define PLAYER_STATE_CAM_FLY 8
 
 //Player Data
+//This is half of the player bbox width
 #define PLAYER_SIZE 0.3f
 //For collision detection, if PLAYER_SIZE * 2 < GRID_SIZE, we can omit certain collision checks
 //Basically, the player bbox will cover less voxels, requiring fewer checks.

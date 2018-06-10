@@ -188,6 +188,9 @@ public:
 
 	float input_turn;
 
+	void draw_single_debug_input(float startx, float starty, float endx, float endy, float *color);
+	void draw_debug_input();
+
 	//Handles touch screen input
 	void handle_input(float x, float y, int event,int pointer_id);
 	//Handles hardware back key / keyboard input
@@ -270,6 +273,9 @@ public:
 	float edge_darken_opacity = 0.3f;
 	float black_overlay_opacity = 0.0f;
 	float white_overlay_opacity = 0.0f;
+
+	//How much we desaturate the screen by
+	float screen_desaturation = 0.0f;
 
 
 	//The following 3 arrays hold the priority of each of the following clip types, in their respective indices

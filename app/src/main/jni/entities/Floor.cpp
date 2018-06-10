@@ -6,8 +6,10 @@
 
 Floor::Floor()
 {
+	interior_variant = 0;
 	global_pos = Vec3(0,0,0);
 	altitude = 0;
+	dynamic_floor_model = 0;
 }
 
 void Floor::clear_floor_tiles()
@@ -1323,6 +1325,10 @@ void Floor::generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs,Vec3 dims, Vec3
 {
 	if(generated)
 		return;
+
+	//Selecting a random interior variant
+	interior_variant = Random::rand_int_in_range(0,INTERIOR_VARIANT_COUNT);
+
 	global_pos = p + Vec3(0,0,floor_num*WINDOW_TILE_SIZE);
 	altitude = global_pos.z;
 	global_mins = mins;
@@ -1416,14 +1422,26 @@ void Floor::generate(Vec3 p, int floor_num, Vec3 mins, Vec3 maxs,Vec3 dims, Vec3
 	// =========== end Player Route Generation ===========
 
 	//TEMP: assigning tiles as obstacles
-	/*int obst_types[8] = {0,1,4,5,6,7,8,9};
+#if DEBUG_FLOORS
+	int obst_types[8] = {0,1,4,5,6,7,8,9};
 
+	//Clearing all previous tiles
+	for(int i = 0; i < width; i++)
+	{
+		for(int j = 0; j < length; j++)
+		{
+			tile_type[i][j] = TILE_TYPE_EMPT;
+			tile_subtype[i][j] = 0;
+		}
+	}
+
+	//Assigning the 5th row of tiles as obstacles.
 	for(int i = 0; i < width && i < 8; i++)
 	{
-		tile_type[i][3] = TILE_TYPE_OBST;
-		tile_subtype[i][3] = obst_types[i];
-	}*/
-
+		tile_type[i][5] = TILE_TYPE_OBST;
+		tile_subtype[i][5] = obst_types[i];
+	}
+#endif
 
 	populate_floor();
 
@@ -1513,8 +1531,8 @@ int Floor::render(Mat4 vp)
 	if(!generated)
 		return 1;
 
-	Global_Tiles::instance->tile_styles[0]->variants[0]->bind_variant();
-	Material* mat = Global_Tiles::instance->tile_styles[0]->variants[0]->mat;
+	Global_Tiles::instance->tile_styles[0]->variants[interior_variant]->bind_variant();
+	Material* mat = Global_Tiles::instance->tile_styles[0]->variants[interior_variant]->mat;
 	Mat4 m;
 	Mat4 world_trans = Mat4::TRANSLATE(global_mins);
 
@@ -1555,6 +1573,7 @@ int Floor::render(Mat4 vp)
 
 void Floor::clear()
 {
+	interior_variant = 0;
 	altitude = 0;
 	width = length = 0;
 	global_mins = Vec3::ZERO();
@@ -1815,3 +1834,55 @@ Vec3 Floor::get_tile_ofs_at_pos(Vec3 p)
 	p = p + global_mins;
 	return p;
 }
+
+
+//Returns the tile type at a given position
+int Floor::get_tile_type_at_pos(Vec3 p)
+{
+	if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
+	{
+		LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+		return TILE_TYPE_EMPT;
+	}
+
+	//finding player pos relative to left near corner of floor
+	Vec3 floor_pos = p - global_mins;
+
+	int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
+	int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
+
+	if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
+	{
+		LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
+		return TILE_TYPE_EMPT;
+	}
+
+	return tile_type[tile_x][tile_y];
+}
+
+//Returns the subtype of a tile at a given position
+int Floor::get_tile_subtype_at_pos(Vec3 p)
+{
+	if(is_x_out_of_bounds(p) || is_y_out_of_bounds(p))
+	{
+		LOGW("Warning: X or Y coord to check is out of bounds: coords:(%f,%f), mins:(%f,%f), maxs:(%f,%f)",p.x,p.y,global_mins.x,global_mins.y,global_maxs.x,global_maxs.y);
+		return RAIL_TYPE_NONE;
+	}
+
+	//finding player pos relative to left near corner of floor
+	Vec3 floor_pos = p - global_mins;
+
+	int tile_x = (int) floorf(floor_pos.x/TILE_SIZE);
+	int tile_y = (int) floorf(floor_pos.y/TILE_SIZE);
+
+	if(tile_x < 0 || tile_y < 0 || tile_x >= width || tile_y >= length)
+	{
+		LOGW("Warning: tried reaching out of bounds tile: (floor dims: (%d x %d), index: (%d x %d))",width,length,tile_x,tile_y);
+		return RAIL_TYPE_NONE;
+	}
+
+	return tile_subtype[tile_x][tile_y];
+}
+
+
+

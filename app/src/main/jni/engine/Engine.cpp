@@ -507,6 +507,7 @@ void Engine::draw_frame()
 		return;
 	}
 	float t = Time::time();
+
 	//Evaluating global time variables
 	Time::fdelta_time = t - Time::last_frame_time;
 	//If way too much time has elapsed since last frame, lerping things will get messed up, so make delta_time be 0

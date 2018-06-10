@@ -11,6 +11,7 @@ float Time::udelta_time = 0.0f;
 float Time::last_frame_time = 0.0f;
 float Time::last_update_time = 0.0f;
 
+float Time::time_scale = 1.0f;
 double Time::start_time = 0.0;
 
 //Returns nanoseconds (from some arbitrary reference point, doesn't seem to be epoch time) as an unsigned long long
